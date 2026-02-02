@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dashboard">
       <body className={`${inter.variable} antialiased`}>
         <div className="gradient-bg" />
         {children}

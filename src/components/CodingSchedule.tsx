@@ -17,11 +17,11 @@ export function CodingSchedule({ data, mostActiveHour, mostActiveDay }: CodingSc
 
     const getHeatColor = (count: number) => {
         const intensity = count / maxCount;
-        if (intensity === 0) return "rgba(255, 255, 255, 0.03)";
-        if (intensity < 0.25) return "rgba(139, 92, 246, 0.2)";
-        if (intensity < 0.5) return "rgba(139, 92, 246, 0.4)";
-        if (intensity < 0.75) return "rgba(139, 92, 246, 0.6)";
-        return "rgba(139, 92, 246, 0.9)";
+        if (intensity === 0) return "var(--hover-bg)";
+        if (intensity < 0.25) return "#0e4429";
+        if (intensity < 0.5) return "#006d32";
+        if (intensity < 0.75) return "#26a641";
+        return "#39d353";
     };
 
     const formatHour = (hour: number) => {
@@ -39,12 +39,12 @@ export function CodingSchedule({ data, mostActiveHour, mostActiveDay }: CodingSc
             className="glass-card p-6"
         >
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold gradient-text">
+                <h3 className="text-lg font-semibold">
                     Coding Schedule
                 </h3>
-                <div className="text-sm text-white/50">
-                    Peak: <span className="text-purple-400">{mostActiveDay}</span> at{" "}
-                    <span className="text-cyan-400">{formatHour(mostActiveHour)}</span>
+                <div className="text-sm text-[var(--muted)]">
+                    Peak: <span className="text-[var(--foreground)]">{mostActiveDay}</span> at{" "}
+                    <span className="text-[var(--foreground)]">{formatHour(mostActiveHour)}</span>
                 </div>
             </div>
 
@@ -57,7 +57,7 @@ export function CodingSchedule({ data, mostActiveHour, mostActiveDay }: CodingSc
                             .map((hour) => (
                                 <div
                                     key={hour}
-                                    className="text-xs text-white/40"
+                                    className="text-xs text-[var(--muted)]"
                                     style={{ width: "12.5%", textAlign: "center" }}
                                 >
                                     {formatHour(hour)}
@@ -68,7 +68,7 @@ export function CodingSchedule({ data, mostActiveHour, mostActiveDay }: CodingSc
                     {/* Heatmap grid */}
                     {days.map((day, dayIndex) => (
                         <div key={day} className="flex items-center mb-1">
-                            <div className="w-10 text-xs text-white/40">{day}</div>
+                            <div className="w-10 text-xs text-[var(--muted)]">{day}</div>
                             <div className="flex flex-1 gap-0.5">
                                 {hours.map((hour) => {
                                     const activity = data.find(
@@ -98,13 +98,13 @@ export function CodingSchedule({ data, mostActiveHour, mostActiveDay }: CodingSc
             </div>
 
             {/* Legend */}
-            <div className="flex items-center justify-end gap-2 mt-4 text-xs text-white/40">
+            <div className="flex items-center justify-end gap-2 mt-4 text-xs text-[var(--muted)]">
                 <span>Less</span>
-                <div className="w-4 h-4 rounded-sm" style={{ background: "rgba(255, 255, 255, 0.03)" }} />
-                <div className="w-4 h-4 rounded-sm" style={{ background: "rgba(139, 92, 246, 0.2)" }} />
-                <div className="w-4 h-4 rounded-sm" style={{ background: "rgba(139, 92, 246, 0.4)" }} />
-                <div className="w-4 h-4 rounded-sm" style={{ background: "rgba(139, 92, 246, 0.6)" }} />
-                <div className="w-4 h-4 rounded-sm" style={{ background: "rgba(139, 92, 246, 0.9)" }} />
+                <div className="w-4 h-4 rounded-sm" style={{ background: "var(--hover-bg)" }} />
+                <div className="w-4 h-4 rounded-sm" style={{ background: "#0e4429" }} />
+                <div className="w-4 h-4 rounded-sm" style={{ background: "#006d32" }} />
+                <div className="w-4 h-4 rounded-sm" style={{ background: "#26a641" }} />
+                <div className="w-4 h-4 rounded-sm" style={{ background: "#39d353" }} />
                 <span>More</span>
             </div>
         </motion.div>

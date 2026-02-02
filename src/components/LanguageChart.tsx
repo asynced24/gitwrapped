@@ -31,7 +31,7 @@ export function LanguageChart({ data }: LanguageChartProps) {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="glass-card p-6"
         >
-            <h3 className="text-lg font-semibold mb-4 gradient-text">
+            <h3 className="text-lg font-semibold mb-4">
                 Language Radar
             </h3>
 
@@ -60,10 +60,10 @@ export function LanguageChart({ data }: LanguageChartProps) {
                             </Pie>
                             <Tooltip
                                 contentStyle={{
-                                    background: "rgba(0,0,0,0.9)",
-                                    border: "none",
+                                    background: "var(--card-bg)",
+                                    border: "1px solid var(--border)",
                                     borderRadius: "8px",
-                                    color: "white",
+                                    color: "var(--foreground)",
                                 }}
                                 formatter={(value: number) => [`${value}%`, ""]}
                             />
@@ -84,10 +84,10 @@ export function LanguageChart({ data }: LanguageChartProps) {
                                 className="w-3 h-3 rounded-full flex-shrink-0"
                                 style={{ background: lang.color }}
                             />
-                            <span className="text-sm text-white/70 truncate">
+                            <span className="text-sm text-[var(--foreground)] opacity-70 truncate">
                                 {lang.language}
                             </span>
-                            <span className="text-sm text-white/40 ml-auto">
+                            <span className="text-sm text-[var(--muted)] ml-auto">
                                 {lang.percentage}%
                             </span>
                         </motion.div>

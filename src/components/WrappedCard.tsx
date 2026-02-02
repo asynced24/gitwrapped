@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { UserStats, LanguageStats } from "@/types/github";
+import { UserStats } from "@/types/github";
 import { Download, Share2 } from "lucide-react";
 
 interface WrappedCardProps {
@@ -58,39 +58,38 @@ export function WrappedCard({ stats }: WrappedCardProps) {
             className="glass-card p-6"
         >
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold gradient-text">
+                <h3 className="text-lg font-semibold">
                     Your GitWrapped Card
                 </h3>
                 <div className="flex gap-2">
                     <button
                         onClick={handleShare}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                        className="p-2 rounded-lg bg-[var(--hover-bg)] hover:bg-[var(--border)] transition-colors"
                         title="Share"
                     >
-                        <Share2 size={18} className="text-white/70" />
+                        <Share2 size={18} className="text-[var(--muted)]" />
                     </button>
                     <button
                         onClick={handleDownload}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                        className="p-2 rounded-lg bg-[var(--hover-bg)] hover:bg-[var(--border)] transition-colors"
                         title="Download"
                     >
-                        <Download size={18} className="text-white/70" />
+                        <Download size={18} className="text-[var(--muted)]" />
                     </button>
                 </div>
             </div>
 
-            {/* Shareable Card */}
+            {/* Shareable Card - always uses vibrant theme for download */}
             <div
                 id="wrapped-card"
                 className="relative p-8 rounded-2xl overflow-hidden"
                 style={{
-                    background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)",
+                    background: "linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1117 100%)",
                 }}
             >
                 {/* Decorative elements */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-[100px]" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/20 rounded-full blur-[100px]" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-[100px]" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[#238636]/20 rounded-full blur-[100px]" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#2f81f7]/20 rounded-full blur-[100px]" />
 
                 {/* Card Content */}
                 <div className="relative z-10">
@@ -99,57 +98,57 @@ export function WrappedCard({ stats }: WrappedCardProps) {
                         <img
                             src={user.avatar_url}
                             alt={user.login}
-                            className="w-16 h-16 rounded-full ring-2 ring-purple-500/50"
+                            className="w-16 h-16 rounded-full ring-2 ring-[#30363d]"
                         />
                         <div>
-                            <h4 className="text-xl font-bold text-white">{user.name || user.login}</h4>
-                            <p className="text-white/50">@{user.login}</p>
+                            <h4 className="text-xl font-bold text-[#e6edf3]">{user.name || user.login}</h4>
+                            <p className="text-[#7d8590]">@{user.login}</p>
                         </div>
                         <div className="ml-auto text-right">
-                            <div className="text-xs text-white/40 uppercase tracking-wider">Year in Code</div>
-                            <div className="text-2xl font-bold gradient-text">2024</div>
+                            <div className="text-xs text-[#7d8590] uppercase tracking-wider">Year in Code</div>
+                            <div className="text-2xl font-bold text-[#2f81f7]">2024</div>
                         </div>
                     </div>
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-3 gap-4 mb-8">
-                        <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-sm">
-                            <div className="text-3xl font-bold text-purple-400">{totalCommits.toLocaleString()}</div>
-                            <div className="text-xs text-white/50 uppercase mt-1">Commits</div>
+                        <div className="text-center p-4 rounded-xl bg-[#21262d]">
+                            <div className="text-3xl font-bold text-[#238636]">{totalCommits.toLocaleString()}</div>
+                            <div className="text-xs text-[#7d8590] uppercase mt-1">Commits</div>
                         </div>
-                        <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-sm">
-                            <div className="text-3xl font-bold text-cyan-400">{totalStars.toLocaleString()}</div>
-                            <div className="text-xs text-white/50 uppercase mt-1">Stars Earned</div>
+                        <div className="text-center p-4 rounded-xl bg-[#21262d]">
+                            <div className="text-3xl font-bold text-[#d29922]">{totalStars.toLocaleString()}</div>
+                            <div className="text-xs text-[#7d8590] uppercase mt-1">Stars Earned</div>
                         </div>
-                        <div className="text-center p-4 rounded-xl bg-white/5 backdrop-blur-sm">
-                            <div className="text-3xl font-bold text-pink-400">{longestStreak}</div>
-                            <div className="text-xs text-white/50 uppercase mt-1">Day Streak</div>
+                        <div className="text-center p-4 rounded-xl bg-[#21262d]">
+                            <div className="text-3xl font-bold text-[#f85149]">{longestStreak}</div>
+                            <div className="text-xs text-[#7d8590] uppercase mt-1">Day Streak</div>
                         </div>
                     </div>
 
                     {/* Top Language & Repo */}
                     <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="p-4 rounded-xl bg-white/5 backdrop-blur-sm">
-                            <div className="text-xs text-white/40 uppercase mb-1">Top Language</div>
+                        <div className="p-4 rounded-xl bg-[#21262d]">
+                            <div className="text-xs text-[#7d8590] uppercase mb-1">Top Language</div>
                             <div className="flex items-center gap-2">
                                 <span
                                     className="w-3 h-3 rounded-full"
-                                    style={{ background: languageStats[0]?.color || "#8b5cf6" }}
+                                    style={{ background: languageStats[0]?.color || "#2f81f7" }}
                                 />
-                                <span className="font-semibold text-white">{topLanguage}</span>
+                                <span className="font-semibold text-[#e6edf3]">{topLanguage}</span>
                             </div>
                         </div>
-                        <div className="p-4 rounded-xl bg-white/5 backdrop-blur-sm">
-                            <div className="text-xs text-white/40 uppercase mb-1">Top Repo</div>
-                            <div className="font-semibold text-white truncate">{topRepo}</div>
+                        <div className="p-4 rounded-xl bg-[#21262d]">
+                            <div className="text-xs text-[#7d8590] uppercase mb-1">Top Repo</div>
+                            <div className="font-semibold text-[#e6edf3] truncate">{topRepo}</div>
                         </div>
                     </div>
 
                     {/* Language Bar */}
                     <div className="mb-6">
-                        <div className="text-xs text-white/40 uppercase mb-2">Languages Used</div>
+                        <div className="text-xs text-[#7d8590] uppercase mb-2">Languages Used</div>
                         <div className="flex h-3 rounded-full overflow-hidden">
-                            {languageStats.slice(0, 5).map((lang, index) => (
+                            {languageStats.slice(0, 5).map((lang) => (
                                 <div
                                     key={lang.language}
                                     className="h-full"
@@ -163,7 +162,7 @@ export function WrappedCard({ stats }: WrappedCardProps) {
                         </div>
                         <div className="flex flex-wrap gap-2 mt-2">
                             {languageStats.slice(0, 5).map((lang) => (
-                                <div key={lang.language} className="flex items-center gap-1 text-xs text-white/50">
+                                <div key={lang.language} className="flex items-center gap-1 text-xs text-[#7d8590]">
                                     <span className="w-2 h-2 rounded-full" style={{ background: lang.color }} />
                                     <span>{lang.language}</span>
                                 </div>
@@ -172,9 +171,9 @@ export function WrappedCard({ stats }: WrappedCardProps) {
                     </div>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between text-xs text-white/40">
+                    <div className="flex items-center justify-between text-xs text-[#7d8590]">
                         <span>Generated with GitWrapped</span>
-                        <span className="gradient-text font-semibold">gitwrapped.dev</span>
+                        <span className="text-[#2f81f7] font-semibold">gitwrapped.dev</span>
                     </div>
                 </div>
             </div>

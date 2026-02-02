@@ -25,7 +25,7 @@ export function CommitChart({ data }: CommitChartProps) {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="glass-card p-6"
         >
-            <h3 className="text-lg font-semibold mb-4 gradient-text">
+            <h3 className="text-lg font-semibold mb-4">
                 Commit Timeline
             </h3>
 
@@ -37,37 +37,31 @@ export function CommitChart({ data }: CommitChartProps) {
                     >
                         <defs>
                             <linearGradient id="commitGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.6} />
-                                <stop offset="50%" stopColor="#06b6d4" stopOpacity={0.3} />
-                                <stop offset="100%" stopColor="#f472b6" stopOpacity={0} />
-                            </linearGradient>
-                            <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                                <stop offset="0%" stopColor="#8b5cf6" />
-                                <stop offset="50%" stopColor="#06b6d4" />
-                                <stop offset="100%" stopColor="#f472b6" />
+                                <stop offset="0%" stopColor="var(--primary, #2f81f7)" stopOpacity={0.4} />
+                                <stop offset="100%" stopColor="var(--primary, #2f81f7)" stopOpacity={0} />
                             </linearGradient>
                         </defs>
                         <XAxis
                             dataKey="month"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }}
+                            tick={{ fill: "var(--muted)", fontSize: 12 }}
                             interval="preserveStartEnd"
                         />
                         <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }}
+                            tick={{ fill: "var(--muted)", fontSize: 12 }}
                             domain={[0, maxCommits * 1.1]}
                         />
                         <Tooltip
                             contentStyle={{
-                                background: "rgba(0,0,0,0.9)",
-                                border: "none",
+                                background: "var(--card-bg)",
+                                border: "1px solid var(--border)",
                                 borderRadius: "8px",
-                                color: "white",
+                                color: "var(--foreground)",
                             }}
-                            labelStyle={{ color: "rgba(255,255,255,0.7)" }}
+                            labelStyle={{ color: "var(--muted)" }}
                             formatter={(value: number) => [
                                 `${value} commits`,
                                 "",
@@ -76,8 +70,8 @@ export function CommitChart({ data }: CommitChartProps) {
                         <Area
                             type="monotone"
                             dataKey="commits"
-                            stroke="url(#lineGradient)"
-                            strokeWidth={3}
+                            stroke="var(--primary, #2f81f7)"
+                            strokeWidth={2}
                             fill="url(#commitGradient)"
                         />
                     </AreaChart>

@@ -8,11 +8,11 @@ interface ContributionCalendarProps {
 }
 
 const LEVEL_COLORS = [
-    "rgba(255, 255, 255, 0.05)",
-    "#1e4620",
-    "#2ea043",
-    "#40c463",
-    "#57d96a",
+    "var(--hover-bg)",
+    "#0e4429",
+    "#006d32",
+    "#26a641",
+    "#39d353",
 ];
 
 export function ContributionCalendar({ data }: ContributionCalendarProps) {
@@ -50,19 +50,19 @@ export function ContributionCalendar({ data }: ContributionCalendarProps) {
             transition={{ duration: 0.5 }}
             className="glass-card p-6 overflow-x-auto"
         >
-            <h3 className="text-lg font-semibold mb-4 gradient-text">
+            <h3 className="text-lg font-semibold mb-4">
                 Contribution Activity
             </h3>
 
             <div className="flex">
-                <div className="flex flex-col justify-around pr-2 text-xs text-white/40">
+                <div className="flex flex-col justify-around pr-2 text-xs text-[var(--muted)]">
                     {days.map((day, i) => (
                         <span key={i} className="h-3">{day}</span>
                     ))}
                 </div>
 
                 <div className="flex-1">
-                    <div className="flex text-xs text-white/40 mb-1">
+                    <div className="flex text-xs text-[var(--muted)] mb-1">
                         {monthLabels.map(({ month, position }) => (
                             <span
                                 key={position}
@@ -98,7 +98,7 @@ export function ContributionCalendar({ data }: ContributionCalendarProps) {
                 </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 mt-4 text-xs text-white/40">
+            <div className="flex items-center justify-end gap-2 mt-4 text-xs text-[var(--muted)]">
                 <span>Less</span>
                 {LEVEL_COLORS.map((color, i) => (
                     <div

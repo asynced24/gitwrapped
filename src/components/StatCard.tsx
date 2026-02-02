@@ -17,7 +17,7 @@ export function StatCard({
     label,
     value,
     subValue,
-    color = "#8b5cf6",
+    color = "var(--primary)",
     delay = 0,
 }: StatCardProps) {
     return (
@@ -29,7 +29,7 @@ export function StatCard({
         >
             <div className="flex items-start justify-between">
                 <div>
-                    <p className="text-sm text-white/50 mb-1">{label}</p>
+                    <p className="text-sm text-[var(--muted)] mb-1">{label}</p>
                     <motion.h3
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -40,12 +40,11 @@ export function StatCard({
                         {typeof value === "number" ? value.toLocaleString() : value}
                     </motion.h3>
                     {subValue && (
-                        <p className="text-xs text-white/40 mt-1">{subValue}</p>
+                        <p className="text-xs text-[var(--muted)] mt-1">{subValue}</p>
                     )}
                 </div>
                 <div
-                    className="p-3 rounded-xl"
-                    style={{ background: `${color}20` }}
+                    className="p-3 rounded-xl bg-[var(--hover-bg)]"
                 >
                     <Icon size={24} style={{ color }} />
                 </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
     Sparkles,
     Star,
@@ -14,6 +13,8 @@ import {
     ArrowLeft,
 } from "lucide-react";
 import { UserStats } from "@/types/github";
+import { ViewModeProvider, useViewMode } from "@/context/ViewModeContext";
+import { ModeToggle } from "@/components/ModeToggle";
 import { ProfileCard } from "@/components/ProfileCard";
 import { StatCard } from "@/components/StatCard";
 import { LanguageChart } from "@/components/LanguageChart";
@@ -22,12 +23,15 @@ import { ContributionCalendar } from "@/components/ContributionCalendar";
 import { TopRepos } from "@/components/TopRepos";
 import { CodingSchedule } from "@/components/CodingSchedule";
 import { WrappedCard } from "@/components/WrappedCard";
+import { WrappedStory } from "@/components/WrappedStory";
 
 interface DashboardClientProps {
     stats: UserStats;
 }
 
-export function DashboardClient({ stats }: DashboardClientProps) {
+function DashboardContent({ stats }: DashboardClientProps) {
+    const { mode } = useViewMode();
+
     const {
         user,
         totalStars,
@@ -45,24 +49,32 @@ export function DashboardClient({ stats }: DashboardClientProps) {
         accountAge,
     } = stats;
 
+    if (mode === "wrapped") {
+        return <WrappedStory stats={stats} />;
+    }
+
     return (
         <div className="min-h-screen py-8">
             {/* Navigation */}
-            <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b border-white/5">
+            <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b border-[var(--border)]">
                 <div className="container flex items-center justify-between h-16">
                     <Link href="/" className="flex items-center gap-2 group">
                         <ArrowLeft
                             size={18}
-                            className="text-white/50 group-hover:text-white transition-colors"
+                            className="text-[var(--muted)] group-hover:text-[var(--foreground)] transition-colors"
                         />
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-[var(--primary)] flex items-center justify-center">
                             <Sparkles size={18} className="text-white" />
                         </div>
-                        <span className="text-xl font-bold gradient-text">GitWrapped</span>
+                        <span className="text-xl font-bold">GitWrapped</span>
                     </Link>
-                    <div className="flex items-center gap-2 text-sm text-white/60">
-                        <span>Viewing:</span>
-                        <span className="font-semibold text-white">@{user.login}</span>
+
+                    <div className="flex items-center gap-4">
+                        <ModeToggle />
+                        <div className="hidden sm:flex items-center gap-2 text-sm text-[var(--muted)]">
+                            <span>Viewing:</span>
+                            <span className="font-semibold text-[var(--foreground)]">@{user.login}</span>
+                        </div>
                     </div>
                 </div>
             </nav>
@@ -85,7 +97,7 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                         label="Total Commits"
                         value={totalCommits}
                         subValue="This year"
-                        color="#8b5cf6"
+                        color="var(--primary)"
                         delay={0}
                     />
                     <StatCard
@@ -93,7 +105,7 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                         label="Stars Earned"
                         value={totalStars}
                         subValue="Across all repos"
-                        color="#f59e0b"
+                        color="var(--warning)"
                         delay={0.1}
                     />
                     <StatCard
@@ -101,7 +113,7 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                         label="Longest Streak"
                         value={longestStreak}
                         subValue="Consecutive days"
-                        color="#ef4444"
+                        color="var(--danger)"
                         delay={0.2}
                     />
                     <StatCard
@@ -109,7 +121,7 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                         label="Total Forks"
                         value={totalForks}
                         subValue="On your repos"
-                        color="#06b6d4"
+                        color="var(--success)"
                         delay={0.3}
                     />
                 </section>
@@ -132,7 +144,7 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                         label="Current Streak"
                         value={currentStreak}
                         subValue="Keep it going!"
-                        color="#10b981"
+                        color="var(--success)"
                         delay={0}
                     />
                     <StatCard
@@ -140,7 +152,7 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                         label="Peak Hour"
                         value={`${mostActiveHour > 12 ? mostActiveHour - 12 : mostActiveHour || 12} ${mostActiveHour >= 12 ? 'PM' : 'AM'}`}
                         subValue="Most active time"
-                        color="#f472b6"
+                        color="var(--accent)"
                         delay={0.1}
                     />
                     <StatCard
@@ -148,7 +160,7 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                         label="Most Active Day"
                         value={mostActiveDay}
                         subValue="Day of the week"
-                        color="#8b5cf6"
+                        color="var(--primary)"
                         delay={0.2}
                     />
                     <StatCard
@@ -156,7 +168,7 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                         label="GitHub Age"
                         value={`${accountAge}+ yrs`}
                         subValue="Time on GitHub"
-                        color="#06b6d4"
+                        color="var(--success)"
                         delay={0.3}
                     />
                 </section>
@@ -181,15 +193,23 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                 </section>
 
                 {/* Footer */}
-                <footer className="text-center py-8 text-sm text-white/40">
+                <footer className="text-center py-8 text-sm text-[var(--muted)]">
                     <p>
                         Generated with{" "}
-                        <Link href="/" className="gradient-text font-semibold hover:underline">
+                        <Link href="/" className="font-semibold hover:underline text-[var(--foreground)]">
                             GitWrapped
                         </Link>
                     </p>
                 </footer>
             </div>
         </div>
+    );
+}
+
+export function DashboardClient({ stats }: DashboardClientProps) {
+    return (
+        <ViewModeProvider>
+            <DashboardContent stats={stats} />
+        </ViewModeProvider>
     );
 }
