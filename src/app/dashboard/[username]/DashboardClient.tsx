@@ -1,29 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import {
-    Sparkles,
-    Star,
-    GitFork,
-    GitCommit,
-    Flame,
-    Calendar,
-    Clock,
-    Users,
-    ArrowLeft,
-} from "lucide-react";
+import { Star, GitFork, BookOpen, MapPin, Link as LinkIcon, Calendar } from "lucide-react";
 import { UserStats } from "@/types/github";
 import { ViewModeProvider, useViewMode } from "@/context/ViewModeContext";
 import { ModeToggle } from "@/components/ModeToggle";
-import { ProfileCard } from "@/components/ProfileCard";
-import { StatCard } from "@/components/StatCard";
-import { LanguageChart } from "@/components/LanguageChart";
-import { CommitChart } from "@/components/CommitChart";
-import { ContributionCalendar } from "@/components/ContributionCalendar";
-import { TopRepos } from "@/components/TopRepos";
-import { CodingSchedule } from "@/components/CodingSchedule";
-import { WrappedCard } from "@/components/WrappedCard";
+import { LanguageBar } from "@/components/LanguageBar";
+import { RepoCard } from "@/components/RepoCard";
 import { WrappedStory } from "@/components/WrappedStory";
+import { formatDistanceToNow } from "date-fns";
 
 interface DashboardClientProps {
     stats: UserStats;
@@ -32,176 +17,164 @@ interface DashboardClientProps {
 function DashboardContent({ stats }: DashboardClientProps) {
     const { mode } = useViewMode();
 
-    const {
-        user,
-        totalStars,
-        totalForks,
-        totalCommits,
-        languageStats,
-        contributionCalendar,
-        topRepositories,
-        monthlyCommits,
-        codingSchedule,
-        longestStreak,
-        currentStreak,
-        mostActiveDay,
-        mostActiveHour,
-        accountAge,
-    } = stats;
-
     if (mode === "wrapped") {
         return <WrappedStory stats={stats} />;
     }
 
+    const {
+        user,
+        totalStars,
+        totalForks,
+        languageStats,
+        topRepositories,
+        accountAgeYears,
+        ownRepoCount,
+        forkedRepoCount,
+        recentlyActive,
+    } = stats;
+
     return (
-        <div className="min-h-screen py-8">
+        <div className="min-h-screen">
             {/* Navigation */}
-            <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b border-[var(--border)]">
-                <div className="container flex items-center justify-between h-16">
-                    <Link href="/" className="flex items-center gap-2 group">
-                        <ArrowLeft
-                            size={18}
-                            className="text-[var(--muted)] group-hover:text-[var(--foreground)] transition-colors"
-                        />
-                        <div className="w-8 h-8 rounded-lg bg-[var(--primary)] flex items-center justify-center">
-                            <Sparkles size={18} className="text-white" />
-                        </div>
-                        <span className="text-xl font-bold">GitWrapped</span>
+            <nav className="nav">
+                <div className="container nav-content">
+                    <Link href="/" className="nav-brand">
+                        <BookOpen size={20} />
+                        <span>GitWrapped</span>
                     </Link>
 
                     <div className="flex items-center gap-4">
                         <ModeToggle />
-                        <div className="hidden sm:flex items-center gap-2 text-sm text-[var(--muted)]">
-                            <span>Viewing:</span>
-                            <span className="font-semibold text-[var(--foreground)]">@{user.login}</span>
-                        </div>
                     </div>
                 </div>
             </nav>
 
-            <div className="container pt-20">
-                {/* Profile Card */}
-                <section className="mb-8">
-                    <ProfileCard
-                        user={user}
-                        totalStars={totalStars}
-                        totalCommits={totalCommits}
-                        accountAge={accountAge}
+            <main className="container" style={{ paddingTop: 32, paddingBottom: 64 }}>
+                {/* Profile Section */}
+                <section className="profile-header" style={{ marginBottom: 32 }}>
+                    <img
+                        src={user.avatar_url}
+                        alt={`${user.login}'s avatar`}
+                        width={96}
+                        height={96}
+                        className="avatar"
                     />
+                    <div className="profile-info">
+                        <h1 className="profile-name">{user.name || user.login}</h1>
+                        <p className="profile-login">@{user.login}</p>
+
+                        {user.bio && (
+                            <p className="profile-bio">{user.bio}</p>
+                        )}
+
+                        <div className="profile-meta">
+                            {user.location && (
+                                <span className="profile-meta-item">
+                                    <MapPin size={16} />
+                                    {user.location}
+                                </span>
+                            )}
+                            {user.blog && (
+                                <a
+                                    href={user.blog.startsWith("http") ? user.blog : `https://${user.blog}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="profile-meta-item"
+                                    style={{ color: "var(--accent-primary)" }}
+                                >
+                                    <LinkIcon size={16} />
+                                    {user.blog.replace(/^https?:\/\//, "")}
+                                </a>
+                            )}
+                            <span className="profile-meta-item">
+                                <Calendar size={16} />
+                                Joined {formatDistanceToNow(new Date(user.created_at), { addSuffix: false })} ago
+                            </span>
+                        </div>
+                    </div>
                 </section>
 
-                {/* Quick Stats */}
-                <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <StatCard
-                        icon={GitCommit}
-                        label="Total Commits"
-                        value={totalCommits}
-                        subValue="This year"
-                        color="var(--primary)"
-                        delay={0}
-                    />
-                    <StatCard
-                        icon={Star}
-                        label="Stars Earned"
-                        value={totalStars}
-                        subValue="Across all repos"
-                        color="var(--warning)"
-                        delay={0.1}
-                    />
-                    <StatCard
-                        icon={Flame}
-                        label="Longest Streak"
-                        value={longestStreak}
-                        subValue="Consecutive days"
-                        color="var(--danger)"
-                        delay={0.2}
-                    />
-                    <StatCard
-                        icon={GitFork}
-                        label="Total Forks"
-                        value={totalForks}
-                        subValue="On your repos"
-                        color="var(--success)"
-                        delay={0.3}
-                    />
+                {/* Stats Grid */}
+                <section className="grid-4" style={{ marginBottom: 32 }}>
+                    <div className="card">
+                        <div className="stat-value">{user.public_repos}</div>
+                        <div className="stat-label">Public repositories</div>
+                    </div>
+                    <div className="card">
+                        <div className="stat-value">{totalStars.toLocaleString()}</div>
+                        <div className="stat-label">Stars earned</div>
+                    </div>
+                    <div className="card">
+                        <div className="stat-value">{totalForks.toLocaleString()}</div>
+                        <div className="stat-label">Times forked</div>
+                    </div>
+                    <div className="card">
+                        <div className="stat-value">{user.followers.toLocaleString()}</div>
+                        <div className="stat-label">Followers</div>
+                    </div>
                 </section>
 
-                {/* Charts Row */}
-                <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <LanguageChart data={languageStats} />
-                    <CommitChart data={monthlyCommits} />
-                </section>
+                {/* Language Breakdown */}
+                {languageStats.length > 0 && (
+                    <section className="card" style={{ marginBottom: 32 }}>
+                        <h2 className="card-header">Languages</h2>
+                        <LanguageBar languages={languageStats} />
+                        <p className="text-muted" style={{ marginTop: 16, fontSize: 12 }}>
+                            Based on bytes across your {ownRepoCount} original repositories.
+                            Jupyter notebooks are counted as Python.
+                        </p>
+                    </section>
+                )}
 
-                {/* Contribution Calendar */}
-                <section className="mb-8">
-                    <ContributionCalendar data={contributionCalendar} />
-                </section>
+                {/* Repositories */}
+                {topRepositories.length > 0 && (
+                    <section style={{ marginBottom: 32 }}>
+                        <h2 style={{ marginBottom: 16 }}>Popular repositories</h2>
+                        <div className="grid-2">
+                            {topRepositories.map((repo) => (
+                                <RepoCard key={repo.id} repo={repo} />
+                            ))}
+                        </div>
+                    </section>
+                )}
 
-                {/* Additional Stats */}
-                <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <StatCard
-                        icon={Calendar}
-                        label="Current Streak"
-                        value={currentStreak}
-                        subValue="Keep it going!"
-                        color="var(--success)"
-                        delay={0}
-                    />
-                    <StatCard
-                        icon={Clock}
-                        label="Peak Hour"
-                        value={`${mostActiveHour > 12 ? mostActiveHour - 12 : mostActiveHour || 12} ${mostActiveHour >= 12 ? 'PM' : 'AM'}`}
-                        subValue="Most active time"
-                        color="var(--accent)"
-                        delay={0.1}
-                    />
-                    <StatCard
-                        icon={Calendar}
-                        label="Most Active Day"
-                        value={mostActiveDay}
-                        subValue="Day of the week"
-                        color="var(--primary)"
-                        delay={0.2}
-                    />
-                    <StatCard
-                        icon={Users}
-                        label="GitHub Age"
-                        value={`${accountAge}+ yrs`}
-                        subValue="Time on GitHub"
-                        color="var(--success)"
-                        delay={0.3}
-                    />
-                </section>
-
-                {/* Coding Schedule */}
-                <section className="mb-8">
-                    <CodingSchedule
-                        data={codingSchedule}
-                        mostActiveHour={mostActiveHour}
-                        mostActiveDay={mostActiveDay}
-                    />
-                </section>
-
-                {/* Top Repositories */}
-                <section className="mb-8">
-                    <TopRepos repositories={topRepositories} />
-                </section>
-
-                {/* Wrapped Card */}
-                <section className="mb-8">
-                    <WrappedCard stats={stats} />
+                {/* Account Summary */}
+                <section className="card card-muted">
+                    <h2 className="card-header">Summary</h2>
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                        <li style={{ padding: "8px 0", borderBottom: "1px solid var(--border-muted)" }}>
+                            <span className="text-secondary">Account age:</span>{" "}
+                            <strong>{accountAgeYears} {accountAgeYears === 1 ? "year" : "years"}</strong> on GitHub
+                        </li>
+                        <li style={{ padding: "8px 0", borderBottom: "1px solid var(--border-muted)" }}>
+                            <span className="text-secondary">Repository split:</span>{" "}
+                            <strong>{ownRepoCount}</strong> original, <strong>{forkedRepoCount}</strong> forked
+                        </li>
+                        <li style={{ padding: "8px 0", borderBottom: "1px solid var(--border-muted)" }}>
+                            <span className="text-secondary">Top language:</span>{" "}
+                            <strong>{stats.topLanguage || "Not enough data"}</strong>
+                            {stats.topLanguagePercentage > 0 && (
+                                <span className="text-muted"> ({stats.topLanguagePercentage}% of code)</span>
+                            )}
+                        </li>
+                        <li style={{ padding: "8px 0" }}>
+                            <span className="text-secondary">Activity:</span>{" "}
+                            {recentlyActive ? (
+                                <span style={{ color: "var(--accent-success)" }}>Active in the last 30 days</span>
+                            ) : (
+                                <span className="text-muted">No recent activity</span>
+                            )}
+                        </li>
+                    </ul>
                 </section>
 
                 {/* Footer */}
-                <footer className="text-center py-8 text-sm text-[var(--muted)]">
+                <footer style={{ textAlign: "center", marginTop: 64, color: "var(--text-muted)", fontSize: 12 }}>
                     <p>
-                        Generated with{" "}
-                        <Link href="/" className="font-semibold hover:underline text-[var(--foreground)]">
-                            GitWrapped
-                        </Link>
+                        Data from GitHub's public API. Language stats are byte-based and may not reflect actual coding time.
                     </p>
                 </footer>
-            </div>
+            </main>
         </div>
     );
 }

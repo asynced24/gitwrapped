@@ -4,19 +4,13 @@ import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-geist-sans",
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: "GitWrapped | Your GitHub Year in Review",
-  description: "Discover your GitHub story. Beautiful analytics, shareable cards, and insights about your coding journey.",
-  keywords: ["GitHub", "analytics", "developer", "wrapped", "statistics", "coding"],
-  authors: [{ name: "GitWrapped" }],
-  openGraph: {
-    title: "GitWrapped | Your GitHub Year in Review",
-    description: "Discover your GitHub story with beautiful analytics and shareable cards.",
-    type: "website",
-  },
+  title: "GitWrapped",
+  description: "View your public GitHub stats as a clean dashboard or story-style wrapped.",
+  keywords: ["GitHub", "analytics", "developer", "statistics"],
 };
 
 export default function RootLayout({
@@ -25,9 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="dashboard">
-      <body className={`${inter.variable} antialiased`}>
-        <div className="gradient-bg" />
+    <html lang="en">
+      <body className={inter.variable}>
         {children}
       </body>
     </html>

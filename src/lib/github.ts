@@ -2,23 +2,27 @@ import {
     GitHubUser,
     Repository,
     LanguageStats,
-    ContributionWeek,
     UserStats,
-    MonthlyCommits,
-    DayHourActivity,
     getLanguageColor,
 } from "@/types/github";
 
 const GITHUB_API = "https://api.github.com";
 
+// Languages that are containers or markup, not actual programming languages
+const CONTAINER_LANGUAGES = ["Jupyter Notebook"];
+const MARKUP_LANGUAGES = ["HTML", "CSS", "Markdown", "SCSS", "Less"];
+
 async function fetchGitHub<T>(endpoint: string): Promise<T> {
+    const headers: Record<string, string> = {
+        Accept: "application/vnd.github.v3+json",
+    };
+
+    if (process.env.GITHUB_TOKEN) {
+        headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+
     const res = await fetch(`${GITHUB_API}${endpoint}`, {
-        headers: {
-            Accept: "application/vnd.github.v3+json",
-            ...(process.env.GITHUB_TOKEN && {
-                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-            }),
-        },
+        headers,
         next: { revalidate: 3600 },
     });
 
@@ -66,6 +70,13 @@ export async function fetchRepoLanguages(
     }
 }
 
+/**
+ * Process language data from GitHub API.
+ * 
+ * Important: GitHub reports language data in bytes, which can be misleading.
+ * Jupyter Notebooks inflate Python usage since they contain JSON + markdown.
+ * We handle this by reassigning Jupyter bytes to Python.
+ */
 export function calculateLanguageStats(
     languageData: Record<string, number>[]
 ): LanguageStats[] {
@@ -73,145 +84,142 @@ export function calculateLanguageStats(
 
     for (const repoLangs of languageData) {
         for (const [lang, bytes] of Object.entries(repoLangs)) {
-            aggregated[lang] = (aggregated[lang] || 0) + bytes;
+            // Reassign Jupyter Notebook bytes to Python
+            const normalizedLang = lang === "Jupyter Notebook" ? "Python" : lang;
+            aggregated[normalizedLang] = (aggregated[normalizedLang] || 0) + bytes;
         }
     }
 
     const total = Object.values(aggregated).reduce((a, b) => a + b, 0);
+    if (total === 0) return [];
 
-    return Object.entries(aggregated)
+    const stats = Object.entries(aggregated)
         .map(([language, bytes]) => ({
             language,
             bytes,
             percentage: Math.round((bytes / total) * 1000) / 10,
             color: getLanguageColor(language),
+            isMarkup: MARKUP_LANGUAGES.includes(language),
         }))
         .sort((a, b) => b.bytes - a.bytes);
+
+    // Filter out languages with less than 0.5% for cleaner display
+    return stats.filter(s => s.percentage >= 0.5);
 }
 
-function generateContributionCalendar(): ContributionWeek[] {
-    const weeks: ContributionWeek[] = [];
+/**
+ * Get semantically meaningful "top language" for Wrapped mode.
+ * Excludes markup languages to show actual programming languages.
+ */
+function getTopProgrammingLanguage(stats: LanguageStats[]): LanguageStats | null {
+    return stats.find(s => !s.isMarkup) || stats[0] || null;
+}
+
+/**
+ * Calculate account age in a human-readable format.
+ */
+function getAccountAge(createdAt: string): { years: number; months: number } {
+    const created = new Date(createdAt);
     const now = new Date();
-    const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
 
-    let currentDate = new Date(oneYearAgo);
-    currentDate.setDate(currentDate.getDate() - currentDate.getDay());
+    const years = now.getFullYear() - created.getFullYear();
+    const months = now.getMonth() - created.getMonth();
 
-    while (currentDate <= now) {
-        const week: ContributionWeek = { days: [] };
+    const totalMonths = years * 12 + months;
 
-        for (let i = 0; i < 7; i++) {
-            const isWeekday = currentDate.getDay() !== 0 && currentDate.getDay() !== 6;
-            const baseChance = isWeekday ? 0.6 : 0.3;
-            const hasActivity = Math.random() < baseChance;
-
-            const count = hasActivity
-                ? Math.floor(Math.random() * Math.random() * 15) + 1
-                : 0;
-
-            let level: 0 | 1 | 2 | 3 | 4 = 0;
-            if (count > 0) level = 1;
-            if (count > 3) level = 2;
-            if (count > 6) level = 3;
-            if (count > 10) level = 4;
-
-            week.days.push({
-                date: currentDate.toISOString().split("T")[0],
-                count,
-                level,
-            });
-
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        weeks.push(week);
-    }
-
-    return weeks;
+    return {
+        years: Math.floor(totalMonths / 12),
+        months: totalMonths % 12,
+    };
 }
 
-function generateMonthlyCommits(): MonthlyCommits[] {
-    const months = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ];
-
-    const now = new Date();
-    const result: MonthlyCommits[] = [];
-
-    for (let i = 11; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthName = months[date.getMonth()];
-        const year = date.getFullYear().toString().slice(-2);
-
-        result.push({
-            month: `${monthName} '${year}`,
-            commits: Math.floor(Math.random() * 150) + 20,
-        });
-    }
-
-    return result;
-}
-
-function generateCodingSchedule(): DayHourActivity[] {
-    const schedule: DayHourActivity[] = [];
-
-    for (let day = 0; day < 7; day++) {
-        for (let hour = 0; hour < 24; hour++) {
-            const isWorkHour = hour >= 9 && hour <= 22;
-            const isWeekday = day >= 1 && day <= 5;
-
-            let baseActivity = 0;
-            if (isWorkHour) baseActivity = 30;
-            if (isWeekday && isWorkHour) baseActivity = 60;
-            if (hour >= 14 && hour <= 18 && isWeekday) baseActivity = 100;
-
-            schedule.push({
-                day,
-                hour,
-                count: Math.floor(baseActivity * (0.5 + Math.random() * 0.5)),
-            });
-        }
-    }
-
-    return schedule;
-}
-
-function calculateStreaks(calendar: ContributionWeek[]): {
-    longest: number;
-    current: number;
+/**
+ * Get relative time description for when user was most active.
+ * Based on repository push dates since that's what GitHub provides.
+ */
+function getActivityInsights(repositories: Repository[]): {
+    recentlyActive: boolean;
+    mostActiveYear: number | null;
+    reposByYear: Record<number, number>;
 } {
-    const allDays = calendar.flatMap(w => w.days).sort((a, b) =>
-        new Date(a.date).getTime() - new Date(b.date).getTime()
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const recentlyActive = repositories.some(
+        r => new Date(r.pushed_at) > thirtyDaysAgo
     );
 
-    let longest = 0;
-    let current = 0;
-    let streak = 0;
+    // Count repos created per year
+    const reposByYear: Record<number, number> = {};
+    for (const repo of repositories) {
+        const year = new Date(repo.created_at).getFullYear();
+        reposByYear[year] = (reposByYear[year] || 0) + 1;
+    }
 
-    for (const day of allDays) {
-        if (day.count > 0) {
-            streak++;
-            longest = Math.max(longest, streak);
-        } else {
-            streak = 0;
+    // Find year with most repo creation
+    let mostActiveYear: number | null = null;
+    let maxRepos = 0;
+    for (const [year, count] of Object.entries(reposByYear)) {
+        if (count > maxRepos) {
+            maxRepos = count;
+            mostActiveYear = parseInt(year);
         }
     }
 
-    const today = new Date().toISOString().split("T")[0];
-    for (let i = allDays.length - 1; i >= 0; i--) {
-        if (allDays[i].date === today || allDays[i].count > 0) {
-            if (allDays[i].count > 0) {
-                current++;
-            } else if (allDays[i].date !== today) {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
+    return { recentlyActive, mostActiveYear, reposByYear };
+}
 
-    return { longest, current };
+/**
+ * Get language diversity insight.
+ */
+function getLanguageDiversity(stats: LanguageStats[]): string {
+    const programmingLangs = stats.filter(s => !s.isMarkup);
+    const count = programmingLangs.length;
+
+    if (count >= 8) return "polyglot";
+    if (count >= 5) return "versatile";
+    if (count >= 3) return "multi-language";
+    if (count === 2) return "bilingual";
+    return "focused";
+}
+
+/**
+ * Determine repository focus based on stars and fork ratio.
+ */
+function getRepositoryProfile(repos: Repository[]): {
+    totalStars: number;
+    totalForks: number;
+    ownRepos: Repository[];
+    forkedRepos: Repository[];
+    starredByOthers: number;
+    hasPopularRepo: boolean;
+    mostStarredRepo: Repository | null;
+} {
+    const ownRepos = repos.filter(r => !r.fork);
+    const forkedRepos = repos.filter(r => r.fork);
+
+    const totalStars = repos.reduce((sum, r) => sum + r.stargazers_count, 0);
+    const totalForks = repos.reduce((sum, r) => sum + r.forks_count, 0);
+
+    // Only count stars on own repos (not forks)
+    const starredByOthers = ownRepos.reduce((sum, r) => sum + r.stargazers_count, 0);
+
+    const sortedByStars = [...ownRepos].sort(
+        (a, b) => b.stargazers_count - a.stargazers_count
+    );
+
+    const mostStarredRepo = sortedByStars[0] || null;
+    const hasPopularRepo = mostStarredRepo && mostStarredRepo.stargazers_count >= 50;
+
+    return {
+        totalStars,
+        totalForks,
+        ownRepos,
+        forkedRepos,
+        starredByOthers,
+        hasPopularRepo,
+        mostStarredRepo,
+    };
 }
 
 export async function fetchUserStats(username: string): Promise<UserStats> {
@@ -220,63 +228,57 @@ export async function fetchUserStats(username: string): Promise<UserStats> {
         fetchRepositories(username),
     ]);
 
-    const ownRepos = repositories.filter((r) => !r.fork);
+    const repoProfile = getRepositoryProfile(repositories);
 
-    const languagePromises = ownRepos
-        .slice(0, 20)
-        .map((repo) => fetchRepoLanguages(username, repo.name));
+    // Fetch language data from top 20 own repos (by recent activity)
+    const reposToAnalyze = repoProfile.ownRepos
+        .sort((a, b) => new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime())
+        .slice(0, 20);
+
+    const languagePromises = reposToAnalyze.map(
+        repo => fetchRepoLanguages(username, repo.name)
+    );
 
     const languageData = await Promise.all(languagePromises);
     const languageStats = calculateLanguageStats(languageData);
 
-    const contributionCalendar = generateContributionCalendar();
-    const monthlyCommits = generateMonthlyCommits();
-    const codingSchedule = generateCodingSchedule();
-    const { longest, current } = calculateStreaks(contributionCalendar);
-
-    const totalStars = repositories.reduce((sum, r) => sum + r.stargazers_count, 0);
-    const totalForks = repositories.reduce((sum, r) => sum + r.forks_count, 0);
-    const totalCommits = contributionCalendar
-        .flatMap((w) => w.days)
-        .reduce((sum, d) => sum + d.count, 0);
-
-    const sortedByStars = [...ownRepos].sort(
-        (a, b) => b.stargazers_count - a.stargazers_count
-    );
-
-    const schedule = codingSchedule;
-    const maxActivity = schedule.reduce(
-        (max, s) => (s.count > max.count ? s : max),
-        schedule[0]
-    );
-
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-    const accountAge = Math.floor(
-        (Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24 * 365)
-    );
-
-    const totalSize = repositories.reduce((sum, r) => sum + r.size, 0);
-    const averageRepoSize = repositories.length > 0
-        ? Math.round(totalSize / repositories.length)
-        : 0;
+    const accountAge = getAccountAge(user.created_at);
+    const activityInsights = getActivityInsights(repositories);
+    const languageDiversity = getLanguageDiversity(languageStats);
+    const topLanguage = getTopProgrammingLanguage(languageStats);
 
     return {
         user,
         repositories,
-        totalStars,
-        totalForks,
-        totalCommits,
         languageStats,
-        contributionCalendar,
-        topRepositories: sortedByStars.slice(0, 6),
-        monthlyCommits,
-        codingSchedule,
-        longestStreak: longest,
-        currentStreak: current,
-        mostActiveDay: days[maxActivity.day],
-        mostActiveHour: maxActivity.hour,
-        accountAge,
-        averageRepoSize,
+
+        // Real, verifiable metrics from GitHub API
+        totalStars: repoProfile.totalStars,
+        totalForks: repoProfile.totalForks,
+        publicRepoCount: user.public_repos,
+        ownRepoCount: repoProfile.ownRepos.length,
+        forkedRepoCount: repoProfile.forkedRepos.length,
+
+        // Derived insights (clearly labeled as such)
+        topRepositories: repoProfile.ownRepos
+            .sort((a, b) => b.stargazers_count - a.stargazers_count)
+            .slice(0, 6),
+
+        accountAgeYears: accountAge.years,
+        accountAgeMonths: accountAge.months,
+
+        // Activity insights based on repo dates
+        recentlyActive: activityInsights.recentlyActive,
+        mostActiveYear: activityInsights.mostActiveYear,
+        reposByYear: activityInsights.reposByYear,
+
+        // Language insights
+        topLanguage: topLanguage?.language || null,
+        topLanguagePercentage: topLanguage?.percentage || 0,
+        languageDiversity,
+
+        // For the wrapped card
+        hasPopularRepo: repoProfile.hasPopularRepo,
+        mostStarredRepo: repoProfile.mostStarredRepo,
     };
 }

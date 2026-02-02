@@ -1,3 +1,10 @@
+/**
+ * GitHub API Types
+ * 
+ * These types map directly to the GitHub REST API v3 responses.
+ * Only fields that are actually available from the API are included.
+ */
+
 export interface GitHubUser {
     login: string;
     name: string | null;
@@ -39,56 +46,55 @@ export interface LanguageStats {
     bytes: number;
     percentage: number;
     color: string;
+    isMarkup?: boolean;
 }
 
-export interface ContributionDay {
-    date: string;
-    count: number;
-    level: 0 | 1 | 2 | 3 | 4;
-}
-
-export interface ContributionWeek {
-    days: ContributionDay[];
-}
-
-export interface CommitActivity {
-    week: number;
-    total: number;
-    days: number[];
-}
-
-export interface DayHourActivity {
-    day: number;
-    hour: number;
-    count: number;
-}
-
-export interface MonthlyCommits {
-    month: string;
-    commits: number;
-}
-
+/**
+ * UserStats contains only data that can be verified from GitHub's public API.
+ * 
+ * Note: We intentionally do NOT include:
+ * - Commit counts (requires authentication + pagination of all commits)
+ * - Contribution calendar (requires GraphQL API or scraping)
+ * - Coding schedule/hours (not available from public API)
+ * - Streak data (would require commit history analysis)
+ * 
+ * These fields are either derived from real data or clearly marked as estimates.
+ */
 export interface UserStats {
     user: GitHubUser;
     repositories: Repository[];
+    languageStats: LanguageStats[];
+
+    // Direct from API - verifiable
     totalStars: number;
     totalForks: number;
-    totalCommits: number;
-    languageStats: LanguageStats[];
-    contributionCalendar: ContributionWeek[];
+    publicRepoCount: number;
+    ownRepoCount: number;
+    forkedRepoCount: number;
+
+    // Derived from repository data
     topRepositories: Repository[];
-    monthlyCommits: MonthlyCommits[];
-    codingSchedule: DayHourActivity[];
-    longestStreak: number;
-    currentStreak: number;
-    mostActiveDay: string;
-    mostActiveHour: number;
-    accountAge: number;
-    averageRepoSize: number;
+    accountAgeYears: number;
+    accountAgeMonths: number;
+
+    // Activity insights based on repo dates
+    recentlyActive: boolean;
+    mostActiveYear: number | null;
+    reposByYear: Record<number, number>;
+
+    // Language insights
+    topLanguage: string | null;
+    topLanguagePercentage: number;
+    languageDiversity: string;
+
+    // Repository profile
+    hasPopularRepo: boolean;
+    mostStarredRepo: Repository | null;
 }
 
+// GitHub's linguist language colors
 export const LANGUAGE_COLORS: Record<string, string> = {
-    JavaScript: "#f7df1e",
+    JavaScript: "#f1e05a",
     TypeScript: "#3178c6",
     Python: "#3572A5",
     Rust: "#dea584",
@@ -110,7 +116,13 @@ export const LANGUAGE_COLORS: Record<string, string> = {
     Lua: "#000080",
     Dockerfile: "#384d54",
     Makefile: "#427819",
-    Jupyter: "#DA5B0B",
+    R: "#198CE7",
+    Scala: "#c22d40",
+    Haskell: "#5e5086",
+    Elixir: "#6e4a7e",
+    Clojure: "#db5855",
+    Objective: "#438eff",
+    Perl: "#0298c3",
 };
 
 export function getLanguageColor(language: string): string {
