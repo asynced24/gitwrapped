@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { Star, GitFork, BookOpen, MapPin, Link as LinkIcon, Calendar } from "lucide-react";
+import { Star, GitFork, BookOpen, MapPin, Link as LinkIcon, Calendar, Share2, Copy, Check } from "lucide-react";
 import { UserStats } from "@/types/github";
 import { ViewModeProvider, useViewMode } from "@/context/ViewModeContext";
 import { ModeToggle } from "@/components/ModeToggle";
 import { LanguageBar } from "@/components/LanguageBar";
 import { RepoCard } from "@/components/RepoCard";
 import { WrappedStory } from "@/components/WrappedStory";
+import { DevProfileCard } from "@/components/DevProfileCard";
+import { TechStackCard } from "@/components/TechStackCard";
 import { formatDistanceToNow } from "date-fns";
+import { useState } from "react";
 
 interface DashboardClientProps {
     stats: UserStats;
@@ -16,6 +19,7 @@ interface DashboardClientProps {
 
 function DashboardContent({ stats }: DashboardClientProps) {
     const { mode } = useViewMode();
+    const [embedCopied, setEmbedCopied] = useState(false);
 
     if (mode === "wrapped") {
         return <WrappedStory stats={stats} />;
@@ -33,8 +37,15 @@ function DashboardContent({ stats }: DashboardClientProps) {
         recentlyActive,
     } = stats;
 
+    const handleCopyEmbed = async () => {
+        const embedCode = `[![GitWrapped](${window.location.origin}/api/badge/${user.login})](${window.location.origin}/dashboard/${user.login})`;
+        await navigator.clipboard.writeText(embedCode);
+        setEmbedCopied(true);
+        setTimeout(() => setEmbedCopied(false), 2000);
+    };
+
     return (
-        <div className="min-h-screen">
+        <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
             {/* Navigation */}
             <nav className="nav">
                 <div className="container nav-content">
@@ -43,74 +54,98 @@ function DashboardContent({ stats }: DashboardClientProps) {
                         <span>GitWrapped</span>
                     </Link>
 
-                    <div className="flex items-center gap-4">
+                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                         <ModeToggle />
                     </div>
                 </div>
             </nav>
 
             <main className="container" style={{ paddingTop: 32, paddingBottom: 64 }}>
-                {/* Profile Section */}
-                <section className="profile-header" style={{ marginBottom: 32 }}>
-                    <img
-                        src={user.avatar_url}
-                        alt={`${user.login}'s avatar`}
-                        width={96}
-                        height={96}
-                        className="avatar"
-                    />
-                    <div className="profile-info">
-                        <h1 className="profile-name">{user.name || user.login}</h1>
-                        <p className="profile-login">@{user.login}</p>
+                {/* Two-column layout: Profile Card + Info */}
+                <section
+                    className="dashboard-layout"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "360px 1fr",
+                        gap: 32,
+                        marginBottom: 32,
+                        alignItems: "start"
+                    }}
+                >
+                    {/* Left: Shareable Profile Card */}
+                    <div>
+                        <DevProfileCard stats={stats} />
 
-                        {user.bio && (
-                            <p className="profile-bio">{user.bio}</p>
-                        )}
-
-                        <div className="profile-meta">
-                            {user.location && (
-                                <span className="profile-meta-item">
-                                    <MapPin size={16} />
-                                    {user.location}
-                                </span>
-                            )}
-                            {user.blog && (
-                                <a
-                                    href={user.blog.startsWith("http") ? user.blog : `https://${user.blog}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="profile-meta-item"
-                                    style={{ color: "var(--accent-primary)" }}
-                                >
-                                    <LinkIcon size={16} />
-                                    {user.blog.replace(/^https?:\/\//, "")}
-                                </a>
-                            )}
-                            <span className="profile-meta-item">
-                                <Calendar size={16} />
-                                Joined {formatDistanceToNow(new Date(user.created_at), { addSuffix: false })} ago
-                            </span>
+                        {/* Embed code section */}
+                        <div style={{ marginTop: 16 }}>
+                            <button
+                                onClick={handleCopyEmbed}
+                                className="btn"
+                                style={{ width: "100%", justifyContent: "center" }}
+                            >
+                                {embedCopied ? <Check size={14} /> : <Share2 size={14} />}
+                                {embedCopied ? "Copied embed code!" : "Copy README badge"}
+                            </button>
                         </div>
                     </div>
-                </section>
 
-                {/* Stats Grid */}
-                <section className="grid-4" style={{ marginBottom: 32 }}>
-                    <div className="card">
-                        <div className="stat-value">{user.public_repos}</div>
-                        <div className="stat-label">Public repositories</div>
-                    </div>
-                    <div className="card">
-                        <div className="stat-value">{totalStars.toLocaleString()}</div>
-                        <div className="stat-label">Stars earned</div>
-                    </div>
-                    <div className="card">
-                        <div className="stat-value">{totalForks.toLocaleString()}</div>
-                        <div className="stat-label">Times forked</div>
-                    </div>
-                    <div className="card">
-                        <div className="stat-value">{user.followers.toLocaleString()}</div>
-                        <div className="stat-label">Followers</div>
+                    {/* Right: Bio and Quick Stats */}
+                    <div>
+                        <div style={{ marginBottom: 24 }}>
+                            <h1 style={{ fontSize: 28, marginBottom: 4 }}>{user.name || user.login}</h1>
+                            <p style={{ color: "var(--text-secondary)", fontSize: 16, marginBottom: 16 }}>@{user.login}</p>
+
+                            {user.bio && (
+                                <p style={{ color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.6, marginBottom: 16 }}>
+                                    {user.bio}
+                                </p>
+                            )}
+
+                            <div className="profile-meta">
+                                {user.location && (
+                                    <span className="profile-meta-item">
+                                        <MapPin size={16} />
+                                        {user.location}
+                                    </span>
+                                )}
+                                {user.blog && (
+                                    <a
+                                        href={user.blog.startsWith("http") ? user.blog : `https://${user.blog}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="profile-meta-item"
+                                        style={{ color: "var(--accent-primary)" }}
+                                    >
+                                        <LinkIcon size={16} />
+                                        {user.blog.replace(/^https?:\/\//, "")}
+                                    </a>
+                                )}
+                                <span className="profile-meta-item">
+                                    <Calendar size={16} />
+                                    Joined {formatDistanceToNow(new Date(user.created_at), { addSuffix: false })} ago
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Stats Grid */}
+                        <div className="grid-4">
+                            <div className="card">
+                                <div className="stat-value">{user.public_repos}</div>
+                                <div className="stat-label">Repositories</div>
+                            </div>
+                            <div className="card">
+                                <div className="stat-value">{totalStars.toLocaleString()}</div>
+                                <div className="stat-label">Stars earned</div>
+                            </div>
+                            <div className="card">
+                                <div className="stat-value">{totalForks.toLocaleString()}</div>
+                                <div className="stat-label">Times forked</div>
+                            </div>
+                            <div className="card">
+                                <div className="stat-value">{user.followers.toLocaleString()}</div>
+                                <div className="stat-label">Followers</div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -121,10 +156,35 @@ function DashboardContent({ stats }: DashboardClientProps) {
                         <LanguageBar languages={languageStats} />
                         <p className="text-muted" style={{ marginTop: 16, fontSize: 12 }}>
                             Based on bytes across your {ownRepoCount} original repositories.
-                            Jupyter notebooks are counted as Python.
+                            Jupyter notebooks are excluded for accuracy.
                         </p>
+
+                        {/* Lab Work Indicator */}
+                        {stats.developerDNA.notebookRepoCount > 0 && (
+                            <div className="lab-work-indicator">
+                                <div className="lab-work-header">
+                                    <span className="lab-work-icon">🔬</span>
+                                    <span className="lab-work-title">Lab Work</span>
+                                    <span className="lab-work-count">{stats.developerDNA.notebookRepoCount} notebooks</span>
+                                </div>
+                                <div className="lab-work-bar-container">
+                                    <div className="lab-work-bar" style={{ width: `${Math.min(stats.developerDNA.labRatio, 100)}%` }} />
+                                </div>
+                                <p className="lab-work-archetype">
+                                    You're a <strong>{
+                                        stats.developerDNA.labArchetype === 'lab-scientist' ? 'Lab Scientist' :
+                                            stats.developerDNA.labArchetype === 'research-oriented' ? 'Research-Oriented Developer' :
+                                                stats.developerDNA.labArchetype === 'hybrid' ? 'Hybrid Developer' :
+                                                    'Production-Focused Developer'
+                                    }</strong> — balancing experimentation with production code.
+                                </p>
+                            </div>
+                        )}
                     </section>
                 )}
+
+                {/* Tech Stack Card */}
+                <TechStackCard stats={stats} />
 
                 {/* Repositories */}
                 {topRepositories.length > 0 && (

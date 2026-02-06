@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Github, BookOpen, ArrowRight } from "lucide-react";
+import { Github, Sparkles, ArrowRight, Code2, Share2 } from "lucide-react";
 
 export default function Home() {
   const [username, setUsername] = useState("");
@@ -18,12 +18,12 @@ export default function Home() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-primary)" }}>
       {/* Navigation */}
       <nav className="nav">
         <div className="container nav-content">
           <div className="nav-brand">
-            <BookOpen size={20} />
+            <Sparkles size={20} style={{ color: "var(--accent-primary)" }} />
             <span>GitWrapped</span>
           </div>
           <a
@@ -49,16 +49,43 @@ export default function Home() {
           alignItems: "center",
           textAlign: "center",
           padding: "64px 24px",
-          maxWidth: 600,
+          maxWidth: 640,
         }}
       >
-        <h1 style={{ fontSize: 32, marginBottom: 16 }}>
-          See your GitHub profile differently
+        {/* Hero badge */}
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "6px 14px",
+            background: "var(--bg-secondary)",
+            borderRadius: "var(--radius-xl)",
+            fontSize: 13,
+            color: "var(--text-secondary)",
+            marginBottom: 24,
+            border: "1px solid var(--border-default)"
+          }}
+        >
+          <Code2 size={14} style={{ color: "var(--accent-primary)" }} />
+          Your developer identity, visualized
+        </div>
+
+        <h1 style={{ fontSize: 40, marginBottom: 16, fontWeight: 700, lineHeight: 1.2 }}>
+          See your GitHub profile<br />
+          <span style={{
+            background: "var(--accent-gradient)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text"
+          }}>
+            differently
+          </span>
         </h1>
 
-        <p className="text-secondary" style={{ fontSize: 16, marginBottom: 32, lineHeight: 1.6 }}>
-          View your public GitHub stats as a clean dashboard or a story-style wrapped.
-          No login required. Uses only public API data.
+        <p className="text-secondary" style={{ fontSize: 17, marginBottom: 40, lineHeight: 1.7, maxWidth: 480 }}>
+          Generate a shareable profile card with your language diversity,
+          stats, and coding journey. Add it to your portfolio or README.
         </p>
 
         <form
@@ -67,7 +94,7 @@ export default function Home() {
             display: "flex",
             gap: 12,
             width: "100%",
-            maxWidth: 400,
+            maxWidth: 420,
             marginBottom: 32,
           }}
         >
@@ -76,7 +103,7 @@ export default function Home() {
               size={18}
               style={{
                 position: "absolute",
-                left: 12,
+                left: 14,
                 top: "50%",
                 transform: "translateY(-50%)",
                 color: "var(--text-muted)",
@@ -86,9 +113,9 @@ export default function Home() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="GitHub username"
+              placeholder="Enter GitHub username"
               className="input"
-              style={{ paddingLeft: 40 }}
+              style={{ paddingLeft: 44, height: 48, fontSize: 15, borderRadius: "var(--radius-md)" }}
               disabled={isLoading}
             />
           </div>
@@ -96,22 +123,61 @@ export default function Home() {
             type="submit"
             disabled={!username.trim() || isLoading}
             className="btn btn-primary"
-            style={{ display: "flex", alignItems: "center", gap: 8 }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              height: 48,
+              paddingLeft: 20,
+              paddingRight: 20,
+              fontSize: 15,
+              borderRadius: "var(--radius-md)"
+            }}
           >
             {isLoading ? (
               "Loading..."
             ) : (
               <>
-                <span>View</span>
+                <span>Generate</span>
                 <ArrowRight size={16} />
               </>
             )}
           </button>
         </form>
 
+        {/* Features */}
+        <div style={{
+          display: "flex",
+          gap: 24,
+          marginBottom: 40,
+          flexWrap: "wrap",
+          justifyContent: "center"
+        }}>
+          {[
+            { icon: <Code2 size={16} />, label: "Language diversity" },
+            { icon: <Share2 size={16} />, label: "Shareable cards" },
+            { icon: <Sparkles size={16} />, label: "No login required" },
+          ].map((feature) => (
+            <div
+              key={feature.label}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                color: "var(--text-muted)",
+                fontSize: 14
+              }}
+            >
+              <span style={{ color: "var(--accent-primary)" }}>{feature.icon}</span>
+              {feature.label}
+            </div>
+          ))}
+        </div>
+
+        {/* Try these */}
         <div className="text-muted" style={{ fontSize: 13 }}>
-          <p style={{ marginBottom: 8 }}>Try these:</p>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+          <p style={{ marginBottom: 10 }}>Try these profiles:</p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
             {["torvalds", "gaearon", "sindresorhus"].map((name) => (
               <button
                 key={name}
@@ -121,7 +187,7 @@ export default function Home() {
                   router.push(`/dashboard/${name}`);
                 }}
                 className="btn"
-                style={{ fontSize: 13, padding: "4px 12px" }}
+                style={{ fontSize: 13, padding: "6px 14px" }}
               >
                 @{name}
               </button>
@@ -134,7 +200,7 @@ export default function Home() {
       <footer
         style={{
           borderTop: "1px solid var(--border-default)",
-          padding: "16px 0",
+          padding: "20px 0",
           textAlign: "center",
           fontSize: 12,
           color: "var(--text-muted)",
@@ -142,7 +208,7 @@ export default function Home() {
       >
         <div className="container">
           <p>
-            Built with Next.js. Data from{" "}
+            Built with Next.js • Data from{" "}
             <a
               href="https://docs.github.com/en/rest"
               target="_blank"
@@ -151,7 +217,6 @@ export default function Home() {
             >
               GitHub REST API
             </a>
-            .
           </p>
         </div>
       </footer>

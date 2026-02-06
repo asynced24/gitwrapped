@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { UserStats } from "@/types/github";
+import { UserStats, getLanguageColor } from "@/types/github";
 import { useViewMode } from "@/context/ViewModeContext";
 
 interface WrappedStoryProps {
@@ -12,87 +12,124 @@ interface WrappedStoryProps {
 
 interface Slide {
     id: string;
+    type: 'text' | 'superpowers' | 'devops' | 'archaeology' | 'dna' | 'archetype';
     title: string;
-    value: string | number;
-    label: string;
+    value?: string | number;
+    label?: string;
     detail?: string;
 }
 
 /**
- * WrappedStory presents GitHub stats in a story format.
- * All insights are derived from real, verifiable GitHub API data.
+ * WrappedStory presents GitHub stats in an immersive story format.
+ * Enhanced with Developer DNA, Superpowers, DevOps maturity, and Code Archaeology.
  */
 export function WrappedStory({ stats }: WrappedStoryProps) {
     const { setMode } = useViewMode();
     const [currentSlide, setCurrentSlide] = useState(0);
     const [direction, setDirection] = useState(0);
 
-    // Build slides from real data only
+    // Build slides from real data
     const slides: Slide[] = [
+        // Opening
         {
             id: "intro",
+            type: "text",
             title: "Your GitHub profile",
             value: stats.user.login,
             label: stats.user.name || "Developer",
         },
+        // Repos
         {
             id: "repos",
-            title: "You have",
-            value: stats.publicRepoCount,
-            label: stats.publicRepoCount === 1 ? "public repository" : "public repositories",
-            detail: stats.ownRepoCount > 0
-                ? `${stats.ownRepoCount} original, ${stats.forkedRepoCount} forked`
-                : undefined,
-        },
-        {
-            id: "stars",
-            title: "Your repos have earned",
-            value: stats.totalStars.toLocaleString(),
-            label: stats.totalStars === 1 ? "star" : "stars",
-            detail: stats.hasPopularRepo && stats.mostStarredRepo
-                ? `Most starred: ${stats.mostStarredRepo.name}`
+            type: "text",
+            title: "You've created",
+            value: stats.ownRepoCount,
+            label: stats.ownRepoCount === 1 ? "original repository" : "original repositories",
+            detail: stats.forkedRepoCount > 0
+                ? `Plus ${stats.forkedRepoCount} forks you're contributing to`
                 : undefined,
         },
     ];
 
-    // Only add language slide if we have language data
+    // Stars (if any)
+    if (stats.totalStars > 0) {
+        slides.push({
+            id: "stars",
+            type: "text",
+            title: "Your work has earned",
+            value: stats.totalStars.toLocaleString(),
+            label: stats.totalStars === 1 ? "star" : "stars",
+            detail: stats.mostStarredRepo
+                ? `Your best: ${stats.mostStarredRepo.name}`
+                : undefined,
+        });
+    }
+
+    // Language slide
     if (stats.topLanguage) {
         slides.push({
             id: "language",
-            title: "Your most used language is",
+            type: "text",
+            title: "Your signature language is",
             value: stats.topLanguage,
             label: `${stats.topLanguagePercentage}% of your code`,
             detail: `You're a ${stats.languageDiversity} developer`,
         });
     }
 
-    // Add followers if significant
-    if (stats.user.followers > 0) {
+    // Code Archaeology - Language Eras (if we have multiple)
+    if (stats.languageEras.length >= 2) {
         slides.push({
-            id: "followers",
-            title: "You have",
-            value: stats.user.followers.toLocaleString(),
-            label: stats.user.followers === 1 ? "follower" : "followers",
+            id: "archaeology",
+            type: "archaeology",
+            title: "Your Code Archaeology",
         });
     }
 
-    // Add account age
+    // Developer DNA (if they have notebooks)
+    if (stats.developerDNA.notebookRepoCount > 0) {
+        slides.push({
+            id: "dna",
+            type: "dna",
+            title: "Your Developer DNA",
+        });
+    }
+
+    // DevOps Maturity (if they have any signals)
+    if (stats.devOpsMaturity.score > 0) {
+        slides.push({
+            id: "devops",
+            type: "devops",
+            title: "Your DevOps DNA",
+        });
+    }
+
+    // Superpowers (if they have any)
+    if (stats.superpowers.primary) {
+        slides.push({
+            id: "superpowers",
+            type: "superpowers",
+            title: "Your Superpowers",
+        });
+    }
+
+    // Account age
     slides.push({
         id: "age",
-        title: "You've been on GitHub for",
+        type: "text",
+        title: "You've been building for",
         value: stats.accountAgeYears,
         label: stats.accountAgeYears === 1 ? "year" : "years",
         detail: stats.mostActiveYear
-            ? `Most repos created in ${stats.mostActiveYear}`
+            ? `Peak year: ${stats.mostActiveYear}`
             : undefined,
     });
 
-    // Closing slide
+    // Final archetype slide
     slides.push({
-        id: "outro",
-        title: stats.recentlyActive ? "You're still building" : "Keep building",
-        value: "→",
-        label: stats.user.name || stats.user.login,
+        id: "archetype",
+        type: "archetype",
+        title: "You are a",
     });
 
     const goToSlide = (index: number) => {
@@ -140,6 +177,221 @@ export function WrappedStory({ stats }: WrappedStoryProps) {
             x: direction > 0 ? "-100%" : "100%",
             opacity: 0,
         }),
+    };
+
+    // Render slide content based on type
+    const renderSlideContent = () => {
+        switch (slide.type) {
+            case 'superpowers':
+                return (
+                    <div className="wrapped-special-content">
+                        <p className="wrapped-title">{slide.title}</p>
+                        <div style={{ marginTop: 32 }}>
+                            {stats.superpowers.primary && (
+                                <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="superpower-card superpower-primary"
+                                >
+                                    <span className="superpower-icon">{stats.superpowers.primary.icon}</span>
+                                    <span className="superpower-name">{stats.superpowers.primary.name}</span>
+                                    <span className="superpower-desc">{stats.superpowers.primary.description}</span>
+                                </motion.div>
+                            )}
+                            <div className="superpower-secondary-grid">
+                                {stats.superpowers.secondary.slice(0, 3).map((power, index) => (
+                                    <motion.div
+                                        key={power.id}
+                                        initial={{ y: 20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ delay: 0.4 + index * 0.1 }}
+                                        className="superpower-card superpower-secondary"
+                                    >
+                                        <span className="superpower-icon">{power.icon}</span>
+                                        <span className="superpower-name">{power.name}</span>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+
+            case 'devops':
+                const tierLabels = {
+                    'code-shipper': 'Code Shipper',
+                    'devops-curious': 'DevOps Curious',
+                    'pipeline-builder': 'Pipeline Builder',
+                    'infrastructure-architect': 'Infrastructure Architect',
+                };
+                const tierEmoji = {
+                    'code-shipper': '📦',
+                    'devops-curious': '🔍',
+                    'pipeline-builder': '🔧',
+                    'infrastructure-architect': '🏗️',
+                };
+                return (
+                    <div className="wrapped-special-content">
+                        <p className="wrapped-title">{slide.title}</p>
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.2 }}
+                            className="devops-tier"
+                        >
+                            <span className="devops-emoji">{tierEmoji[stats.devOpsMaturity.tier]}</span>
+                            <span className="devops-label">{tierLabels[stats.devOpsMaturity.tier]}</span>
+                            <span className="devops-score">{stats.devOpsMaturity.score}% DevOps Score</span>
+                        </motion.div>
+                        <div className="devops-signals">
+                            {stats.devOpsMaturity.signals
+                                .filter(s => s.found)
+                                .map((signal, index) => (
+                                    <motion.div
+                                        key={signal.type}
+                                        initial={{ x: -20, opacity: 0 }}
+                                        animate={{ x: 0, opacity: 1 }}
+                                        transition={{ delay: 0.4 + index * 0.1 }}
+                                        className="devops-signal"
+                                    >
+                                        <span>{signal.icon}</span>
+                                        <span>{signal.label}</span>
+                                        <span className="signal-count">×{signal.repoCount}</span>
+                                    </motion.div>
+                                ))}
+                        </div>
+                    </div>
+                );
+
+            case 'archaeology':
+                return (
+                    <div className="wrapped-special-content">
+                        <p className="wrapped-title">⛏️ {slide.title}</p>
+                        <div className="archaeology-timeline">
+                            {stats.languageEras.map((era, index) => (
+                                <motion.div
+                                    key={era.year}
+                                    initial={{ x: -30, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: 0.2 + index * 0.15 }}
+                                    className="archaeology-era"
+                                >
+                                    <span className="era-year">{era.year}</span>
+                                    <div
+                                        className="era-bar"
+                                        style={{ background: era.languageColor }}
+                                    />
+                                    <div className="era-info">
+                                        <span className="era-language">{era.dominantLanguage}</span>
+                                        {era.secondaryLanguages.length > 0 && (
+                                            <span className="era-secondary">
+                                                +{era.secondaryLanguages.map(l => l.language).join(', +')}
+                                            </span>
+                                        )}
+                                        <span className="era-name">{era.eraName}</span>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                );
+
+            case 'dna':
+                const archetypeLabels = {
+                    'production-focused': 'Production Developer',
+                    'hybrid': 'Hybrid Developer',
+                    'research-oriented': 'Research Developer',
+                    'lab-scientist': 'Lab Scientist',
+                };
+                return (
+                    <div className="wrapped-special-content">
+                        <p className="wrapped-title">🧬 {slide.title}</p>
+                        <div className="dna-strands">
+                            <motion.div
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ delay: 0.3, duration: 0.6 }}
+                                className="dna-strand dna-code"
+                            >
+                                <span className="strand-label">Code Strand</span>
+                                <div className="strand-bar" style={{ width: `${100 - stats.developerDNA.labRatio}%` }} />
+                                <span className="strand-percent">{100 - stats.developerDNA.labRatio}%</span>
+                            </motion.div>
+                            <motion.div
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ delay: 0.5, duration: 0.6 }}
+                                className="dna-strand dna-lab"
+                            >
+                                <span className="strand-label">🔬 Lab Strand</span>
+                                <div className="strand-bar lab" style={{ width: `${stats.developerDNA.labRatio}%` }} />
+                                <span className="strand-percent">{stats.developerDNA.labRatio}%</span>
+                            </motion.div>
+                        </div>
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.8 }}
+                            className="dna-archetype"
+                        >
+                            {stats.developerDNA.notebookRepoCount} notebooks — You're a {archetypeLabels[stats.developerDNA.labArchetype]}
+                        </motion.p>
+                    </div>
+                );
+
+            case 'archetype':
+                return (
+                    <div className="wrapped-special-content archetype-slide">
+                        <p className="wrapped-title">{slide.title}</p>
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                            className="archetype-value"
+                        >
+                            {stats.superpowers.archetype}
+                        </motion.div>
+                        <motion.p
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.5 }}
+                            className="archetype-name"
+                        >
+                            {stats.user.name || stats.user.login}
+                        </motion.p>
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.7 }}
+                            className="archetype-cta"
+                        >
+                            {stats.experienceProfile.closingMessage}
+                        </motion.p>
+                        {stats.experienceProfile.contextualMessage && (
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.9 }}
+                                className="archetype-context"
+                            >
+                                {stats.experienceProfile.contextualMessage}
+                            </motion.p>
+                        )}
+                    </div>
+                );
+
+            default:
+                return (
+                    <>
+                        <p className="wrapped-title">{slide.title}</p>
+                        <div className="wrapped-value">{slide.value}</div>
+                        <p className="wrapped-label">{slide.label}</p>
+                        {slide.detail && (
+                            <p className="wrapped-detail">{slide.detail}</p>
+                        )}
+                    </>
+                );
+        }
     };
 
     return (
@@ -193,12 +445,7 @@ export function WrappedStory({ stats }: WrappedStoryProps) {
                     transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                     className="wrapped-slide"
                 >
-                    <p className="wrapped-title">{slide.title}</p>
-                    <div className="wrapped-value">{slide.value}</div>
-                    <p className="wrapped-label">{slide.label}</p>
-                    {slide.detail && (
-                        <p className="wrapped-detail">{slide.detail}</p>
-                    )}
+                    {renderSlideContent()}
                 </motion.div>
             </AnimatePresence>
 

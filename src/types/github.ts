@@ -50,6 +50,150 @@ export interface LanguageStats {
 }
 
 /**
+ * Developer DNA - Tracks the "Lab Strand" (notebooks/experiments)
+ * separate from the "Code Strand" (traditional programming)
+ */
+export interface DeveloperDNA {
+    // Lab Strand (Jupyter Notebooks)
+    notebookBytes: number;
+    notebookRepoCount: number;
+    labRatio: number; // 0-100, percentage of work in notebooks
+    labArchetype: 'production-focused' | 'hybrid' | 'research-oriented' | 'lab-scientist';
+
+    // Code Strand (covered by languageStats)
+    totalCodeBytes: number;
+}
+
+/**
+ * DevOps Maturity - Analyzes CI/CD and infrastructure practices
+ */
+export interface DevOpsMaturity {
+    score: number; // 0-100
+    tier: 'code-shipper' | 'devops-curious' | 'pipeline-builder' | 'infrastructure-architect';
+    signals: DevOpsSignal[];
+    hasGitHubActions: boolean;
+    hasDocker: boolean;
+    hasKubernetes: boolean;
+    hasTerraform: boolean;
+}
+
+export interface DevOpsSignal {
+    type: string;
+    label: string;
+    icon: string;
+    found: boolean;
+    repoCount: number;
+}
+
+/**
+ * Developer Superpowers - Pattern-based abilities detected from activity
+ */
+export interface Superpower {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+    strength: number; // 0-100
+}
+
+export interface DeveloperSuperpowers {
+    primary: Superpower | null;
+    secondary: Superpower[];
+    archetype: string; // Final summary like "Nocturnal Polyglot Scientist"
+}
+
+/**
+ * Language Era - For the Archaeology feature
+ * Enhanced to track all languages used each year, not just dominant
+ */
+export interface LanguageEra {
+    year: number;
+    dominantLanguage: string;
+    languageColor: string;
+    repoCount: number;
+    eraName: string;
+    // NEW: Secondary languages used that year (>10% of year's bytes)
+    secondaryLanguages: { language: string; percentage: number }[];
+    // NEW: All languages used that year with percentages
+    allLanguages: { language: string; bytes: number; percentage: number }[];
+}
+
+/**
+ * Experience Tier - For real, context-aware motivational messaging
+ */
+export type ExperienceTier = 'pioneer' | 'veteran' | 'established' | 'rising' | 'newcomer';
+
+export interface ExperienceProfile {
+    tier: ExperienceTier;
+    closingMessage: string;
+    contextualMessage: string | null; // Additional context-based message
+}
+
+/**
+ * Code Health - Comprehensive code quality assessment
+ */
+export interface CodeHealth {
+    overallScore: number; // 0-100
+    tier: 'needs-work' | 'getting-there' | 'solid' | 'excellent';
+
+    // Individual category scores
+    documentation: DocumentationScore;
+    branching: BranchingScore;
+    deployment: DeploymentScore;
+    organization: OrganizationScore;
+    testing: TestingScore;
+    devOps: DevOpsMaturity; // Reuse existing
+}
+
+export interface DocumentationScore {
+    score: number; // 0-100
+    hasReadme: boolean;
+    readmeQuality: 'none' | 'minimal' | 'good' | 'excellent';
+    hasLicense: boolean;
+    hasContributing: boolean;
+    hasCodeOfConduct: boolean;
+    reposWithReadme: number;
+    totalReposChecked: number;
+}
+
+export interface BranchingScore {
+    score: number; // 0-100
+    strategy: 'single-branch' | 'basic-branching' | 'feature-branches' | 'gitflow';
+    avgBranchesPerRepo: number;
+    reposWithMultipleBranches: number;
+    totalBranches: number;
+}
+
+export interface DeploymentScore {
+    score: number; // 0-100
+    platforms: DeploymentPlatform[];
+    hasAnyDeployment: boolean;
+    reposWithDeployment: number;
+}
+
+export interface DeploymentPlatform {
+    name: string;
+    icon: string;
+    repoCount: number;
+}
+
+export interface OrganizationScore {
+    score: number; // 0-100
+    hasGitignore: boolean;
+    hasSrcFolder: boolean;
+    hasTestsFolder: boolean;
+    hasPackageManager: boolean; // package.json, Cargo.toml, setup.py, etc.
+    reposWellOrganized: number;
+}
+
+export interface TestingScore {
+    score: number; // 0-100
+    hasTestFiles: boolean;
+    hasTestConfig: boolean; // jest.config, pytest.ini, etc.
+    reposWithTests: number;
+}
+
+/**
  * UserStats contains only data that can be verified from GitHub's public API.
  * 
  * Note: We intentionally do NOT include:
@@ -90,6 +234,24 @@ export interface UserStats {
     // Repository profile
     hasPopularRepo: boolean;
     mostStarredRepo: Repository | null;
+
+    // Developer DNA (Lab vs Code)
+    developerDNA: DeveloperDNA;
+
+    // DevOps Maturity
+    devOpsMaturity: DevOpsMaturity;
+
+    // Superpowers
+    superpowers: DeveloperSuperpowers;
+
+    // Language Eras (for Archaeology)
+    languageEras: LanguageEra[];
+
+    // Code Health (dashboard feature)
+    codeHealth: CodeHealth;
+
+    // Experience Profile (motivational messaging)
+    experienceProfile: ExperienceProfile;
 }
 
 // GitHub's linguist language colors
@@ -123,8 +285,10 @@ export const LANGUAGE_COLORS: Record<string, string> = {
     Clojure: "#db5855",
     Objective: "#438eff",
     Perl: "#0298c3",
+    "Jupyter Notebook": "#DA5B0B",
 };
 
 export function getLanguageColor(language: string): string {
     return LANGUAGE_COLORS[language] || "#6b7280";
 }
+
