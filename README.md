@@ -4,7 +4,7 @@
 
 Think Spotify Wrapped, but for your GitHub commits. GitWrapped turns your raw commit history into a cinematic story and a professional developer dashboard. No login required—just type your username.
 
-🔗 **[Live Demo](https://gitwrapped.vercel.app)** *(Coming soon)*
+🔗 **[Live Demo](https://gitwrapped-lemon.vercel.app)**
 
 ---
 
