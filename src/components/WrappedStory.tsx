@@ -12,7 +12,7 @@ interface WrappedStoryProps {
 
 interface Slide {
     id: string;
-    type: 'text' | 'superpowers' | 'devops' | 'archaeology' | 'dna' | 'archetype';
+    type: 'text' | 'superpowers' | 'devops' | 'archaeology' | 'dna' | 'archetype' | 'documentation';
     title: string;
     value?: string | number;
     label?: string;
@@ -110,6 +110,15 @@ export function WrappedStory({ stats }: WrappedStoryProps) {
             id: "superpowers",
             type: "superpowers",
             title: "Your Superpowers",
+        });
+    }
+
+    // Documentation Analysis (if available)
+    if (stats.readmeAnalysis) {
+        slides.push({
+            id: "documentation",
+            type: "documentation",
+            title: "Documentation Quality",
         });
     }
 
@@ -219,9 +228,9 @@ export function WrappedStory({ stats }: WrappedStoryProps) {
 
             case 'devops':
                 const tierLabels = {
-                    'code-shipper': 'Code Shipper',
-                    'devops-curious': 'DevOps Curious',
-                    'pipeline-builder': 'Pipeline Builder',
+                    'code-shipper': 'Product Focus',
+                    'devops-curious': 'Ops Aware',
+                    'pipeline-builder': 'Automation Specialist',
                     'infrastructure-architect': 'Infrastructure Architect',
                 };
                 const tierEmoji = {
@@ -298,10 +307,10 @@ export function WrappedStory({ stats }: WrappedStoryProps) {
 
             case 'dna':
                 const archetypeLabels = {
-                    'production-focused': 'Production Developer',
-                    'hybrid': 'Hybrid Developer',
-                    'research-oriented': 'Research Developer',
-                    'lab-scientist': 'Lab Scientist',
+                    'production-focused': 'Product Engineer',
+                    'hybrid': 'Full Spectrum Developer',
+                    'research-oriented': 'Applied Researcher',
+                    'lab-scientist': 'Research & Experimentation',
                 };
                 return (
                     <div className="wrapped-special-content">
@@ -336,6 +345,49 @@ export function WrappedStory({ stats }: WrappedStoryProps) {
                         >
                             {stats.developerDNA.notebookRepoCount} notebooks — You're a {archetypeLabels[stats.developerDNA.labArchetype]}
                         </motion.p>
+                    </div>
+                );
+
+            case 'documentation':
+                return (
+                    <div className="wrapped-special-content">
+                        <p className="wrapped-title">📝 {slide.title}</p>
+                        {stats.readmeAnalysis && (
+                            <div className="documentation-score-card">
+                                <motion.div
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    className="doc-score-circle"
+                                >
+                                    <span className="doc-score-value">{stats.readmeAnalysis.score}</span>
+                                    <span className="doc-score-label">Score</span>
+                                </motion.div>
+                                <div className="doc-strengths">
+                                    {stats.readmeAnalysis.strengths.map((strength, i) => (
+                                        <motion.div
+                                            key={i}
+                                            initial={{ x: -20, opacity: 0 }}
+                                            animate={{ x: 0, opacity: 1 }}
+                                            transition={{ delay: 0.2 + i * 0.1 }}
+                                            className="doc-strength-item"
+                                        >
+                                            ✅ {strength}
+                                        </motion.div>
+                                    ))}
+                                    {stats.readmeAnalysis.improvementAreas.slice(0, 1).map((area, i) => (
+                                        <motion.div
+                                            key={`area-${i}`}
+                                            initial={{ x: -20, opacity: 0 }}
+                                            animate={{ x: 0, opacity: 1 }}
+                                            transition={{ delay: 0.5 }}
+                                            className="doc-strength-item improve"
+                                        >
+                                            💡 {area}
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
 

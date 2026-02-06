@@ -172,10 +172,10 @@ function DashboardContent({ stats }: DashboardClientProps) {
                                 </div>
                                 <p className="lab-work-archetype">
                                     You're a <strong>{
-                                        stats.developerDNA.labArchetype === 'lab-scientist' ? 'Lab Scientist' :
-                                            stats.developerDNA.labArchetype === 'research-oriented' ? 'Research-Oriented Developer' :
-                                                stats.developerDNA.labArchetype === 'hybrid' ? 'Hybrid Developer' :
-                                                    'Production-Focused Developer'
+                                        stats.developerDNA.labArchetype === 'lab-scientist' ? 'Research & Experimentation' :
+                                            stats.developerDNA.labArchetype === 'research-oriented' ? 'Applied Researcher' :
+                                                stats.developerDNA.labArchetype === 'hybrid' ? 'Full Spectrum Developer' :
+                                                    'Product Engineer'
                                     }</strong> — balancing experimentation with production code.
                                 </p>
                             </div>

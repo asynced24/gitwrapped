@@ -305,7 +305,7 @@ function detectSuperpowers(
     if (dna.labRatio >= 20) {
         superpowers.push({
             id: 'lab-scientist',
-            name: 'Lab Scientist',
+            name: 'Research & Experimentation',
             icon: '🔬',
             description: `${dna.notebookRepoCount} notebooks — experiments before shipping`,
             strength: Math.min(100, dna.labRatio * 2),
@@ -316,9 +316,9 @@ function detectSuperpowers(
     if (devOps.score >= 40) {
         superpowers.push({
             id: 'devops-hero',
-            name: 'DevOps Hero',
+            name: 'Infrastructure Architect',
             icon: '🔧',
-            description: 'Automates everything, ships with confidence',
+            description: 'Automates infrastructure & shipping',
             strength: devOps.score,
         });
     }
@@ -368,8 +368,8 @@ function detectSuperpowers(
     // Generate archetype
     const archetypeParts: string[] = [];
     if (superpowers.find(s => s.id === 'polyglot')) archetypeParts.push('Polyglot');
-    if (superpowers.find(s => s.id === 'lab-scientist')) archetypeParts.push('Scientist');
-    if (superpowers.find(s => s.id === 'devops-hero')) archetypeParts.push('DevOps Engineer');
+    if (superpowers.find(s => s.id === 'lab-scientist')) archetypeParts.push('Researcher');
+    if (superpowers.find(s => s.id === 'devops-hero')) archetypeParts.push('Infrastructure & Ops');
     if (superpowers.find(s => s.id === 'star-magnet')) archetypeParts.push('Star Collector');
     if (superpowers.find(s => s.id === 'open-source-champion')) archetypeParts.push('Open Source Builder');
     if (superpowers.find(s => s.id === 'tool-builder')) archetypeParts.push('Tool Maker');
@@ -682,6 +682,98 @@ async function analyzeDocumentation(
         hasCodeOfConduct,
         reposWithReadme,
         totalReposChecked: reposToCheck.length,
+    };
+}
+
+/**
+ * Fetch README content for a repository
+ */
+async function fetchReadmeContent(username: string, repo: string): Promise<string> {
+    try {
+        const data = await fetchGitHub<{ content: string; encoding: string }>(
+            `/repos/${username}/${repo}/readme`
+        );
+        if (data.encoding === 'base64') {
+            return atob(data.content);
+        }
+        return '';
+    } catch {
+        return '';
+    }
+}
+
+/**
+ * Analyze README quality and give it a score
+ */
+export async function analyzeReadme(
+    username: string,
+    repo: string
+): Promise<{ score: number; strengths: string[]; improvementAreas: string[] }> {
+    const readme = await fetchReadmeContent(username, repo);
+
+    if (!readme) {
+        return {
+            score: 0,
+            strengths: [],
+            improvementAreas: ['Create a README.md file to document your project']
+        };
+    }
+
+    let score = 0;
+    const strengths: string[] = [];
+    const improvementAreas: string[] = [];
+
+    // Length check (is it substantial?)
+    if (readme.length > 2000) {
+        score += 20;
+        strengths.push('Comprehensive documentation length');
+    } else if (readme.length > 500) {
+        score += 10;
+    } else {
+        improvementAreas.push('Expand documentation length');
+    }
+
+    // Key Sections Check
+    const lowerReadme = readme.toLowerCase();
+
+    // Installation / Usage
+    if (lowerReadme.includes('install') || lowerReadme.includes('setup') || lowerReadme.includes('usage') || lowerReadme.includes('getting started')) {
+        score += 20;
+        strengths.push('Clear installation/usage instructions');
+    } else {
+        improvementAreas.push('Add Installation or Usage sections');
+    }
+
+    // Code blocks
+    if (readme.includes('```')) {
+        score += 15;
+        strengths.push('Includes code examples');
+    }
+
+    // Headers hierarchy
+    if (readme.includes('# ') && readme.includes('## ')) {
+        score += 15;
+        strengths.push('Good document structure');
+    }
+
+    // Images/Badges
+    if (readme.includes('![') || lowerReadme.includes('<img')) {
+        score += 15;
+        strengths.push('Visuals/badges included');
+    } else {
+        improvementAreas.push('Add screenshots or badges');
+    }
+
+    // Contributing/License mentions
+    if (lowerReadme.includes('contributing') || lowerReadme.includes('license')) {
+        score += 15;
+        strengths.push('Community/License info present');
+    }
+
+    return {
+        score: Math.min(100, score),
+        strengths,
+        improvementAreas
     };
 }
 
@@ -1000,6 +1092,12 @@ export async function fetchUserStats(username: string): Promise<UserStats> {
         repoProfile.hasPopularRepo
     );
 
+    // NEW: Analyze README for the most popular repo
+    let readmeAnalysis = null;
+    if (repoProfile.mostStarredRepo) {
+        readmeAnalysis = await analyzeReadme(username, repoProfile.mostStarredRepo.name);
+    }
+
     return {
         user,
         repositories,
@@ -1045,6 +1143,9 @@ export async function fetchUserStats(username: string): Promise<UserStats> {
 
         // Experience Profile (motivational messaging)
         experienceProfile,
+
+        // README Analysis
+        readmeAnalysis,
     };
 }
 

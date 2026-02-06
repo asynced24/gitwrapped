@@ -252,6 +252,15 @@ export interface UserStats {
 
     // Experience Profile (motivational messaging)
     experienceProfile: ExperienceProfile;
+
+    // README Analysis (new feature)
+    readmeAnalysis: ReadmeAnalysis | null;
+}
+
+export interface ReadmeAnalysis {
+    score: number;
+    strengths: string[];
+    improvementAreas: string[];
 }
 
 // GitHub's linguist language colors
