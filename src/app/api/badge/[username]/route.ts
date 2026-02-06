@@ -6,75 +6,75 @@ import { fetchUser, fetchRepositories, calculateLanguageStats, fetchRepoLanguage
  * Returns an SVG badge that can be embedded in README files
  */
 export async function GET(
-    request: NextRequest,
-    { params }: { params: Promise<{ username: string }> }
+  request: NextRequest,
+  { params }: { params: Promise<{ username: string }> }
 ) {
-    const { username } = await params;
+  const { username } = await params;
 
-    try {
-        // Fetch minimal data needed for the badge
-        const [user, repositories] = await Promise.all([
-            fetchUser(username),
-            fetchRepositories(username)
-        ]);
+  try {
+    // Fetch minimal data needed for the badge
+    const [user, repositories] = await Promise.all([
+      fetchUser(username),
+      fetchRepositories(username)
+    ]);
 
-        // Get top language from first 10 repos
-        const reposToAnalyze = repositories
-            .filter(r => !r.fork)
-            .slice(0, 10);
+    // Get top language from first 10 repos
+    const reposToAnalyze = repositories
+      .filter(r => !r.fork)
+      .slice(0, 10);
 
-        const languageData = await Promise.all(
-            reposToAnalyze.map(repo => fetchRepoLanguages(username, repo.name))
-        );
+    const languageData = await Promise.all(
+      reposToAnalyze.map(repo => fetchRepoLanguages(username, repo.name))
+    );
 
-        const languageStats = calculateLanguageStats(languageData);
-        const topLanguage = languageStats.find(l => !l.isMarkup)?.language || "Code";
-        const langColor = languageStats.find(l => !l.isMarkup)?.color || "#10b981";
+    const languageStatsObj = calculateLanguageStats(languageData);
+    const topLanguage = languageStatsObj.stats.find(l => !l.isMarkup)?.language || "Code";
+    const langColor = languageStatsObj.stats.find(l => !l.isMarkup)?.color || "#10b981";
 
-        // Calculate stats
-        const totalStars = repositories.reduce((sum, r) => sum + r.stargazers_count, 0);
-        const ownRepos = repositories.filter(r => !r.fork).length;
+    // Calculate stats
+    const totalStars = repositories.reduce((sum, r) => sum + r.stargazers_count, 0);
+    const ownRepos = repositories.filter(r => !r.fork).length;
 
-        // Generate SVG badge
-        const svg = generateBadgeSVG({
-            username: user.login,
-            topLanguage,
-            langColor,
-            stars: totalStars,
-            repos: ownRepos,
-        });
+    // Generate SVG badge
+    const svg = generateBadgeSVG({
+      username: user.login,
+      topLanguage,
+      langColor,
+      stars: totalStars,
+      repos: ownRepos,
+    });
 
-        return new NextResponse(svg, {
-            headers: {
-                "Content-Type": "image/svg+xml",
-                "Cache-Control": "public, max-age=3600, s-maxage=3600",
-            },
-        });
-    } catch {
-        // Return error badge
-        const errorSvg = generateErrorBadgeSVG();
-        return new NextResponse(errorSvg, {
-            status: 200, // Return 200 so the image still renders
-            headers: {
-                "Content-Type": "image/svg+xml",
-                "Cache-Control": "public, max-age=300",
-            },
-        });
-    }
+    return new NextResponse(svg, {
+      headers: {
+        "Content-Type": "image/svg+xml",
+        "Cache-Control": "public, max-age=3600, s-maxage=3600",
+      },
+    });
+  } catch {
+    // Return error badge
+    const errorSvg = generateErrorBadgeSVG();
+    return new NextResponse(errorSvg, {
+      status: 200, // Return 200 so the image still renders
+      headers: {
+        "Content-Type": "image/svg+xml",
+        "Cache-Control": "public, max-age=300",
+      },
+    });
+  }
 }
 
 interface BadgeData {
-    username: string;
-    topLanguage: string;
-    langColor: string;
-    stars: number;
-    repos: number;
+  username: string;
+  topLanguage: string;
+  langColor: string;
+  stars: number;
+  repos: number;
 }
 
 function generateBadgeSVG(data: BadgeData): string {
-    const { username, topLanguage, langColor, stars, repos } = data;
+  const { username, topLanguage, langColor, stars, repos } = data;
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="80" viewBox="0 0 320 80">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="80" viewBox="0 0 320 80">
   <defs>
     <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#10b981"/>
@@ -126,7 +126,7 @@ function generateBadgeSVG(data: BadgeData): string {
 }
 
 function generateErrorBadgeSVG(): string {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="40" viewBox="0 0 200 40">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="40" viewBox="0 0 200 40">
   <rect width="200" height="40" rx="6" fill="#f3f4f6"/>
   <text x="100" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#9ca3af" text-anchor="middle">
     GitWrapped • User not found
@@ -135,14 +135,14 @@ function generateErrorBadgeSVG(): string {
 }
 
 function escapeXml(unsafe: string): string {
-    return unsafe.replace(/[<>&'"]/g, (c) => {
-        switch (c) {
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '&': return '&amp;';
-            case "'": return '&apos;';
-            case '"': return '&quot;';
-            default: return c;
-        }
-    });
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case "'": return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
 }
