@@ -39,4 +39,4 @@ npm run dev
 
 ---
 
-[asynced24](https://github.com/asynced24)*
+[![GitWrapped](https://gitwrapped-lemon.vercel.app/api/badge/asynced24)](https://gitwrapped-lemon.vercel.app/dashboard/asynced24)
