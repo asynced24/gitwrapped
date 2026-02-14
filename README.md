@@ -6,8 +6,7 @@ Think Spotify Wrapped, but for your GitHub commits. GitWrapped turns your raw co
 
 🔗 **[Live Demo](https://gitwrapped-lemon.vercel.app)**
 
-[![GitWrapped](https://gitwrapped-lemon.vercel.app/api/badge/asynced24)](https://gitwrapped-lemon.vercel.app/dashboard/asynced24)
-
+[![GitWrapped](http://localhost:3001/api/badge/asynced24)](http://localhost:3001/dashboard/asynced24)
 ---
 
 ## Features
