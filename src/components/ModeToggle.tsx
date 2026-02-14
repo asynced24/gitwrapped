@@ -1,30 +1,28 @@
 "use client";
 
 import { useViewMode } from "@/context/ViewModeContext";
-import { LayoutDashboard, Sparkles } from "lucide-react";
+import { BarChart3, Sparkles } from "lucide-react";
 
 export function ModeToggle() {
     const { mode, setMode } = useViewMode();
 
     return (
-        <div className="mode-toggle">
+        <div className="view-toggle">
             <button
-                className="mode-toggle-btn"
-                data-active={mode === "dashboard"}
                 onClick={() => setMode("dashboard")}
-                aria-label="Switch to Dashboard view"
+                className="view-toggle-btn"
+                data-active={mode === "dashboard"}
             >
-                <LayoutDashboard size={14} style={{ marginRight: 4, verticalAlign: "middle" }} />
-                Dashboard
+                <BarChart3 size={16} />
+                <span>Dashboard</span>
             </button>
             <button
-                className="mode-toggle-btn"
-                data-active={mode === "wrapped"}
                 onClick={() => setMode("wrapped")}
-                aria-label="Switch to Wrapped view"
+                className="view-toggle-btn"
+                data-active={mode === "wrapped"}
             >
-                <Sparkles size={14} style={{ marginRight: 4, verticalAlign: "middle" }} />
-                Wrapped
+                <Sparkles size={16} />
+                <span>Wrapped</span>
             </button>
         </div>
     );

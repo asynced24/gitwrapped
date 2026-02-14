@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { fetchUserStats } from "@/lib/github";
-import { DashboardClient } from "./DashboardClient";
+import DashboardClient from "./DashboardClient";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 
 interface DashboardPageProps {

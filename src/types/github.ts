@@ -50,17 +50,24 @@ export interface LanguageStats {
 }
 
 /**
+ * Language stats calculated by repo count instead of bytes
+ */
+export interface LanguageStatsByRepo {
+    language: string;
+    repoCount: number;
+    percentage: number;
+    color: string;
+}
+
+/**
  * Developer DNA - Tracks the "Lab Strand" (notebooks/experiments)
- * separate from the "Code Strand" (traditional programming)
+ * separate from the "Code Strand" (traditional programming).
+ * Purely ratio-based, no archetype labels.
  */
 export interface DeveloperDNA {
-    // Lab Strand (Jupyter Notebooks)
     notebookBytes: number;
     notebookRepoCount: number;
     labRatio: number; // 0-100, percentage of work in notebooks
-    labArchetype: 'production-focused' | 'hybrid' | 'research-oriented' | 'lab-scientist';
-
-    // Code Strand (covered by languageStats)
     totalCodeBytes: number;
 }
 
@@ -86,25 +93,8 @@ export interface DevOpsSignal {
 }
 
 /**
- * Developer Superpowers - Pattern-based abilities detected from activity
- */
-export interface Superpower {
-    id: string;
-    name: string;
-    icon: string;
-    description: string;
-    strength: number; // 0-100
-}
-
-export interface DeveloperSuperpowers {
-    primary: Superpower | null;
-    secondary: Superpower[];
-    archetype: string; // Final summary like "Nocturnal Polyglot Scientist"
-}
-
-/**
  * Language Era - For the Archaeology feature
- * Enhanced to track all languages used each year, not just dominant
+ * Tracks all languages used each year, not just dominant
  */
 export interface LanguageEra {
     year: number;
@@ -112,9 +102,7 @@ export interface LanguageEra {
     languageColor: string;
     repoCount: number;
     eraName: string;
-    // NEW: Secondary languages used that year (>10% of year's bytes)
     secondaryLanguages: { language: string; percentage: number }[];
-    // NEW: All languages used that year with percentages
     allLanguages: { language: string; bytes: number; percentage: number }[];
 }
 
@@ -126,7 +114,26 @@ export type ExperienceTier = 'pioneer' | 'veteran' | 'established' | 'rising' | 
 export interface ExperienceProfile {
     tier: ExperienceTier;
     closingMessage: string;
-    contextualMessage: string | null; // Additional context-based message
+    contextualMessage: string | null;
+}
+
+/**
+ * Monthly Activity - tracks repo creation/update activity per month
+ */
+export interface MonthlyActivity {
+    month: string;        // "2025-01" format
+    reposCreated: number;
+    reposPushed: number;
+}
+
+/**
+ * Contribution Consistency - pattern of activity
+ */
+export interface ContributionConsistency {
+    pattern: 'consistent' | 'burst' | 'sporadic' | 'inactive';
+    activeMonths: number;
+    totalMonths: number;
+    longestGapDays: number;
 }
 
 /**
@@ -136,17 +143,16 @@ export interface CodeHealth {
     overallScore: number; // 0-100
     tier: 'needs-work' | 'getting-there' | 'solid' | 'excellent';
 
-    // Individual category scores
     documentation: DocumentationScore;
     branching: BranchingScore;
     deployment: DeploymentScore;
     organization: OrganizationScore;
     testing: TestingScore;
-    devOps: DevOpsMaturity; // Reuse existing
+    devOps: DevOpsMaturity;
 }
 
 export interface DocumentationScore {
-    score: number; // 0-100
+    score: number;
     hasReadme: boolean;
     readmeQuality: 'none' | 'minimal' | 'good' | 'excellent';
     hasLicense: boolean;
@@ -157,7 +163,7 @@ export interface DocumentationScore {
 }
 
 export interface BranchingScore {
-    score: number; // 0-100
+    score: number;
     strategy: 'single-branch' | 'basic-branching' | 'feature-branches' | 'gitflow';
     avgBranchesPerRepo: number;
     reposWithMultipleBranches: number;
@@ -165,7 +171,7 @@ export interface BranchingScore {
 }
 
 export interface DeploymentScore {
-    score: number; // 0-100
+    score: number;
     platforms: DeploymentPlatform[];
     hasAnyDeployment: boolean;
     reposWithDeployment: number;
@@ -178,18 +184,18 @@ export interface DeploymentPlatform {
 }
 
 export interface OrganizationScore {
-    score: number; // 0-100
+    score: number;
     hasGitignore: boolean;
     hasSrcFolder: boolean;
     hasTestsFolder: boolean;
-    hasPackageManager: boolean; // package.json, Cargo.toml, setup.py, etc.
+    hasPackageManager: boolean;
     reposWellOrganized: number;
 }
 
 export interface TestingScore {
-    score: number; // 0-100
+    score: number;
     hasTestFiles: boolean;
-    hasTestConfig: boolean; // jest.config, pytest.ini, etc.
+    hasTestConfig: boolean;
     reposWithTests: number;
 }
 
@@ -201,8 +207,6 @@ export interface TestingScore {
  * - Contribution calendar (requires GraphQL API or scraping)
  * - Coding schedule/hours (not available from public API)
  * - Streak data (would require commit history analysis)
- * 
- * These fields are either derived from real data or clearly marked as estimates.
  */
 export interface UserStats {
     user: GitHubUser;
@@ -230,6 +234,7 @@ export interface UserStats {
     topLanguage: string | null;
     topLanguagePercentage: number;
     languageDiversity: string;
+    languageStatsByRepoCount: LanguageStatsByRepo[];
 
     // Repository profile
     hasPopularRepo: boolean;
@@ -241,9 +246,6 @@ export interface UserStats {
     // DevOps Maturity
     devOpsMaturity: DevOpsMaturity;
 
-    // Superpowers
-    superpowers: DeveloperSuperpowers;
-
     // Language Eras (for Archaeology)
     languageEras: LanguageEra[];
 
@@ -253,14 +255,12 @@ export interface UserStats {
     // Experience Profile (motivational messaging)
     experienceProfile: ExperienceProfile;
 
-    // README Analysis (new feature)
-    readmeAnalysis: ReadmeAnalysis | null;
-}
+    // Activity & Growth
+    monthlyActivity: MonthlyActivity[];
+    contributionConsistency: ContributionConsistency;
 
-export interface ReadmeAnalysis {
-    score: number;
-    strengths: string[];
-    improvementAreas: string[];
+    // Development Profile
+    developmentProfile: string;
 }
 
 // GitHub's linguist language colors
@@ -300,4 +300,3 @@ export const LANGUAGE_COLORS: Record<string, string> = {
 export function getLanguageColor(language: string): string {
     return LANGUAGE_COLORS[language] || "#6b7280";
 }
-

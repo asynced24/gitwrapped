@@ -1,20 +1,25 @@
 "use client";
 
 import { Repository, getLanguageColor } from "@/types/github";
-import { Star, GitFork } from "lucide-react";
+import { Star, GitFork, Clock } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 interface RepoCardProps {
     repo: Repository;
+    highlight?: boolean;
 }
 
-export function RepoCard({ repo }: RepoCardProps) {
+export function RepoCard({ repo, highlight = false }: RepoCardProps) {
     return (
         <a
             href={repo.html_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="repo-card"
+            className={`repo-card ${highlight ? 'repo-card--highlight' : ''}`}
         >
+            {highlight && (
+                <span className="repo-card__badge">Most Impactful</span>
+            )}
             <div className="repo-name">{repo.name}</div>
             {repo.description && (
                 <p className="repo-description">{repo.description}</p>
@@ -41,6 +46,10 @@ export function RepoCard({ repo }: RepoCardProps) {
                         {repo.forks_count.toLocaleString()}
                     </span>
                 )}
+                <span className="language-legend-item text-muted">
+                    <Clock size={12} />
+                    {formatDistanceToNow(new Date(repo.pushed_at), { addSuffix: true })}
+                </span>
             </div>
         </a>
     );

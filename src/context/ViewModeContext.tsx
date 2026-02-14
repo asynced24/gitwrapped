@@ -2,29 +2,33 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-type ViewMode = "dashboard" | "wrapped";
+export type ViewMode = "dashboard" | "wrapped";
+export type Theme = "monochrome" | "dark-minimal" | "light-clean";
 
 interface ViewModeContextType {
     mode: ViewMode;
+    theme: Theme;
     setMode: (mode: ViewMode) => void;
-    toggleMode: () => void;
+    setTheme: (theme: Theme) => void;
 }
 
 const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined);
 
 export function ViewModeProvider({ children }: { children: ReactNode }) {
     const [mode, setMode] = useState<ViewMode>("dashboard");
+    const [theme, setTheme] = useState<Theme>("monochrome");
 
     useEffect(() => {
-        document.documentElement.setAttribute("data-theme", mode);
-    }, [mode]);
-
-    const toggleMode = () => {
-        setMode((prev) => (prev === "dashboard" ? "wrapped" : "dashboard"));
-    };
+        // Wrapped mode always stays dark
+        if (mode === "wrapped") {
+            document.documentElement.setAttribute("data-theme", "wrapped");
+        } else {
+            document.documentElement.setAttribute("data-theme", theme);
+        }
+    }, [mode, theme]);
 
     return (
-        <ViewModeContext.Provider value={{ mode, setMode, toggleMode }}>
+        <ViewModeContext.Provider value={{ mode, theme, setMode, setTheme }}>
             {children}
         </ViewModeContext.Provider>
     );

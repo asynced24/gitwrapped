@@ -6,9 +6,10 @@ import {
     DeveloperDNA,
     DevOpsMaturity,
     DevOpsSignal,
-    DeveloperSuperpowers,
-    Superpower,
     LanguageEra,
+    LanguageStatsByRepo,
+    MonthlyActivity,
+    ContributionConsistency,
     CodeHealth,
     DocumentationScore,
     BranchingScore,
@@ -25,23 +26,6 @@ const GITHUB_API = "https://api.github.com";
 
 // Languages that are markup, not actual programming languages
 const MARKUP_LANGUAGES = ["HTML", "CSS", "Markdown", "SCSS", "Less"];
-
-// Era names for the Archaeology feature
-const ERA_NAMES: Record<string, string> = {
-    JavaScript: "The JavaScript Journey",
-    TypeScript: "The TypeScript Empire",
-    Python: "The Python Expedition",
-    Java: "The Java Age",
-    "C++": "The C++ Era",
-    C: "The C Foundation",
-    Rust: "The Rust Frontier",
-    Go: "The Go Movement",
-    Ruby: "The Ruby Rails",
-    Swift: "The Swift Era",
-    Kotlin: "The Kotlin Rise",
-    PHP: "The PHP Chapter",
-    default: "The Exploration",
-};
 
 async function fetchGitHub<T>(endpoint: string): Promise<T> {
     const headers: Record<string, string> = {
@@ -115,6 +99,10 @@ async function fetchRepoContents(owner: string, repo: string, path: string = "")
     }
 }
 
+// =============================================================================
+// LANGUAGE ANALYSIS
+// =============================================================================
+
 /**
  * Process language data, tracking notebooks separately for Developer DNA
  */
@@ -127,15 +115,22 @@ export function calculateLanguageStats(
 
     for (const repoLangs of languageData) {
         for (const [lang, bytes] of Object.entries(repoLangs)) {
-            // Track Jupyter Notebooks separately (Lab Strand)
             if (lang === "Jupyter Notebook") {
                 notebookBytes += bytes;
-                continue;
+            } else {
+                aggregated[lang] = (aggregated[lang] || 0) + bytes;
+                totalCodeBytes += bytes;
             }
-
-            aggregated[lang] = (aggregated[lang] || 0) + bytes;
-            totalCodeBytes += bytes;
         }
+    }
+
+    // Jupyter Notebook byte size is weighted at 0.1x to reduce distortion
+    // caused by markdown cells and output artifacts.
+    // The weighted bytes are credited to Python (notebooks are Python-based).
+    if (notebookBytes > 0) {
+        const weightedNotebookBytes = Math.round(notebookBytes * 0.1);
+        aggregated['Python'] = (aggregated['Python'] || 0) + weightedNotebookBytes;
+        totalCodeBytes += weightedNotebookBytes;
     }
 
     const total = Object.values(aggregated).reduce((a, b) => a + b, 0);
@@ -159,7 +154,39 @@ export function calculateLanguageStats(
 }
 
 /**
- * Calculate Developer DNA - the Lab vs Code balance
+ * Calculate language stats by repository count (not bytes).
+ * Uses the primary language field from each repo.
+ */
+function calculateLanguageStatsByRepoCount(repos: Repository[]): LanguageStatsByRepo[] {
+    const langCounts: Record<string, number> = {};
+    const ownRepos = repos.filter(r => !r.fork && r.language);
+
+    for (const repo of ownRepos) {
+        if (repo.language) {
+            langCounts[repo.language] = (langCounts[repo.language] || 0) + 1;
+        }
+    }
+
+    const total = ownRepos.length;
+    if (total === 0) return [];
+
+    return Object.entries(langCounts)
+        .map(([language, repoCount]) => ({
+            language,
+            repoCount,
+            percentage: Math.round((repoCount / total) * 1000) / 10,
+            color: getLanguageColor(language),
+        }))
+        .sort((a, b) => b.repoCount - a.repoCount);
+}
+
+// =============================================================================
+// DEVELOPER DNA
+// =============================================================================
+
+/**
+ * Calculate Developer DNA — the Lab vs Code balance.
+ * Purely ratio-based, no archetype labels.
  */
 function calculateDeveloperDNA(
     notebookBytes: number,
@@ -168,24 +195,19 @@ function calculateDeveloperDNA(
 ): DeveloperDNA {
     const totalBytes = notebookBytes + totalCodeBytes;
     const labRatio = totalBytes > 0 ? Math.round((notebookBytes / totalBytes) * 100) : 0;
-
-    // Count repos with Jupyter as primary language
     const notebookRepoCount = repos.filter(r => r.language === "Jupyter Notebook").length;
-
-    let labArchetype: DeveloperDNA['labArchetype'];
-    if (labRatio >= 50) labArchetype = 'lab-scientist';
-    else if (labRatio >= 30) labArchetype = 'research-oriented';
-    else if (labRatio >= 10) labArchetype = 'hybrid';
-    else labArchetype = 'production-focused';
 
     return {
         notebookBytes,
         notebookRepoCount,
         labRatio,
-        labArchetype,
         totalCodeBytes,
     };
 }
+
+// =============================================================================
+// DEVOPS MATURITY
+// =============================================================================
 
 /**
  * Analyze DevOps maturity by checking for CI/CD and infrastructure files
@@ -203,7 +225,6 @@ async function analyzeDevOpsMaturity(
         { type: 'makefile', label: 'Makefile', icon: '📋', found: false, repoCount: 0 },
     ];
 
-    // Check top 10 most active repos for DevOps signals
     const reposToCheck = repos
         .filter(r => !r.fork)
         .sort((a, b) => new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime())
@@ -213,7 +234,6 @@ async function analyzeDevOpsMaturity(
         try {
             const rootContents = await fetchRepoContents(username, repo.name);
 
-            // Check for various DevOps signals
             if (rootContents.includes('.github')) {
                 const githubContents = await fetchRepoContents(username, repo.name, '.github');
                 if (githubContents.includes('workflows')) {
@@ -247,19 +267,17 @@ async function analyzeDevOpsMaturity(
                 signals[5].repoCount++;
             }
         } catch {
-            // Skip repos we can't access
             continue;
         }
     }
 
-    // Calculate score
     let score = 0;
-    if (signals[0].found) score += 25; // GitHub Actions
-    if (signals[1].found) score += 20; // Docker
-    if (signals[2].found) score += 20; // Kubernetes
-    if (signals[3].found) score += 15; // Terraform
-    if (signals[4].found) score += 10; // Other CI/CD
-    if (signals[5].found) score += 10; // Makefile
+    if (signals[0].found) score += 25;
+    if (signals[1].found) score += 20;
+    if (signals[2].found) score += 20;
+    if (signals[3].found) score += 15;
+    if (signals[4].found) score += 10;
+    if (signals[5].found) score += 10;
 
     let tier: DevOpsMaturity['tier'];
     if (score >= 70) tier = 'infrastructure-architect';
@@ -278,122 +296,79 @@ async function analyzeDevOpsMaturity(
     };
 }
 
+// =============================================================================
+// DEVELOPMENT PROFILE
+// =============================================================================
+
 /**
- * Detect developer superpowers based on patterns
+ * Generate a short, data-driven development profile summary
+ * based on dominant languages, repo distribution, and notebook presence.
  */
-function detectSuperpowers(
-    stats: LanguageStats[],
+function generateDevelopmentProfile(
+    languageStats: LanguageStats[],
     repos: Repository[],
-    dna: DeveloperDNA,
-    devOps: DevOpsMaturity
-): DeveloperSuperpowers {
-    const superpowers: Superpower[] = [];
+    hasNotebooks: boolean
+): string {
+    const topLangs = languageStats.filter(l => !l.isMarkup).slice(0, 3);
+    if (topLangs.length === 0) return "Developer";
 
-    // Polyglot: Uses 5+ programming languages
-    const programmingLangs = stats.filter(s => !s.isMarkup);
-    if (programmingLangs.length >= 5) {
-        superpowers.push({
-            id: 'polyglot',
-            name: 'Polyglot',
-            icon: '🧬',
-            description: `Fluent in ${programmingLangs.length} languages`,
-            strength: Math.min(100, programmingLangs.length * 12),
-        });
+    const primaryLang = topLangs[0].language;
+    const secondaryLang = topLangs[1]?.language;
+
+    // Categorize languages
+    const frontendLangs = ["JavaScript", "TypeScript", "Vue", "HTML", "CSS"];
+    const backendLangs = ["Python", "Go", "Rust", "Java", "C#", "Ruby", "PHP", "Elixir", "Scala"];
+    const mlLangs = ["Python", "R", "Jupyter Notebook"];
+    const systemsLangs = ["Rust", "C", "C++", "Go"];
+
+    const isFrontend = frontendLangs.includes(primaryLang);
+    const isBackend = backendLangs.includes(primaryLang);
+    const isML = mlLangs.includes(primaryLang) && hasNotebooks;
+    const isSystems = systemsLangs.includes(primaryLang);
+
+    // Determine profile
+    if (isFrontend && secondaryLang && backendLangs.includes(secondaryLang)) {
+        return hasNotebooks ? "Full-stack engineer with ML experimentation" : "Full-stack engineer";
     }
 
-    // Lab Scientist: High notebook ratio
-    if (dna.labRatio >= 20) {
-        superpowers.push({
-            id: 'lab-scientist',
-            name: 'Research & Experimentation',
-            icon: '🔬',
-            description: `${dna.notebookRepoCount} notebooks — experiments before shipping`,
-            strength: Math.min(100, dna.labRatio * 2),
-        });
+    if (isBackend && hasNotebooks) {
+        return "Backend & ML-focused systems builder";
     }
 
-    // DevOps Hero: High DevOps score
-    if (devOps.score >= 40) {
-        superpowers.push({
-            id: 'devops-hero',
-            name: 'Infrastructure Architect',
-            icon: '🔧',
-            description: 'Automates infrastructure & shipping',
-            strength: devOps.score,
-        });
+    if (isML) {
+        return secondaryLang && backendLangs.includes(secondaryLang)
+            ? "ML engineer with production systems experience"
+            : "ML & data science focused";
     }
 
-    // Star Magnet: Has repos with many stars
-    const totalStars = repos.reduce((sum, r) => sum + r.stargazers_count, 0);
-    if (totalStars >= 100) {
-        superpowers.push({
-            id: 'star-magnet',
-            name: 'Star Magnet',
-            icon: '⭐',
-            description: `${totalStars.toLocaleString()} stars earned`,
-            strength: Math.min(100, Math.log10(totalStars) * 25),
-        });
+    if (isSystems) {
+        return "Systems programmer";
     }
 
-    // Open Source Champion: Many non-fork repos
-    const ownRepos = repos.filter(r => !r.fork);
-    if (ownRepos.length >= 20) {
-        superpowers.push({
-            id: 'open-source-champion',
-            name: 'Open Source Champion',
-            icon: '🌍',
-            description: `${ownRepos.length} original projects created`,
-            strength: Math.min(100, ownRepos.length * 4),
-        });
+    if (isFrontend) {
+        return "Frontend-focused developer";
     }
 
-    // Tool Builder: Has CLI, library, or framework repos
-    const toolPatterns = ['cli', 'lib', 'sdk', 'api', 'framework', 'plugin', 'extension'];
-    const toolRepos = repos.filter(r =>
-        toolPatterns.some(p => r.name.toLowerCase().includes(p) || (r.description?.toLowerCase() || '').includes(p))
-    );
-    if (toolRepos.length >= 2) {
-        superpowers.push({
-            id: 'tool-builder',
-            name: 'Tool Builder',
-            icon: '🔧',
-            description: `Creates tools others depend on`,
-            strength: Math.min(100, toolRepos.length * 20),
-        });
+    if (isBackend) {
+        return "Backend engineer";
     }
 
-    // Sort by strength
-    superpowers.sort((a, b) => b.strength - a.strength);
-
-    // Generate archetype
-    const archetypeParts: string[] = [];
-    if (superpowers.find(s => s.id === 'polyglot')) archetypeParts.push('Polyglot');
-    if (superpowers.find(s => s.id === 'lab-scientist')) archetypeParts.push('Researcher');
-    if (superpowers.find(s => s.id === 'devops-hero')) archetypeParts.push('Infrastructure & Ops');
-    if (superpowers.find(s => s.id === 'star-magnet')) archetypeParts.push('Star Collector');
-    if (superpowers.find(s => s.id === 'open-source-champion')) archetypeParts.push('Open Source Builder');
-    if (superpowers.find(s => s.id === 'tool-builder')) archetypeParts.push('Tool Maker');
-
-    const archetype = archetypeParts.length > 0
-        ? archetypeParts.slice(0, 2).join(' ')
-        : 'Code Explorer';
-
-    return {
-        primary: superpowers[0] || null,
-        secondary: superpowers.slice(1),
-        archetype,
-    };
+    // Fallback
+    return `${primaryLang} developer`;
 }
 
+// =============================================================================
+// LANGUAGE ERAS (Archaeology)
+// =============================================================================
+
 /**
- * Analyze language eras for the Archaeology feature
- * Enhanced to track ALL languages used each year, not just dominant
+ * Analyze language eras for the Archaeology feature.
+ * Tracks ALL languages used each year, not just dominant.
  */
 function analyzeLanguageEras(
     repos: Repository[],
     languageData: Record<string, number>[]
 ): LanguageEra[] {
-    // Group repos by year and track ALL languages with bytes
     const yearData: Record<number, { repos: Repository[]; languages: Record<string, number> }> = {};
 
     repos.forEach((repo, index) => {
@@ -403,10 +378,8 @@ function analyzeLanguageEras(
         }
         yearData[year].repos.push(repo);
 
-        // Add ALL language data from the corresponding repo
         if (languageData[index]) {
             for (const [lang, bytes] of Object.entries(languageData[index])) {
-                // Skip Jupyter Notebook for era naming but we could track it separately
                 if (lang !== "Jupyter Notebook") {
                     yearData[year].languages[lang] = (yearData[year].languages[lang] || 0) + bytes;
                 }
@@ -420,21 +393,16 @@ function analyzeLanguageEras(
         const entries = Object.entries(data.languages);
         if (entries.length === 0) continue;
 
-        // Calculate total bytes for this year
         const totalBytes = entries.reduce((sum, [, bytes]) => sum + bytes, 0);
-
-        // Sort by bytes descending
         const sortedLangs = entries.sort((a, b) => b[1] - a[1]);
         const [dominantLanguage] = sortedLangs[0];
 
-        // Calculate all languages with percentages
         const allLanguages = sortedLangs.map(([language, bytes]) => ({
             language,
             bytes,
             percentage: Math.round((bytes / totalBytes) * 100),
         }));
 
-        // Secondary languages are those with >10% share (excluding dominant)
         const secondaryLanguages = allLanguages
             .filter((l, i) => i > 0 && l.percentage >= 10)
             .map(({ language, percentage }) => ({ language, percentage }));
@@ -444,7 +412,7 @@ function analyzeLanguageEras(
             dominantLanguage,
             languageColor: getLanguageColor(dominantLanguage),
             repoCount: data.repos.length,
-            eraName: ERA_NAMES[dominantLanguage] || ERA_NAMES.default,
+            eraName: `${dominantLanguage} era`,
             secondaryLanguages,
             allLanguages,
         });
@@ -452,6 +420,10 @@ function analyzeLanguageEras(
 
     return eras;
 }
+
+// =============================================================================
+// ACTIVITY & GROWTH
+// =============================================================================
 
 /**
  * Get semantically meaningful "top language" for Wrapped mode.
@@ -564,8 +536,85 @@ function getRepositoryProfile(repos: Repository[]): {
 }
 
 /**
- * Calculate experience profile for motivational messaging
- * Based on real, defensible metrics
+ * Calculate monthly activity from repository creation and push dates.
+ * Returns the last 24 months of activity data.
+ */
+function getMonthlyActivity(repositories: Repository[]): MonthlyActivity[] {
+    const now = new Date();
+    const months: Map<string, MonthlyActivity> = new Map();
+
+    // Initialize last 24 months
+    for (let i = 23; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        months.set(key, { month: key, reposCreated: 0, reposPushed: 0 });
+    }
+
+    for (const repo of repositories) {
+        const createdMonth = repo.created_at.substring(0, 7);
+        const pushedMonth = repo.pushed_at.substring(0, 7);
+
+        if (months.has(createdMonth)) {
+            months.get(createdMonth)!.reposCreated++;
+        }
+        if (months.has(pushedMonth)) {
+            months.get(pushedMonth)!.reposPushed++;
+        }
+    }
+
+    return Array.from(months.values());
+}
+
+/**
+ * Analyze contribution consistency from push dates.
+ */
+function getContributionConsistency(repositories: Repository[]): ContributionConsistency {
+    if (repositories.length === 0) {
+        return { pattern: 'inactive', activeMonths: 0, totalMonths: 0, longestGapDays: 0 };
+    }
+
+    // Collect all push dates
+    const pushDates = repositories
+        .map(r => new Date(r.pushed_at))
+        .sort((a, b) => a.getTime() - b.getTime());
+
+    // Get unique months with activity
+    const activeMonthSet = new Set<string>();
+    for (const d of pushDates) {
+        activeMonthSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    // Calculate total months span
+    const firstDate = pushDates[0];
+    const lastDate = pushDates[pushDates.length - 1];
+    const totalMonths = Math.max(1,
+        (lastDate.getFullYear() - firstDate.getFullYear()) * 12 +
+        (lastDate.getMonth() - firstDate.getMonth()) + 1
+    );
+
+    const activeMonths = activeMonthSet.size;
+
+    // Find longest gap between pushes
+    let longestGapDays = 0;
+    for (let i = 1; i < pushDates.length; i++) {
+        const gap = (pushDates[i].getTime() - pushDates[i - 1].getTime()) / (1000 * 60 * 60 * 24);
+        if (gap > longestGapDays) longestGapDays = Math.round(gap);
+    }
+
+    // Determine pattern
+    const ratio = activeMonths / totalMonths;
+    let pattern: ContributionConsistency['pattern'];
+    if (ratio >= 0.7) pattern = 'consistent';
+    else if (ratio >= 0.4) pattern = 'burst';
+    else if (ratio > 0) pattern = 'sporadic';
+    else pattern = 'inactive';
+
+    return { pattern, activeMonths, totalMonths, longestGapDays };
+}
+
+/**
+ * Calculate experience profile for motivational messaging.
+ * Based on real, defensible metrics.
  */
 function calculateExperienceProfile(
     accountAgeYears: number,
@@ -575,7 +624,6 @@ function calculateExperienceProfile(
     recentlyActive: boolean,
     hasPopularRepo: boolean
 ): ExperienceProfile {
-    // Determine experience tier
     let tier: ExperienceTier;
 
     if (accountAgeYears >= 7 && repoCount >= 50) {
@@ -590,7 +638,6 @@ function calculateExperienceProfile(
         tier = 'newcomer';
     }
 
-    // Closing messages by tier
     const CLOSING_MESSAGES: Record<ExperienceTier, string> = {
         'pioneer': "You walked so others could run.",
         'veteran': "Your journey is a roadmap for others.",
@@ -599,7 +646,6 @@ function calculateExperienceProfile(
         'newcomer': "The first commit is always the hardest. You did it.",
     };
 
-    // Contextual messages based on additional signals
     let contextualMessage: string | null = null;
 
     if (totalStars >= 1000) {
@@ -638,9 +684,7 @@ async function analyzeDocumentation(
     let hasLicense = false;
     let hasContributing = false;
     let hasCodeOfConduct = false;
-    let totalReadmeLength = 0;
 
-    // Check a sample of repos (limit API calls)
     const reposToCheck = repos.slice(0, 10);
 
     for (const repo of reposToCheck) {
@@ -660,14 +704,12 @@ async function analyzeDocumentation(
         }
     }
 
-    // Calculate documentation score
     const readmeRatio = reposToCheck.length > 0 ? reposWithReadme / reposToCheck.length : 0;
-    let score = readmeRatio * 50; // 50 points for README coverage
+    let score = readmeRatio * 50;
     if (hasLicense) score += 20;
     if (hasContributing) score += 15;
     if (hasCodeOfConduct) score += 15;
 
-    // Determine README quality
     let readmeQuality: 'none' | 'minimal' | 'good' | 'excellent' = 'none';
     if (readmeRatio >= 0.9) readmeQuality = 'excellent';
     else if (readmeRatio >= 0.7) readmeQuality = 'good';
@@ -686,98 +728,6 @@ async function analyzeDocumentation(
 }
 
 /**
- * Fetch README content for a repository
- */
-async function fetchReadmeContent(username: string, repo: string): Promise<string> {
-    try {
-        const data = await fetchGitHub<{ content: string; encoding: string }>(
-            `/repos/${username}/${repo}/readme`
-        );
-        if (data.encoding === 'base64') {
-            return atob(data.content);
-        }
-        return '';
-    } catch {
-        return '';
-    }
-}
-
-/**
- * Analyze README quality and give it a score
- */
-export async function analyzeReadme(
-    username: string,
-    repo: string
-): Promise<{ score: number; strengths: string[]; improvementAreas: string[] }> {
-    const readme = await fetchReadmeContent(username, repo);
-
-    if (!readme) {
-        return {
-            score: 0,
-            strengths: [],
-            improvementAreas: ['Create a README.md file to document your project']
-        };
-    }
-
-    let score = 0;
-    const strengths: string[] = [];
-    const improvementAreas: string[] = [];
-
-    // Length check (is it substantial?)
-    if (readme.length > 2000) {
-        score += 20;
-        strengths.push('Comprehensive documentation length');
-    } else if (readme.length > 500) {
-        score += 10;
-    } else {
-        improvementAreas.push('Expand documentation length');
-    }
-
-    // Key Sections Check
-    const lowerReadme = readme.toLowerCase();
-
-    // Installation / Usage
-    if (lowerReadme.includes('install') || lowerReadme.includes('setup') || lowerReadme.includes('usage') || lowerReadme.includes('getting started')) {
-        score += 20;
-        strengths.push('Clear installation/usage instructions');
-    } else {
-        improvementAreas.push('Add Installation or Usage sections');
-    }
-
-    // Code blocks
-    if (readme.includes('```')) {
-        score += 15;
-        strengths.push('Includes code examples');
-    }
-
-    // Headers hierarchy
-    if (readme.includes('# ') && readme.includes('## ')) {
-        score += 15;
-        strengths.push('Good document structure');
-    }
-
-    // Images/Badges
-    if (readme.includes('![') || lowerReadme.includes('<img')) {
-        score += 15;
-        strengths.push('Visuals/badges included');
-    } else {
-        improvementAreas.push('Add screenshots or badges');
-    }
-
-    // Contributing/License mentions
-    if (lowerReadme.includes('contributing') || lowerReadme.includes('license')) {
-        score += 15;
-        strengths.push('Community/License info present');
-    }
-
-    return {
-        score: Math.min(100, score),
-        strengths,
-        improvementAreas
-    };
-}
-
-/**
  * Analyze branching strategy
  */
 async function analyzeBranching(
@@ -787,7 +737,6 @@ async function analyzeBranching(
     let totalBranches = 0;
     let reposWithMultipleBranches = 0;
 
-    // Check a sample of repos
     const reposToCheck = repos.slice(0, 10);
 
     for (const repo of reposToCheck) {
@@ -807,13 +756,11 @@ async function analyzeBranching(
 
     const avgBranches = reposToCheck.length > 0 ? totalBranches / reposToCheck.length : 0;
 
-    // Determine strategy
     let strategy: 'single-branch' | 'basic-branching' | 'feature-branches' | 'gitflow' = 'single-branch';
     if (avgBranches >= 4) strategy = 'gitflow';
     else if (avgBranches >= 2.5) strategy = 'feature-branches';
     else if (avgBranches > 1) strategy = 'basic-branching';
 
-    // Calculate score
     const branchRatio = reposToCheck.length > 0 ? reposWithMultipleBranches / reposToCheck.length : 0;
     const score = Math.min(100, Math.round(branchRatio * 60 + Math.min(avgBranches * 10, 40)));
 
@@ -865,7 +812,6 @@ async function analyzeDeployment(
         }
     }
 
-    // Build platforms array
     const platforms: DeploymentPlatform[] = Object.entries(platformCounts)
         .map(([name, repoCount]) => ({
             name,
@@ -964,13 +910,11 @@ async function analyzeTesting(
         const files = await fetchRepoContents(username, repo.name);
         let foundTests = false;
 
-        // Check for test folders or files
         if (files.some(f => f.includes('test') || f === 'tests' || f === '__tests__' || f === 'spec')) {
             hasTestFiles = true;
             foundTests = true;
         }
 
-        // Check for test config files
         if (TEST_CONFIGS.some(tc => files.includes(tc.toLowerCase()))) {
             hasTestConfig = true;
             foundTests = true;
@@ -1005,7 +949,6 @@ async function analyzeCodeHealth(
 ): Promise<CodeHealth> {
     const ownRepos = repos.filter(r => !r.fork);
 
-    // Run all analyses in parallel
     const [documentation, branching, deployment, organization, testing] = await Promise.all([
         analyzeDocumentation(username, ownRepos),
         analyzeBranching(username, ownRepos),
@@ -1014,7 +957,6 @@ async function analyzeCodeHealth(
         analyzeTesting(username, ownRepos),
     ]);
 
-    // Calculate weighted overall score
     const overallScore = Math.round(
         documentation.score * 0.20 +
         branching.score * 0.15 +
@@ -1024,7 +966,6 @@ async function analyzeCodeHealth(
         devOpsMaturity.score * 0.20
     );
 
-    // Determine tier
     let tier: 'needs-work' | 'getting-there' | 'solid' | 'excellent' = 'needs-work';
     if (overallScore >= 80) tier = 'excellent';
     else if (overallScore >= 60) tier = 'solid';
@@ -1041,6 +982,10 @@ async function analyzeCodeHealth(
         devOps: devOpsMaturity,
     };
 }
+
+// =============================================================================
+// MAIN DATA FETCHING
+// =============================================================================
 
 export async function fetchUserStats(username: string): Promise<UserStats> {
     const [user, repositories] = await Promise.all([
@@ -1067,22 +1012,19 @@ export async function fetchUserStats(username: string): Promise<UserStats> {
     const languageDiversity = getLanguageDiversity(languageStats);
     const topLanguage = getTopProgrammingLanguage(languageStats);
 
-    // NEW: Calculate Developer DNA (Lab vs Code)
+    // Developer DNA (Lab vs Code) — simplified, no archetype label
     const developerDNA = calculateDeveloperDNA(notebookBytes, totalCodeBytes, repositories);
 
-    // NEW: Analyze DevOps maturity
+    // DevOps maturity
     const devOpsMaturity = await analyzeDevOpsMaturity(username, repoProfile.ownRepos);
 
-    // NEW: Detect superpowers
-    const superpowers = detectSuperpowers(languageStats, repositories, developerDNA, devOpsMaturity);
-
-    // NEW: Analyze language eras
+    // Language eras
     const languageEras = analyzeLanguageEras(reposToAnalyze, languageData);
 
-    // NEW: Analyze Code Health (comprehensive quality metrics)
+    // Code Health (dashboard feature)
     const codeHealth = await analyzeCodeHealth(username, repositories, devOpsMaturity);
 
-    // NEW: Calculate experience profile for motivational messaging
+    // Experience profile for motivational messaging
     const experienceProfile = calculateExperienceProfile(
         accountAge.years,
         repoProfile.ownRepos.length,
@@ -1092,11 +1034,19 @@ export async function fetchUserStats(username: string): Promise<UserStats> {
         repoProfile.hasPopularRepo
     );
 
-    // NEW: Analyze README for the most popular repo
-    let readmeAnalysis = null;
-    if (repoProfile.mostStarredRepo) {
-        readmeAnalysis = await analyzeReadme(username, repoProfile.mostStarredRepo.name);
-    }
+    // NEW: Activity & Growth
+    const monthlyActivity = getMonthlyActivity(repositories);
+    const contributionConsistency = getContributionConsistency(repositories);
+
+    // NEW: Language stats by repo count
+    const languageStatsByRepoCount = calculateLanguageStatsByRepoCount(repositories);
+
+    // NEW: Development profile
+    const developmentProfile = generateDevelopmentProfile(
+        languageStats,
+        repositories,
+        developerDNA.notebookRepoCount > 0
+    );
 
     return {
         user,
@@ -1127,6 +1077,7 @@ export async function fetchUserStats(username: string): Promise<UserStats> {
         topLanguage: topLanguage?.language || null,
         topLanguagePercentage: topLanguage?.percentage || 0,
         languageDiversity,
+        languageStatsByRepoCount,
 
         // Repository profile
         hasPopularRepo: repoProfile.hasPopularRepo,
@@ -1135,7 +1086,6 @@ export async function fetchUserStats(username: string): Promise<UserStats> {
         // Enhanced insights
         developerDNA,
         devOpsMaturity,
-        superpowers,
         languageEras,
 
         // Code Health (dashboard feature)
@@ -1144,8 +1094,11 @@ export async function fetchUserStats(username: string): Promise<UserStats> {
         // Experience Profile (motivational messaging)
         experienceProfile,
 
-        // README Analysis
-        readmeAnalysis,
+        // Activity & Growth
+        monthlyActivity,
+        contributionConsistency,
+
+        // Development Profile
+        developmentProfile,
     };
 }
-

@@ -1,248 +1,299 @@
 "use client";
 
-import Link from "next/link";
-import { Star, GitFork, BookOpen, MapPin, Link as LinkIcon, Calendar, Share2, Copy, Check } from "lucide-react";
-import { UserStats } from "@/types/github";
+import { useState, useMemo } from "react";
+import { UserStats, Repository } from "@/types/github";
 import { ViewModeProvider, useViewMode } from "@/context/ViewModeContext";
 import { ModeToggle } from "@/components/ModeToggle";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { DevProfileCard } from "@/components/DevProfileCard";
 import { LanguageBar } from "@/components/LanguageBar";
 import { RepoCard } from "@/components/RepoCard";
+import { ActivityChart } from "@/components/ActivityChart";
 import { WrappedStory } from "@/components/WrappedStory";
-import { DevProfileCard } from "@/components/DevProfileCard";
-import { TechStackCard } from "@/components/TechStackCard";
-import { formatDistanceToNow } from "date-fns";
-import { useState } from "react";
+import {
+    Activity,
+    Code2,
+    FolderGit2,
+    Beaker,
+    ShieldCheck,
+    ArrowUpDown,
+    Copy,
+    Check,
+} from "lucide-react";
 
 interface DashboardClientProps {
     stats: UserStats;
 }
 
+export default function DashboardClient({ stats }: DashboardClientProps) {
+    return (
+        <ViewModeProvider>
+            <DashboardContent stats={stats} />
+        </ViewModeProvider>
+    );
+}
+
+type RepoSort = "stars" | "recent" | "size";
+
 function DashboardContent({ stats }: DashboardClientProps) {
     const { mode } = useViewMode();
-    const [embedCopied, setEmbedCopied] = useState(false);
+    const [repoSort, setRepoSort] = useState<RepoSort>("stars");
+    const [badgeCopied, setBadgeCopied] = useState(false);
+
+    // Sort repositories
+    const sortedRepos = useMemo(() => {
+        const repos = [...stats.topRepositories];
+        switch (repoSort) {
+            case "stars":
+                return repos.sort((a, b) => b.stargazers_count - a.stargazers_count);
+            case "recent":
+                return repos.sort((a, b) => new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime());
+            case "size":
+                return repos.sort((a, b) => b.size - a.size);
+            default:
+                return repos;
+        }
+    }, [stats.topRepositories, repoSort]);
+
+    const handleCopyBadge = async () => {
+        const badgeUrl = `${window.location.origin}/api/badge/${stats.user.login}?portfolio=your-site.dev&linkedin=linkedin.com/in/you`;
+        const markdown = `[![GitWrapped](${badgeUrl})](${window.location.origin}/dashboard/${stats.user.login})`;
+        await navigator.clipboard.writeText(markdown);
+        setBadgeCopied(true);
+        setTimeout(() => setBadgeCopied(false), 2000);
+    };
 
     if (mode === "wrapped") {
         return <WrappedStory stats={stats} />;
     }
 
-    const {
-        user,
-        totalStars,
-        totalForks,
-        languageStats,
-        topRepositories,
-        accountAgeYears,
-        ownRepoCount,
-        forkedRepoCount,
-        recentlyActive,
-    } = stats;
-
-    const handleCopyEmbed = async () => {
-        const embedCode = `[![GitWrapped](${window.location.origin}/api/badge/${user.login})](${window.location.origin}/dashboard/${user.login})`;
-        await navigator.clipboard.writeText(embedCode);
-        setEmbedCopied(true);
-        setTimeout(() => setEmbedCopied(false), 2000);
-    };
-
     return (
-        <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
+        <div className="dashboard">
             {/* Navigation */}
-            <nav className="nav">
-                <div className="container nav-content">
-                    <Link href="/" className="nav-brand">
-                        <BookOpen size={20} />
-                        <span>GitWrapped</span>
-                    </Link>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                        <ModeToggle />
-                    </div>
+            <nav className="dashboard-nav">
+                <div className="dashboard-nav__left">
+                    <a href="/" className="dashboard-nav__logo">GitWrapped</a>
+                </div>
+                <div className="dashboard-nav__center">
+                    <ModeToggle />
+                </div>
+                <div className="dashboard-nav__right">
+                    <ThemeSwitcher />
                 </div>
             </nav>
 
-            <main className="container" style={{ paddingTop: 32, paddingBottom: 64 }}>
-                {/* Two-column layout: Profile Card + Info */}
-                <section
-                    className="dashboard-layout"
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "360px 1fr",
-                        gap: 32,
-                        marginBottom: 32,
-                        alignItems: "start"
-                    }}
-                >
-                    {/* Left: Shareable Profile Card */}
-                    <div>
-                        <DevProfileCard stats={stats} />
+            <div className="dashboard-content">
+                {/* ============================================= */}
+                {/* SECTION 1: Developer Identity Snapshot (Hero) */}
+                {/* ============================================= */}
+                <section className="dashboard-section">
+                    <DevProfileCard stats={stats} />
 
-                        {/* Embed code section */}
-                        <div style={{ marginTop: 16 }}>
-                            <button
-                                onClick={handleCopyEmbed}
-                                className="btn"
-                                style={{ width: "100%", justifyContent: "center" }}
-                            >
-                                {embedCopied ? <Check size={14} /> : <Share2 size={14} />}
-                                {embedCopied ? "Copied embed code!" : "Copy README badge"}
-                            </button>
-                        </div>
+                    {stats.user.bio && (
+                        <p className="dashboard-bio">{stats.user.bio}</p>
+                    )}
+
+                    {/* Activity status */}
+                    <div className="dashboard-hero-meta">
+                        {stats.recentlyActive && (
+                            <span className="activity-badge activity-badge--active">
+                                <span className="activity-dot" />
+                                Active in last 30 days
+                            </span>
+                        )}
+                        {stats.contributionConsistency.pattern !== 'inactive' && (
+                            <span className="activity-badge">
+                                {stats.contributionConsistency.pattern === 'consistent' && '📊 Consistent contributor'}
+                                {stats.contributionConsistency.pattern === 'burst' && '⚡ Burst contributor'}
+                                {stats.contributionConsistency.pattern === 'sporadic' && '🌊 Sporadic contributor'}
+                            </span>
+                        )}
+                    </div>
+                </section>
+
+                {/* ============================================= */}
+                {/* SECTION 2: Activity & Growth                  */}
+                {/* ============================================= */}
+                <section className="dashboard-section">
+                    <h2 className="section-title">
+                        <Activity size={18} />
+                        Activity & Growth
+                    </h2>
+                    <p className="section-subtitle">Repository creation and update activity over the last 24 months</p>
+
+                    <div className="card">
+                        <ActivityChart data={stats.monthlyActivity} />
                     </div>
 
-                    {/* Right: Bio and Quick Stats */}
-                    <div>
-                        <div style={{ marginBottom: 24 }}>
-                            <h1 style={{ fontSize: 28, marginBottom: 4 }}>{user.name || user.login}</h1>
-                            <p style={{ color: "var(--text-secondary)", fontSize: 16, marginBottom: 16 }}>@{user.login}</p>
-
-                            {user.bio && (
-                                <p style={{ color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.6, marginBottom: 16 }}>
-                                    {user.bio}
-                                </p>
-                            )}
-
-                            <div className="profile-meta">
-                                {user.location && (
-                                    <span className="profile-meta-item">
-                                        <MapPin size={16} />
-                                        {user.location}
-                                    </span>
-                                )}
-                                {user.blog && (
-                                    <a
-                                        href={user.blog.startsWith("http") ? user.blog : `https://${user.blog}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="profile-meta-item"
-                                        style={{ color: "var(--accent-primary)" }}
-                                    >
-                                        <LinkIcon size={16} />
-                                        {user.blog.replace(/^https?:\/\//, "")}
-                                    </a>
-                                )}
-                                <span className="profile-meta-item">
-                                    <Calendar size={16} />
-                                    Joined {formatDistanceToNow(new Date(user.created_at), { addSuffix: false })} ago
-                                </span>
-                            </div>
+                    {/* Quick activity stats */}
+                    <div className="stats-grid stats-grid--3">
+                        <div className="stat-card">
+                            <span className="stat-value">{stats.ownRepoCount}</span>
+                            <span className="stat-label">Own repos</span>
                         </div>
-
-                        {/* Stats Grid */}
-                        <div className="grid-4">
-                            <div className="card">
-                                <div className="stat-value">{user.public_repos}</div>
-                                <div className="stat-label">Repositories</div>
-                            </div>
-                            <div className="card">
-                                <div className="stat-value">{totalStars.toLocaleString()}</div>
-                                <div className="stat-label">Stars earned</div>
-                            </div>
-                            <div className="card">
-                                <div className="stat-value">{totalForks.toLocaleString()}</div>
-                                <div className="stat-label">Times forked</div>
-                            </div>
-                            <div className="card">
-                                <div className="stat-value">{user.followers.toLocaleString()}</div>
-                                <div className="stat-label">Followers</div>
-                            </div>
+                        <div className="stat-card">
+                            <span className="stat-value">
+                                {stats.mostActiveYear || "-"}
+                            </span>
+                            <span className="stat-label">Most active year</span>
+                        </div>
+                        <div className="stat-card">
+                            <span className="stat-value">
+                                {stats.contributionConsistency.activeMonths}/{stats.contributionConsistency.totalMonths}
+                            </span>
+                            <span className="stat-label">Active months</span>
                         </div>
                     </div>
                 </section>
 
-                {/* Language Breakdown */}
-                {languageStats.length > 0 && (
-                    <section className="card" style={{ marginBottom: 32 }}>
-                        <h2 className="card-header">Languages</h2>
-                        <LanguageBar languages={languageStats} />
-                        <p className="text-muted" style={{ marginTop: 16, fontSize: 12 }}>
-                            Based on bytes across your {ownRepoCount} original repositories.
-                            Jupyter notebooks are excluded for accuracy.
-                        </p>
+                {/* ============================================= */}
+                {/* SECTION 3: Stack & Focus                      */}
+                {/* ============================================= */}
+                <section className="dashboard-section">
+                    <h2 className="section-title">
+                        <Code2 size={18} />
+                        Stack & Focus
+                    </h2>
 
-                        {/* Lab Work Indicator */}
-                        {stats.developerDNA.notebookRepoCount > 0 && (
-                            <div className="lab-work-indicator">
-                                <div className="lab-work-header">
-                                    <span className="lab-work-icon">🔬</span>
-                                    <span className="lab-work-title">Lab Work</span>
-                                    <span className="lab-work-count">{stats.developerDNA.notebookRepoCount} notebooks</span>
-                                </div>
-                                <div className="lab-work-bar-container">
-                                    <div className="lab-work-bar" style={{ width: `${Math.min(stats.developerDNA.labRatio, 100)}%` }} />
-                                </div>
-                                <p className="lab-work-archetype">
-                                    You're a <strong>{
-                                        stats.developerDNA.labArchetype === 'lab-scientist' ? 'Research & Experimentation' :
-                                            stats.developerDNA.labArchetype === 'research-oriented' ? 'Applied Researcher' :
-                                                stats.developerDNA.labArchetype === 'hybrid' ? 'Full Spectrum Developer' :
-                                                    'Product Engineer'
-                                    }</strong> — balancing experimentation with production code.
-                                </p>
+                    <div className="card">
+                        <LanguageBar
+                            languagesByBytes={stats.languageStats}
+                            languagesByRepo={stats.languageStatsByRepoCount}
+                        />
+                    </div>
+
+                    {/* Development Profile */}
+                    <div className="card dev-profile-card">
+                        <h3 className="card-title">Primary Development Profile</h3>
+                        <p className="dev-profile-text">{stats.developmentProfile}</p>
+                    </div>
+
+                    {/* DevOps signals */}
+                    {stats.devOpsMaturity.signals.some(s => s.found) && (
+                        <div className="card">
+                            <h3 className="card-title">
+                                <ShieldCheck size={16} />
+                                DevOps Signals
+                            </h3>
+                            <div className="devops-signals">
+                                {stats.devOpsMaturity.signals
+                                    .filter(s => s.found)
+                                    .map(signal => (
+                                        <span key={signal.type} className="devops-signal-badge">
+                                            <span>{signal.icon}</span>
+                                            <span>{signal.label}</span>
+                                            <span className="text-muted">({signal.repoCount})</span>
+                                        </span>
+                                    ))
+                                }
                             </div>
-                        )}
+                        </div>
+                    )}
+                </section>
+
+                {/* ============================================= */}
+                {/* SECTION 4: Developer Profile Type (Optional)  */}
+                {/* ============================================= */}
+                {stats.developerDNA.labRatio > 0 && (
+                    <section className="dashboard-section">
+                        <h2 className="section-title">
+                            <Beaker size={18} />
+                            Lab vs Code
+                        </h2>
+
+                        <div className="card dna-card">
+                            <div className="dna-bar">
+                                <div
+                                    className="dna-bar__lab"
+                                    style={{ width: `${stats.developerDNA.labRatio}%` }}
+                                />
+                                <div
+                                    className="dna-bar__code"
+                                    style={{ width: `${100 - stats.developerDNA.labRatio}%` }}
+                                />
+                            </div>
+                            <div className="dna-labels">
+                                <span>{stats.developerDNA.labRatio}% lab work</span>
+                                <span>{100 - stats.developerDNA.labRatio}% production code</span>
+                            </div>
+                            <p className="text-muted" style={{ marginTop: "0.75rem", fontSize: "0.8rem" }}>
+                                Lab work is based on repositories primarily using Jupyter Notebook.
+                            </p>
+                        </div>
                     </section>
                 )}
 
-                {/* Tech Stack Card */}
-                <TechStackCard stats={stats} />
-
-                {/* Repositories */}
-                {topRepositories.length > 0 && (
-                    <section style={{ marginBottom: 32 }}>
-                        <h2 style={{ marginBottom: 16 }}>Popular repositories</h2>
-                        <div className="grid-2">
-                            {topRepositories.map((repo) => (
-                                <RepoCard key={repo.id} repo={repo} />
+                {/* ============================================= */}
+                {/* SECTION 5: Projects                           */}
+                {/* ============================================= */}
+                <section className="dashboard-section">
+                    <div className="section-header">
+                        <h2 className="section-title">
+                            <FolderGit2 size={18} />
+                            Projects
+                        </h2>
+                        <div className="repo-sort">
+                            <ArrowUpDown size={14} />
+                            {(["stars", "recent", "size"] as RepoSort[]).map((s) => (
+                                <button
+                                    key={s}
+                                    className="repo-sort-btn"
+                                    data-active={repoSort === s}
+                                    onClick={() => setRepoSort(s)}
+                                >
+                                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                                </button>
                             ))}
                         </div>
-                    </section>
-                )}
+                    </div>
 
-                {/* Account Summary */}
-                <section className="card card-muted">
-                    <h2 className="card-header">Summary</h2>
-                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                        <li style={{ padding: "8px 0", borderBottom: "1px solid var(--border-muted)" }}>
-                            <span className="text-secondary">Account age:</span>{" "}
-                            <strong>{accountAgeYears} {accountAgeYears === 1 ? "year" : "years"}</strong> on GitHub
-                        </li>
-                        <li style={{ padding: "8px 0", borderBottom: "1px solid var(--border-muted)" }}>
-                            <span className="text-secondary">Repository split:</span>{" "}
-                            <strong>{ownRepoCount}</strong> original, <strong>{forkedRepoCount}</strong> forked
-                        </li>
-                        <li style={{ padding: "8px 0", borderBottom: "1px solid var(--border-muted)" }}>
-                            <span className="text-secondary">Top language:</span>{" "}
-                            <strong>{stats.topLanguage || "Not enough data"}</strong>
-                            {stats.topLanguagePercentage > 0 && (
-                                <span className="text-muted"> ({stats.topLanguagePercentage}% of code)</span>
-                            )}
-                        </li>
-                        <li style={{ padding: "8px 0" }}>
-                            <span className="text-secondary">Activity:</span>{" "}
-                            {recentlyActive ? (
-                                <span style={{ color: "var(--accent-success)" }}>Active in the last 30 days</span>
-                            ) : (
-                                <span className="text-muted">No recent activity</span>
-                            )}
-                        </li>
-                    </ul>
+                    {/* Most Impactful Repo */}
+                    {stats.mostStarredRepo && stats.mostStarredRepo.stargazers_count > 0 && (
+                        <RepoCard repo={stats.mostStarredRepo} highlight />
+                    )}
+
+                    {/* Remaining Repos */}
+                    <div className="repo-grid">
+                        {sortedRepos
+                            .filter(r => r.id !== stats.mostStarredRepo?.id)
+                            .map(repo => (
+                                <RepoCard key={repo.id} repo={repo} />
+                            ))
+                        }
+                    </div>
                 </section>
 
-                {/* Footer */}
-                <footer style={{ textAlign: "center", marginTop: 64, color: "var(--text-muted)", fontSize: 12 }}>
-                    <p>
-                        Data from GitHub's public API. Language stats are byte-based and may not reflect actual coding time.
-                    </p>
-                </footer>
-            </main>
-        </div>
-    );
-}
+                {/* ============================================= */}
+                {/* BADGE EMBED                                   */}
+                {/* ============================================= */}
+                <section className="dashboard-section badge-section">
+                    <h2 className="section-title">README Badge</h2>
+                    <p className="section-subtitle">Add your GitWrapped badge to your README</p>
 
-export function DashboardClient({ stats }: DashboardClientProps) {
-    return (
-        <ViewModeProvider>
-            <DashboardContent stats={stats} />
-        </ViewModeProvider>
+                    {/* Badge preview (standard) */}
+                    <div className="badge-preview">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={`/api/badge/${stats.user.login}?portfolio=your-site.dev&linkedin=linkedin.com/in/you`}
+                            alt="GitWrapped Badge"
+                            className="badge-img"
+                        />
+                    </div>
+
+                    <p className="text-muted" style={{ fontSize: '12px', marginTop: '8px', marginBottom: '12px' }}>
+                        Replace <code>your-site.dev</code> and <code>linkedin.com/in/you</code> with your actual links.
+                    </p>
+
+                    {/* Copy button */}
+                    <button
+                        onClick={handleCopyBadge}
+                        className="btn badge-copy-btn"
+                    >
+                        {badgeCopied ? <Check size={14} /> : <Copy size={14} />}
+                        {badgeCopied ? "Copied!" : "Copy Markdown"}
+                    </button>
+                </section>
+            </div>
+        </div>
     );
 }

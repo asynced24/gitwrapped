@@ -1,7 +1,7 @@
 "use client";
 
-import { Star, GitFork, Code2, Zap, Copy, Check, ExternalLink } from "lucide-react";
-import { UserStats, LanguageStats } from "@/types/github";
+import { Star, GitFork, Code2, Copy, Check, ExternalLink } from "lucide-react";
+import { UserStats } from "@/types/github";
 import { useState } from "react";
 
 interface DevProfileCardProps {
@@ -11,16 +11,19 @@ interface DevProfileCardProps {
 
 /**
  * DevProfileCard - The shareable "identity card" component
- * Can be embedded in portfolios and shared as a link
+ * Focuses on identity, not vanity metrics.
  */
 export function DevProfileCard({ stats, compact = false }: DevProfileCardProps) {
     const [copied, setCopied] = useState(false);
-    const { user, languageStats, totalStars, totalForks, languageDiversity, topLanguage } = stats;
+    const { user, languageStats, totalStars, totalForks, languageDiversity } = stats;
 
-    // Get top 3 languages for display
+    // Get top 3 programming languages for display (no percentages, just names)
     const topLanguages = languageStats
         .filter(l => !l.isMarkup)
         .slice(0, 3);
+
+    // Unique language count
+    const languageCount = languageStats.filter(l => !l.isMarkup).length;
 
     const handleCopyLink = async () => {
         const link = `${window.location.origin}/dashboard/${user.login}`;
@@ -31,7 +34,7 @@ export function DevProfileCard({ stats, compact = false }: DevProfileCardProps) 
 
     return (
         <div className={`dev-profile-card ${compact ? 'dev-profile-card--compact' : ''}`}>
-            {/* Gradient accent bar */}
+            {/* Accent bar */}
             <div className="dev-profile-card__accent" />
 
             <div className="dev-profile-card__content">
@@ -48,11 +51,18 @@ export function DevProfileCard({ stats, compact = false }: DevProfileCardProps) 
                     </div>
                 </div>
 
-                {/* Language diversity indicator */}
-                <div className="dev-profile-card__diversity">
-                    <Code2 size={14} />
-                    <span className="dev-profile-card__diversity-label">
-                        {languageDiversity} developer
+                {/* Identity metrics */}
+                <div className="dev-profile-card__identity">
+                    <span className="dev-profile-card__identity-item">
+                        {stats.accountAgeYears}y on GitHub
+                    </span>
+                    <span className="dev-profile-card__identity-sep">•</span>
+                    <span className="dev-profile-card__identity-item">
+                        {languageCount} languages
+                    </span>
+                    <span className="dev-profile-card__identity-sep">•</span>
+                    <span className="dev-profile-card__identity-item">
+                        {stats.ownRepoCount} repos
                     </span>
                 </div>
 
@@ -60,24 +70,35 @@ export function DevProfileCard({ stats, compact = false }: DevProfileCardProps) 
                 {topLanguages.length > 0 && (
                     <div className="dev-profile-card__languages">
                         {topLanguages.map((lang) => (
-                            <LanguageTag key={lang.language} language={lang} />
+                            <span
+                                key={lang.language}
+                                className="dev-profile-card__lang-tag"
+                                style={{ '--lang-color': lang.color } as React.CSSProperties}
+                            >
+                                <span className="dev-profile-card__lang-dot" />
+                                {lang.language}
+                            </span>
                         ))}
                     </div>
                 )}
 
-                {/* Quick stats */}
+                {/* Quick stats - only show meaningful ones */}
                 <div className="dev-profile-card__stats">
+                    {totalStars >= 10 && (
+                        <div className="dev-profile-card__stat">
+                            <Star size={14} />
+                            <span>{totalStars.toLocaleString()}</span>
+                        </div>
+                    )}
+                    {totalForks >= 5 && (
+                        <div className="dev-profile-card__stat">
+                            <GitFork size={14} />
+                            <span>{totalForks.toLocaleString()}</span>
+                        </div>
+                    )}
                     <div className="dev-profile-card__stat">
-                        <Star size={14} />
-                        <span>{totalStars.toLocaleString()}</span>
-                    </div>
-                    <div className="dev-profile-card__stat">
-                        <GitFork size={14} />
-                        <span>{totalForks.toLocaleString()}</span>
-                    </div>
-                    <div className="dev-profile-card__stat">
-                        <Zap size={14} />
-                        <span>{stats.publicRepoCount} repos</span>
+                        <Code2 size={14} />
+                        <span>{languageDiversity}</span>
                     </div>
                 </div>
 
@@ -104,23 +125,10 @@ export function DevProfileCard({ stats, compact = false }: DevProfileCardProps) 
                 )}
             </div>
 
-            {/* GitWrapped branding */}
+            {/* Branding */}
             <div className="dev-profile-card__branding">
                 <span>GitWrapped</span>
             </div>
         </div>
-    );
-}
-
-function LanguageTag({ language }: { language: LanguageStats }) {
-    return (
-        <span
-            className="dev-profile-card__lang-tag"
-            style={{ '--lang-color': language.color } as React.CSSProperties}
-        >
-            <span className="dev-profile-card__lang-dot" />
-            {language.language}
-            <span className="dev-profile-card__lang-pct">{language.percentage}%</span>
-        </span>
     );
 }
