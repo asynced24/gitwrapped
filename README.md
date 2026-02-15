@@ -5,6 +5,7 @@
 Think Spotify Wrapped, but for your GitHub commits. GitWrapped turns your raw commit history into a cinematic story and a professional developer dashboard. No login required—just type your username.
 
 🔗 **[Live Demo](https://gitwrapped.aryansync.com)**
+![asynced24's Dev Card](https://gitwrapped.aryansync.com/api/card/asynced24)
 ---
 
 ## Features
