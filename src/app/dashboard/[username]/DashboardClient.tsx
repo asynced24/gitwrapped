@@ -86,7 +86,7 @@ function DashboardContent({ stats }: DashboardClientProps) {
         const computedBadgePath = `/api/badge/${stats.user.login}${query ? `?${query}` : ""}`;
         const origin = typeof window !== "undefined"
             ? window.location.origin
-            : "https://your-gitwrapped-domain.com";
+            : "https://gitwrapped.aryansync.com";
         const dashboardUrl = `${origin}/dashboard/${stats.user.login}`;
         const absoluteBadgeUrl = `${origin}${computedBadgePath}`;
         const programmingLanguageCount = stats.languageStats.filter(l => !l.isMarkup).length;
