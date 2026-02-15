@@ -39,6 +39,7 @@ function DashboardContent({ stats }: DashboardClientProps) {
     const { mode } = useViewMode();
     const [repoSort, setRepoSort] = useState<RepoSort>("stars");
     const [badgeCopied, setBadgeCopied] = useState(false);
+    const [newTabCopied, setNewTabCopied] = useState(false);
     const [portfolioUrl, setPortfolioUrl] = useState("");
     const [linkedinUsername, setLinkedinUsername] = useState("");
 
@@ -57,7 +58,7 @@ function DashboardContent({ stats }: DashboardClientProps) {
         }
     }, [stats.topRepositories, repoSort]);
 
-    const { badgePath, readmeSnippet } = useMemo(() => {
+    const { badgePath, readmeSnippet, readmeSnippetNewTab } = useMemo(() => {
         const normalizedPortfolio = portfolioUrl
             .trim()
             .replace(/^https?:\/\//i, "")
@@ -97,25 +98,36 @@ function DashboardContent({ stats }: DashboardClientProps) {
                 : "",
         ].filter(Boolean);
 
+        const topLang = (stats.topLanguage ?? "Polyglot").replace(/-/g, "--").replace(/_/g, "__").replace(/ /g, "_");
+
         const statButtons = [
             `<img src="https://img.shields.io/badge/Languages-${programmingLanguageCount}-1F2937?style=flat-square&logo=codefactor&logoColor=white" alt="Languages" />`,
             `<img src="https://img.shields.io/badge/Repositories-${stats.ownRepoCount}-1F2937?style=flat-square&logo=github&logoColor=white" alt="Repositories" />`,
-            `<img src="https://img.shields.io/badge/Profile-${stats.user.login}-1F2937?style=flat-square&logo=githubsponsors&logoColor=white" alt="Profile" />`,
+            `<img src="https://img.shields.io/badge/Top_Language-${topLang}-1F2937?style=flat-square&logo=stackblitz&logoColor=white" alt="Top Language" />`,
         ];
 
         const snippet = `<div align="center">\n\n<a href="${dashboardUrl}">\n  <img src="${absoluteBadgeUrl}" alt="GitWrapped Badge" />\n</a>\n\n${socialButtons.join(" ")}\n\n${statButtons.join(" ")}\n\n</div>`;
 
+        const snippetNewTab = snippet.replace(/<a href="/g, '<a target="_blank" href="');
+
         return {
             badgePath: computedBadgePath,
             readmeSnippet: snippet,
+            readmeSnippetNewTab: snippetNewTab,
         };
-    }, [portfolioUrl, linkedinUsername, stats.languageStats, stats.ownRepoCount, stats.user.login]);
+    }, [portfolioUrl, linkedinUsername, stats.languageStats, stats.ownRepoCount, stats.user.login, stats.topLanguage]);
 
     const handleCopyBadge = async () => {
         const markdown = readmeSnippet;
         await navigator.clipboard.writeText(markdown);
         setBadgeCopied(true);
         setTimeout(() => setBadgeCopied(false), 2000);
+    };
+
+    const handleCopyNewTab = async () => {
+        await navigator.clipboard.writeText(readmeSnippetNewTab);
+        setNewTabCopied(true);
+        setTimeout(() => setNewTabCopied(false), 2000);
     };
 
     if (mode === "wrapped") {
@@ -367,6 +379,20 @@ function DashboardContent({ stats }: DashboardClientProps) {
                         {badgeCopied ? <Check size={14} /> : <Copy size={14} />}
                         {badgeCopied ? "Copied!" : "Copy README Snippet"}
                     </button>
+
+                    <div className="readme-newtab-variant">
+                        <p className="readme-newtab-note">
+                            Want links to open in a new tab? Use this version so your GitHub profile stays open.
+                        </p>
+                        <pre className="readme-snippet">{readmeSnippetNewTab}</pre>
+                        <button
+                            onClick={handleCopyNewTab}
+                            className="btn badge-copy-btn"
+                        >
+                            {newTabCopied ? <Check size={14} /> : <Copy size={14} />}
+                            {newTabCopied ? "Copied!" : "Copy New-Tab Variant"}
+                        </button>
+                    </div>
                 </section>
             </div>
         </div>
