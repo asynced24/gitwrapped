@@ -11,6 +11,7 @@ import { RepoCard } from "@/components/RepoCard";
 import { ActivityChart } from "@/components/ActivityChart";
 import { WrappedStory } from "@/components/WrappedStory";
 import { PokemonCard } from "@/components/PokemonCard";
+import { TechCursor } from "@/components/TechCursor";
 import { buildCardData } from "@/lib/card";
 import {
     Activity,
@@ -134,6 +135,7 @@ function DashboardContent({ stats }: DashboardClientProps) {
 
     return (
         <div className="dashboard">
+            <TechCursor />
             {/* Navigation */}
             <nav className="dashboard-nav">
                 <div className="dashboard-nav__left">

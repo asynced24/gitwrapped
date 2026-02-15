@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import html2canvas from "html2canvas";
 import { PokemonCard } from "@/components/PokemonCard";
 import { PokemonCardData } from "@/lib/card";
 import { Copy, Check, Download, ExternalLink, Zap, ArrowLeft } from "lucide-react";
@@ -48,17 +47,56 @@ export default function GenerateClient() {
     };
 
     const handleDownloadPng = async () => {
-        if (!cardPreviewRef.current || !cardData) return;
-        const canvas = await html2canvas(cardPreviewRef.current, {
-            backgroundColor: null,
-            scale: 2,
-            useCORS: true,
-        });
-        const pngDataUrl = canvas.toDataURL("image/png");
-        const link = document.createElement("a");
-        link.href = pngDataUrl;
-        link.download = `${cardData.username}-dev-card.png`;
-        link.click();
+        if (!cardData) return;
+        
+        try {
+            // Fetch the SVG from the API
+            const response = await fetch(`/api/card/${cardData.username}`);
+            if (!response.ok) throw new Error("Failed to fetch card SVG");
+            
+            const svgText = await response.text();
+            
+            // Create a blob from the SVG text
+            const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(svgBlob);
+            
+            // Create an image element to load the SVG
+            const img = new Image();
+            img.onload = () => {
+                // Create a canvas at 2x resolution for better quality
+                const canvas = document.createElement("canvas");
+                const scale = 2;
+                canvas.width = 350 * scale;
+                canvas.height = 490 * scale;
+                
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return;
+                
+                // Scale up for high quality
+                ctx.scale(scale, scale);
+                
+                // Draw the SVG image onto the canvas
+                ctx.drawImage(img, 0, 0);
+                
+                // Convert canvas to PNG and trigger download
+                canvas.toBlob((blob) => {
+                    if (!blob) return;
+                    const pngUrl = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = pngUrl;
+                    link.download = `${cardData.username}-dev-card.png`;
+                    link.click();
+                    
+                    // Cleanup
+                    URL.revokeObjectURL(pngUrl);
+                    URL.revokeObjectURL(url);
+                }, "image/png");
+            };
+            
+            img.src = url;
+        } catch (error) {
+            console.error("Failed to download PNG:", error);
+        }
     };
 
     return (
