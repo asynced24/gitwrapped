@@ -5,15 +5,16 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-Sentry.init({
-  dsn: "https://b8a242c0fb3881ccef6ccd7a5cc10fbe@o4510890878894080.ingest.us.sentry.io/4510890905567232",
+const sentryEnabled =
+  process.env.NODE_ENV === "production" &&
+  process.env.SENTRY_ENABLED === "true" &&
+  Boolean(process.env.SENTRY_DSN);
 
-  // Sample 10% of traces to stay within free tier
-  tracesSampleRate: 0.1,
-
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
-
-  // Do NOT send user PII (IP addresses, cookies, etc.)
-  sendDefaultPii: false,
-});
+if (sentryEnabled) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 0.05,
+    enableLogs: false,
+    sendDefaultPii: false,
+  });
+}

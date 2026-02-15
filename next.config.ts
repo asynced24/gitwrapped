@@ -5,13 +5,17 @@ const nextConfig: NextConfig = {
   /* config options here */
 };
 
-export default withSentryConfig(nextConfig, {
+const sentryBuildEnabled = process.env.SENTRY_ENABLED === "true";
+
+const sentryConfig = withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: "td-ur",
+  org: process.env.SENTRY_ORG || "td-ur",
 
-  project: "gitwrapped",
+  project: process.env.SENTRY_PROJECT || "gitwrapped",
+
+  authToken: process.env.SENTRY_AUTH_TOKEN,
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
@@ -39,3 +43,5 @@ export default withSentryConfig(nextConfig, {
     },
   }
 });
+
+export default sentryBuildEnabled ? sentryConfig : nextConfig;
