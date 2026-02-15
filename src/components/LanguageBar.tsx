@@ -115,7 +115,7 @@ export function LanguageBar({ languagesByBytes, languagesByRepo }: LanguageBarPr
                     Language stats are calculated from {isByteMode ? "byte counts across" : "primary language of"} your repositories.
                 </p>
                 <div className="language-tooltip">
-                    Language percentages are based on GitHub byte metrics. Jupyter Notebook files are weighted at 0.1x and credited to Python to reduce distortion from markdown and output cells.
+                    Language percentages are based on GitHub byte metrics. Jupyter Notebook bytes are excluded from code-volume stats, and Python is represented by its own source code.
                 </div>
             </div>
         </div>

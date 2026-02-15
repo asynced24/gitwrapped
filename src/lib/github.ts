@@ -124,13 +124,11 @@ export function calculateLanguageStats(
         }
     }
 
-    // Jupyter Notebook byte size is weighted at 0.1x to reduce distortion
-    // caused by markdown cells and output artifacts.
-    // The weighted bytes are credited to Python (notebooks are Python-based).
+    // Keep notebook bytes separate from code-volume stats to avoid distortion
+    // from markdown/output-heavy notebook files.
+    // Python remains represented by its own source bytes only.
     if (notebookBytes > 0) {
-        const weightedNotebookBytes = Math.round(notebookBytes * 0.1);
-        aggregated['Python'] = (aggregated['Python'] || 0) + weightedNotebookBytes;
-        totalCodeBytes += weightedNotebookBytes;
+        aggregated['Python'] = aggregated['Python'] || 0;
     }
 
     const total = Object.values(aggregated).reduce((a, b) => a + b, 0);
@@ -160,14 +158,24 @@ export function calculateLanguageStats(
 function calculateLanguageStatsByRepoCount(repos: Repository[]): LanguageStatsByRepo[] {
     const langCounts: Record<string, number> = {};
     const ownRepos = repos.filter(r => !r.fork && r.language);
+    let notebookRepoCount = 0;
 
     for (const repo of ownRepos) {
         if (repo.language) {
+            if (repo.language === "Jupyter Notebook") {
+                notebookRepoCount++;
+                continue;
+            }
+
             langCounts[repo.language] = (langCounts[repo.language] || 0) + 1;
         }
     }
 
-    const total = ownRepos.length;
+    if (notebookRepoCount > 0) {
+        langCounts.Python = (langCounts.Python || 0) + 1;
+    }
+
+    const total = Object.values(langCounts).reduce((sum, count) => sum + count, 0);
     if (total === 0) return [];
 
     return Object.entries(langCounts)
@@ -193,9 +201,9 @@ function calculateDeveloperDNA(
     totalCodeBytes: number,
     repos: Repository[]
 ): DeveloperDNA {
-    const totalBytes = notebookBytes + totalCodeBytes;
-    const labRatio = totalBytes > 0 ? Math.round((notebookBytes / totalBytes) * 100) : 0;
-    const notebookRepoCount = repos.filter(r => r.language === "Jupyter Notebook").length;
+    const ownRepos = repos.filter(r => !r.fork);
+    const notebookRepoCount = ownRepos.filter(r => r.language === "Jupyter Notebook").length;
+    const labRatio = ownRepos.length > 0 ? Math.round((notebookRepoCount / ownRepos.length) * 100) : 0;
 
     return {
         notebookBytes,

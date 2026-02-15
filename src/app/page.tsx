@@ -27,9 +27,10 @@ export default function Home() {
           <Github size={14} />
           Source
         </a>
-        <a href="https://github.com/yourusername" target="_blank" rel="noopener noreferrer" className="landing-header-link">
+        <a href="https://github.com/asynced24" target="_blank" rel="noopener noreferrer" className="landing-header-link landing-header-link--author">
           <User size={14} />
-          Built by You
+          <span className="author-label">Built by</span>
+          <span className="author-handle">@asynced24</span>
         </a>
       </div>
 
@@ -44,9 +45,9 @@ export default function Home() {
           </p>
 
           <div className="landing-features">
-            <span className="landing-feature">📊 Developer analytics</span>
-            <span className="landing-feature">🪪 Shareable identity cards</span>
-            <span className="landing-feature">📈 Trend visualization</span>
+            <span className="landing-feature">Developer analytics</span>
+            <span className="landing-feature">Shareable identity cards</span>
+            <span className="landing-feature">Trend visualization</span>
           </div>
 
           <form onSubmit={handleSubmit} className="landing-form">

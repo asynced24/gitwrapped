@@ -349,8 +349,8 @@ function renderSlide(slide: Slide, stats: UserStats) {
         case "dna":
             return (
                 <div className="slide-content slide-dna">
-                    <p className="slide-eyebrow">Developer DNA</p>
-                    <h2 className="slide-headline">Lab vs Code</h2>
+                    <p className="slide-eyebrow">Notebook Signal</p>
+                    <h2 className="slide-headline">How often you explore in notebooks</h2>
                     <div className="slide-dna-visual">
                         <div className="slide-dna-bar">
                             <motion.div
@@ -361,8 +361,8 @@ function renderSlide(slide: Slide, stats: UserStats) {
                             />
                         </div>
                         <div className="slide-dna-labels">
-                            <span>{stats.developerDNA.labRatio}% Notebooks</span>
-                            <span>{100 - stats.developerDNA.labRatio}% Code</span>
+                            <span>{stats.developerDNA.notebookRepoCount} notebook repos</span>
+                            <span>{stats.developerDNA.labRatio}% of repositories</span>
                         </div>
                     </div>
                 </div>
