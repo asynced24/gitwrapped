@@ -12,9 +12,49 @@ No login required—just type your username.
 
 <br>
 
-Poke Card -
+## Featured Developer Poke Cards
 
-![asynced24's Dev Card](https://gitwrapped.aryansync.com/api/card/asynced24)
+<div align="center">
+
+<table>
+<tr>
+<td align="center">
+<a href="https://gitwrapped.aryansync.com/dashboard/torvalds">
+<img src="https://gitwrapped.aryansync.com/api/card/torvalds" width="300"/>
+</a>
+<br/>
+<sub>torvalds</sub>
+</td>
+
+<td align="center">
+<a href="https://gitwrapped.aryansync.com/dashboard/gaearon">
+<img src="https://gitwrapped.aryansync.com/api/card/gaearon" width="300"/>
+</a>
+<br/>
+<sub>gaearon</sub>
+</td>
+</tr>
+
+<tr>
+<td align="center">
+<a href="https://gitwrapped.aryansync.com/dashboard/mril-dsilva">
+<img src="https://gitwrapped.aryansync.com/api/card/mril-dsilva" width="300"/>
+</a>
+<br/>
+<sub>mril-dsilva</sub>
+</td>
+
+<td align="center">
+<a href="https://gitwrapped-lemon.vercel.app/dashboard/asynced24">
+<img src="https://gitwrapped-lemon.vercel.app/api/card/asynced24" width="300"/>
+</a>
+<br/>
+<sub>asynced24</sub>
+</td>
+</tr>
+</table>
+
+</div>
 
 </div>
 
