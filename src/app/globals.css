@@ -406,6 +406,8 @@ a {
 .dashboard {
   min-height: 100vh;
   background: var(--bg-primary);
+  position: relative;
+  isolation: isolate;
 }
 
 .dashboard-nav {
@@ -445,6 +447,8 @@ a {
   max-width: 780px;
   margin: 0 auto;
   padding: 32px 24px 80px;
+  position: relative;
+  z-index: 1;
 }
 
 /* =============================================================================
@@ -453,6 +457,8 @@ a {
 
 .dashboard-section {
   margin-bottom: 40px;
+  position: relative;
+  z-index: 1;
 }
 
 .section-title {
@@ -1746,6 +1752,8 @@ a {
     var(--bg-primary);
   color: var(--text-primary);
   padding-bottom: 48px;
+  position: relative;
+  isolation: isolate;
 }
 
 .generate-nav {
@@ -1772,6 +1780,28 @@ a {
   margin: 8px auto 0;
   text-align: center;
   padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.generate-hero__box {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+}
+
+.generate-hero__cursor {
+  opacity: 0.24;
+  z-index: 0;
+}
+
+.generate-hero__box > *:not(.generate-hero__cursor) {
+  position: relative;
+  z-index: 1;
 }
 
 .generate-hero__badge {
@@ -1874,6 +1904,8 @@ a {
   max-width: 1160px;
   margin: 30px auto 0;
   padding: 0 24px;
+  position: relative;
+  z-index: 1;
 }
 
 .generate-results__grid {
@@ -1981,12 +2013,16 @@ a {
     radial-gradient(900px 420px at 10% -10%, rgba(78, 225, 160, 0.14), transparent 55%),
     radial-gradient(900px 420px at 90% -10%, rgba(88, 166, 255, 0.1), transparent 55%),
     var(--bg-primary);
+  position: relative;
+  isolation: isolate;
 }
 
 .pokemon-card-view__content {
   max-width: 980px;
   margin: 0 auto;
   padding: 26px 24px 48px;
+  position: relative;
+  z-index: 1;
 }
 
 .pokemon-card-view__header {

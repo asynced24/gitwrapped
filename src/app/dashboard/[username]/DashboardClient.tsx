@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
+import html2canvas from "html2canvas";
 import { UserStats } from "@/types/github";
 import { ViewModeProvider, useViewMode } from "@/context/ViewModeContext";
 import { ModeToggle } from "@/components/ModeToggle";
@@ -22,6 +23,8 @@ import {
     ArrowUpDown,
     Copy,
     Check,
+    Download,
+    ExternalLink,
 } from "lucide-react";
 
 interface DashboardClientProps {
@@ -393,6 +396,7 @@ function PokemonCardView({ stats }: DashboardClientProps) {
     const { setMode } = useViewMode();
     const cardData = useMemo(() => buildCardData(stats), [stats]);
     const [copied, setCopied] = useState(false);
+    const cardPreviewRef = useRef<HTMLDivElement>(null);
 
     const origin = typeof window !== "undefined" ? window.location.origin : "https://gitwrapped.aryansync.com";
     const cardUrl = `${origin}/api/card/${stats.user.login}`;
@@ -404,8 +408,35 @@ function PokemonCardView({ stats }: DashboardClientProps) {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const handleDownloadImage = async () => {
+        if (!cardPreviewRef.current) return;
+        try {
+            const canvas = await html2canvas(cardPreviewRef.current, {
+                scale: 2,
+                backgroundColor: null,
+                useCORS: true,
+                allowTaint: true,
+                logging: false,
+                width: 350,
+                height: 490,
+            });
+            canvas.toBlob((blob) => {
+                if (!blob) return;
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `${stats.user.login}-dev-card.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+            }, "image/png");
+        } catch {
+            // noop
+        }
+    };
+
     return (
         <div className="pokemon-card-view">
+            <TechCursor />
             <nav className="dashboard-nav">
                 <div className="dashboard-nav__left">
                     <a href="/" className="dashboard-nav__logo">GitWrapped</a>
@@ -424,7 +455,7 @@ function PokemonCardView({ stats }: DashboardClientProps) {
                     </p>
                 </div>
 
-                <div className="pokemon-card-view__card-wrapper">
+                <div className="pokemon-card-view__card-wrapper" ref={cardPreviewRef}>
                     <PokemonCard data={cardData} />
                 </div>
 
@@ -439,13 +470,18 @@ function PokemonCardView({ stats }: DashboardClientProps) {
                             {copied ? <Check size={14} /> : <Copy size={14} />}
                             {copied ? "Copied!" : "Copy Markdown"}
                         </button>
+                        <button onClick={handleDownloadImage} className="btn badge-copy-btn">
+                            <Download size={14} />
+                            Download Image
+                        </button>
                         <a
                             href={`/api/card/${stats.user.login}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn badge-copy-btn"
                         >
-                            View SVG
+                            <ExternalLink size={14} />
+                            View Image
                         </a>
                     </div>
 

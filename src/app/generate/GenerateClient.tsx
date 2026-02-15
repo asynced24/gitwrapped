@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import html2canvas from "html2canvas";
 import { PokemonCard } from "@/components/PokemonCard";
+import { TechCursor } from "@/components/TechCursor";
 import { PokemonCardData } from "@/lib/card";
 import { Copy, Check, Download, ExternalLink, Zap, ArrowLeft } from "lucide-react";
 
@@ -47,53 +49,28 @@ export default function GenerateClient() {
     };
 
     const handleDownloadPng = async () => {
-        if (!cardData) return;
+        if (!cardData || !cardPreviewRef.current) return;
         
         try {
-            // Fetch the SVG from the API
-            const response = await fetch(`/api/card/${cardData.username}`);
-            if (!response.ok) throw new Error("Failed to fetch card SVG");
-            
-            const svgText = await response.text();
-            
-            // Create a blob from the SVG text
-            const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
-            const url = URL.createObjectURL(svgBlob);
-            
-            // Create an image element to load the SVG
-            const img = new Image();
-            img.onload = () => {
-                // Create a canvas at 2x resolution for better quality
-                const canvas = document.createElement("canvas");
-                const scale = 2;
-                canvas.width = 350 * scale;
-                canvas.height = 490 * scale;
-                
-                const ctx = canvas.getContext("2d");
-                if (!ctx) return;
-                
-                // Scale up for high quality
-                ctx.scale(scale, scale);
-                
-                // Draw the SVG image onto the canvas
-                ctx.drawImage(img, 0, 0);
-                
-                // Convert canvas to PNG and trigger download
-                canvas.toBlob((blob) => {
-                    if (!blob) return;
-                    const pngUrl = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.href = pngUrl;
-                    link.download = `${cardData.username}-dev-card.png`;
-                    link.click();
-                    
-                    // Cleanup
-                    URL.revokeObjectURL(pngUrl);
-                    URL.revokeObjectURL(url);
-                }, "image/png");
-            };
-            
-            img.src = url;
+            const canvas = await html2canvas(cardPreviewRef.current, {
+                scale: 2,
+                backgroundColor: null,
+                useCORS: true,
+                allowTaint: true,
+                logging: false,
+                width: 350,
+                height: 490,
+            });
+
+            canvas.toBlob((blob) => {
+                if (!blob) return;
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `${cardData.username}-dev-card.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+            }, "image/png");
         } catch (error) {
             console.error("Failed to download PNG:", error);
         }
@@ -109,44 +86,47 @@ export default function GenerateClient() {
             </nav>
 
             <div className="generate-hero">
-                <div className="generate-hero__badge">
-                    <Zap size={14} />
-                    <span>Dev Pokémon Card Generator</span>
+                <div className="generate-hero__box">
+                    <TechCursor mode="absolute" className="generate-hero__cursor" />
+                    <div className="generate-hero__badge">
+                        <Zap size={14} />
+                        <span>Dev Pokémon Card Generator</span>
+                    </div>
+                    <h1 className="generate-hero__title">
+                        Get Your Dev Card
+                    </h1>
+                    <p className="generate-hero__subtitle">
+                        Transform your GitHub profile into a collectible Pokémon-style trading card.
+                        Embed it in your README or share it anywhere.
+                    </p>
+
+                    <form onSubmit={handleGenerate} className="generate-form">
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="GitHub username"
+                            className="generate-form__input"
+                            disabled={loading}
+                        />
+                        <button
+                            type="submit"
+                            className="generate-form__btn"
+                            disabled={loading || !username.trim()}
+                        >
+                            {loading ? (
+                                <span className="generate-spinner" />
+                            ) : (
+                                <>
+                                    <Zap size={16} />
+                                    Generate
+                                </>
+                            )}
+                        </button>
+                    </form>
+
+                    {error && <p className="generate-error">{error}</p>}
                 </div>
-                <h1 className="generate-hero__title">
-                    Get Your Dev Card
-                </h1>
-                <p className="generate-hero__subtitle">
-                    Transform your GitHub profile into a collectible Pokémon-style trading card.
-                    Embed it in your README or share it anywhere.
-                </p>
-
-                <form onSubmit={handleGenerate} className="generate-form">
-                    <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="GitHub username"
-                        className="generate-form__input"
-                        disabled={loading}
-                    />
-                    <button
-                        type="submit"
-                        className="generate-form__btn"
-                        disabled={loading || !username.trim()}
-                    >
-                        {loading ? (
-                            <span className="generate-spinner" />
-                        ) : (
-                            <>
-                                <Zap size={16} />
-                                Generate
-                            </>
-                        )}
-                    </button>
-                </form>
-
-                {error && <p className="generate-error">{error}</p>}
             </div>
 
             {cardData && (
@@ -158,11 +138,15 @@ export default function GenerateClient() {
                             <div className="generate-results__card-wrap" ref={cardPreviewRef}>
                                 <PokemonCard data={cardData} />
                             </div>
+                            <button onClick={handleDownloadPng} className="generate-actions__btn mt-3">
+                                <Download size={14} />
+                                Download PNG
+                            </button>
                         </div>
 
                         {/* Static SVG Preview */}
                         <div className="generate-results__preview">
-                            <h3 className="generate-results__label">Static SVG (for README)</h3>
+                            <h3 className="generate-results__label">Static Image (for README)</h3>
                             <div className="generate-results__svg-wrap">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
@@ -197,7 +181,7 @@ export default function GenerateClient() {
                                 className="generate-actions__btn"
                             >
                                 <ExternalLink size={14} />
-                                View SVG
+                                View Image
                             </a>
                             <a
                                 href={`/api/card/${cardData.username}`}
@@ -205,12 +189,8 @@ export default function GenerateClient() {
                                 className="generate-actions__btn"
                             >
                                 <Download size={14} />
-                                Download SVG
+                                Download Image
                             </a>
-                            <button onClick={handleDownloadPng} className="generate-actions__btn">
-                                <Download size={14} />
-                                Download PNG
-                            </button>
                         </div>
                     </div>
 

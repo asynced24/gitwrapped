@@ -17,6 +17,11 @@ interface Particle {
     draw: (ctx: CanvasRenderingContext2D) => void;
 }
 
+interface TechCursorProps {
+    mode?: "fixed" | "absolute";
+    className?: string;
+}
+
 const icons: { name: string; src: string }[] = [
     {
         name: "JavaScript",
@@ -44,7 +49,7 @@ const icons: { name: string; src: string }[] = [
     },
 ];
 
-export function TechCursor() {
+export function TechCursor({ mode = "fixed", className = "" }: TechCursorProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const particlesRef = useRef<Particle[]>([]);
     const techImagesRef = useRef<TechImage[]>([]);
@@ -69,8 +74,17 @@ export function TechCursor() {
             const ctx = canvas.getContext("2d");
             if (!ctx) return;
 
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            const updateSize = () => {
+                if (mode === "absolute" && canvas.parentElement) {
+                    canvas.width = canvas.parentElement.clientWidth;
+                    canvas.height = canvas.parentElement.clientHeight;
+                    return;
+                }
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            };
+
+            updateSize();
 
             const particles = particlesRef.current;
 
@@ -90,6 +104,14 @@ export function TechCursor() {
             animate();
 
             const onMove = (e: MouseEvent) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = mode === "absolute" ? e.clientX - rect.left : e.clientX;
+                const y = mode === "absolute" ? e.clientY - rect.top : e.clientY;
+
+                if (mode === "absolute" && (x < 0 || y < 0 || x > rect.width || y > rect.height)) {
+                    return;
+                }
+
                 const randomIcon =
                     techImagesRef.current[
                     Math.floor(Math.random() * techImagesRef.current.length)
@@ -98,8 +120,8 @@ export function TechCursor() {
                 const size = 22 + Math.random() * 8;
 
                 const particle: Particle = {
-                    x: e.clientX,
-                    y: e.clientY,
+                    x,
+                    y,
                     alpha: 1,
                     image: randomIcon.image,
                     size,
@@ -124,23 +146,26 @@ export function TechCursor() {
             };
 
             window.addEventListener("mousemove", onMove);
+            window.addEventListener("resize", updateSize);
             return () => {
                 window.removeEventListener("mousemove", onMove);
+                window.removeEventListener("resize", updateSize);
             };
         });
-    }, []);
+    }, [mode]);
 
     return (
         <canvas
             ref={canvasRef}
+            className={className}
             style={{
-                position: 'fixed',
+                position: mode === "absolute" ? "absolute" : "fixed",
                 top: 0,
                 left: 0,
                 width: '100%',
                 height: '100%',
                 pointerEvents: 'none',
-                zIndex: 0,
+                zIndex: -1,
             }}
         />
     );

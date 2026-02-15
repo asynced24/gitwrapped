@@ -41,6 +41,8 @@ export interface PokemonCardData {
     weakness: TypeMatchup;
     resistance: TypeMatchup;
     retreatCost: number;
+    xp: number;
+    codeVelocity: number;
 }
 
 /* ─────────────────────────────────────────────
@@ -467,6 +469,18 @@ function getEvolutionStage(ageYears: number, repoCount: number, totalStars: numb
    Attack Damage Calculation
    ───────────────────────────────────────────── */
 
+function computeXP(ageYears: number, repoCount: number, totalStars: number, languageCount: number): number {
+    // Composite experience score: age + repos + stars + language diversity
+    const raw = ageYears * 15 + repoCount * 5 + totalStars * 2 + languageCount * 10;
+    return Math.min(Math.max(Math.round(raw), 10), 9999);
+}
+
+function computeCodeVelocity(totalRepos: number, recentActiveRepos: number): number {
+    // % of codebase actively maintained (pushed in last 6 months)
+    if (totalRepos === 0) return 0;
+    return Math.min(Math.round((recentActiveRepos / totalRepos) * 100), 100);
+}
+
 function calculateAttack1Damage(avgMonthlyActivity: number): number {
     // Light attack based on consistency
     return Math.min(Math.max(Math.round(avgMonthlyActivity * 3), 10), 60);
@@ -573,6 +587,12 @@ export function buildCardData(stats: UserStats): PokemonCardData {
         weakness,
         resistance,
         retreatCost,
+        xp: computeXP(ageYears, stats.ownRepoCount, stats.totalStars, languageCount),
+        codeVelocity: computeCodeVelocity(stats.ownRepoCount, stats.topRepositories.length > 0 ? stats.topRepositories.filter(r => {
+            const pushed = new Date(r.pushed_at ?? r.created_at);
+            const monthsAgo = (Date.now() - pushed.getTime()) / (30 * 24 * 60 * 60 * 1000);
+            return monthsAgo <= 6;
+        }).length : 0),
     };
 }
 
@@ -680,5 +700,7 @@ export async function fetchCardData(username: string): Promise<PokemonCardData> 
         weakness,
         resistance,
         retreatCost,
+        xp: computeXP(ageYears, ownRepos.length, totalStars, languageCount),
+        codeVelocity: computeCodeVelocity(ownRepos.length, recentRepos.length),
     };
 }
