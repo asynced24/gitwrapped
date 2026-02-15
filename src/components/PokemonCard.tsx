@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, type CSSProperties } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { PokemonCardData, getCardArtPath, getLanguageTheme } from "@/lib/card";
 
@@ -97,6 +97,21 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
 
     return (
         <div className={`perspective-[1400px] ${className}`}>
+            {/* ═══ GRADIENT BORDER FRAME ═══ */}
+            <div
+                className={`rounded-[20px] ${captureMode ? "" : "card-border-glow"}`}
+                style={{
+                    padding: "4px",
+                    background: `linear-gradient(145deg, ${theme.borderColor}, ${theme.accentColor})`,
+                    ["--glow-1" as string]: `${theme.borderColor}60`,
+                    ["--glow-2" as string]: `${theme.accentColor}30`,
+                    boxShadow: `
+                        0 0 20px ${theme.borderColor}60,
+                        0 0 60px ${theme.accentColor}30,
+                        0 4px 16px rgba(0,0,0,0.3)
+                    `,
+                } as CSSProperties}
+            >
             <motion.div
                 ref={cardRef}
                 onMouseMove={handleMouseMove}
@@ -117,9 +132,7 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                     boxShadow: `
                         0 2px 4px rgba(0,0,0,0.12),
                         0 8px 16px rgba(0,0,0,0.16),
-                        0 16px 48px rgba(0,0,0,0.20),
-                        0 0 0 2px rgba(180,180,180,0.4),
-                        0 0 100px ${theme.borderColor}25
+                        0 16px 48px rgba(0,0,0,0.20)
                     `,
                 }}
             >
@@ -300,7 +313,7 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                     <div
                         className="relative mx-3 mb-1.5 px-3 py-2 rounded-lg"
                         style={{
-                            background: "rgba(0,0,0,0.35)",
+                            background: "rgba(0,0,0,0.48)",
                             backdropFilter: "blur(6px)",
                             WebkitBackdropFilter: "blur(6px)",
                             border: "1px solid rgba(255,255,255,0.15)",
@@ -343,11 +356,11 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                     </div>
 
                     {/* ── POWER STATS ── */}
-                    <div className="relative mx-3 mb-1.5 flex gap-2">
+                    <div className="relative mx-3 mb-3 flex gap-2">
                         <div
                             className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md"
                             style={{
-                                background: "rgba(0,0,0,0.30)",
+                                background: "rgba(0,0,0,0.42)",
                                 backdropFilter: "blur(4px)",
                                 border: "1px solid rgba(255,255,255,0.10)",
                             }}
@@ -362,7 +375,7 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                         <div
                             className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md"
                             style={{
-                                background: "rgba(0,0,0,0.30)",
+                                background: "rgba(0,0,0,0.42)",
                                 backdropFilter: "blur(4px)",
                                 border: "1px solid rgba(255,255,255,0.10)",
                             }}
@@ -377,7 +390,15 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                     </div>
 
                     {/* ── ATTACKS SECTION ── */}
-                    <div className="relative flex-1 px-4 pt-1 pb-1 flex flex-col gap-1.5">
+                    <div
+                        className="relative flex-1 mx-3 px-3 pt-2 pb-1.5 rounded-lg flex flex-col gap-1.5"
+                        style={{
+                            background: "rgba(0,0,0,0.38)",
+                            backdropFilter: "blur(4px)",
+                            WebkitBackdropFilter: "blur(4px)",
+                            border: "1px solid rgba(255,255,255,0.10)",
+                        }}
+                    >
                         {/* Attack 1 */}
                         <div className="pb-1">
                             <div className="flex items-center gap-2">
@@ -389,17 +410,17 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                                 </div>
                                 {/* Attack name */}
                                 <span
-                                    className="flex-1 text-[15px] font-black text-white tracking-tight drop-shadow-md leading-[1.1]"
-                                    style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                    className="flex-1 text-[15px] font-black text-white tracking-tight leading-[1.1]"
+                                    style={{ fontFamily: "'Mona Sans', sans-serif", textShadow: "0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.4)" }}
                                 >
                                     {data.attack1.name}
                                 </span>
                                 {/* Damage */}
                                 <span
-                                    className="w-[54px] text-right text-[26px] font-black text-white leading-none tabular-nums drop-shadow-lg"
+                                    className="w-[48px] text-right text-[24px] font-black text-white leading-none tabular-nums"
                                     style={{
                                         fontFamily: "'JetBrains Mono', monospace",
-                                        textShadow: "0 2px 4px rgba(0,0,0,0.8)",
+                                        textShadow: "0 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5)",
                                     }}
                                 >
                                     {data.attack1.damage}
@@ -439,17 +460,17 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                                 </div>
                                 {/* Attack name */}
                                 <span
-                                    className="flex-1 text-[15px] font-black text-white tracking-tight drop-shadow-md leading-[1.1]"
-                                    style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                    className="flex-1 text-[15px] font-black text-white tracking-tight leading-[1.1]"
+                                    style={{ fontFamily: "'Mona Sans', sans-serif", textShadow: "0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.4)" }}
                                 >
                                     {data.attack2.name}
                                 </span>
                                 {/* Damage */}
                                 <span
-                                    className="w-[54px] text-right text-[26px] font-black text-white leading-none tabular-nums drop-shadow-lg"
+                                    className="w-[48px] text-right text-[24px] font-black text-white leading-none tabular-nums"
                                     style={{
                                         fontFamily: "'JetBrains Mono', monospace",
-                                        textShadow: "0 2px 4px rgba(0,0,0,0.8)",
+                                        textShadow: "0 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5)",
                                     }}
                                 >
                                     {data.attack2.damage}
@@ -487,16 +508,16 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                                     ))}
                                 </div>
                                 <span
-                                    className="flex-1 text-[15px] font-black text-white tracking-tight drop-shadow-md leading-[1.1]"
-                                    style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                    className="flex-1 text-[15px] font-black text-white tracking-tight leading-[1.1]"
+                                    style={{ fontFamily: "'Mona Sans', sans-serif", textShadow: "0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.4)" }}
                                 >
                                     {supportAttacks[0].name}
                                 </span>
                                 <span
-                                    className="w-[54px] text-right text-[26px] font-black text-white leading-none tabular-nums drop-shadow-lg"
+                                    className="w-[48px] text-right text-[24px] font-black text-white leading-none tabular-nums"
                                     style={{
                                         fontFamily: "'JetBrains Mono', monospace",
-                                        textShadow: "0 2px 4px rgba(0,0,0,0.8)",
+                                        textShadow: "0 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5)",
                                     }}
                                 >
                                     {supportAttacks[0].damage}
@@ -534,16 +555,16 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                                     ))}
                                 </div>
                                 <span
-                                    className="flex-1 text-[15px] font-black text-white tracking-tight drop-shadow-md leading-[1.1]"
-                                    style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                    className="flex-1 text-[15px] font-black text-white tracking-tight leading-[1.1]"
+                                    style={{ fontFamily: "'Mona Sans', sans-serif", textShadow: "0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.4)" }}
                                 >
                                     {supportAttacks[1].name}
                                 </span>
                                 <span
-                                    className="w-[54px] text-right text-[26px] font-black text-white leading-none tabular-nums drop-shadow-lg"
+                                    className="w-[48px] text-right text-[24px] font-black text-white leading-none tabular-nums"
                                     style={{
                                         fontFamily: "'JetBrains Mono', monospace",
-                                        textShadow: "0 2px 4px rgba(0,0,0,0.8)",
+                                        textShadow: "0 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5)",
                                     }}
                                 >
                                     {supportAttacks[1].damage}
@@ -681,6 +702,7 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                     }}
                 />
             </motion.div>
+            </div>
         </div>
     );
 }

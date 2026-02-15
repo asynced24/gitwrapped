@@ -1935,6 +1935,37 @@ a {
   min-height: 530px;
 }
 
+/* ─── Pokémon Card glow pulse ─── */
+.card-border-glow {
+  animation: card-glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes card-glow-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 20px var(--glow-1),
+      0 0 60px var(--glow-2),
+      0 4px 16px rgba(0,0,0,0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 32px var(--glow-1),
+      0 0 80px var(--glow-2),
+      0 4px 16px rgba(0,0,0,0.3);
+  }
+}
+
+.png-export-shell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 28px;
+}
+
+.png-export-shell.is-capturing {
+  padding: 16px;
+}
+
 .generate-results__svg-img {
   width: 350px;
   height: 490px;

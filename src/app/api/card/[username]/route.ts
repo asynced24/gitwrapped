@@ -253,34 +253,37 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
 
   <!-- ═══ POWER STATS (XP + Velocity) ═══ -->
   <rect x="12" y="${data.ability.description.length > 50 ? 276 : 272}" width="158" height="24" rx="6" fill="rgba(0,0,0,0.42)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-  <text x="42" y="${data.ability.description.length > 50 ? 286 : 282}" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.84)" letter-spacing="1">XP</text>
-  <text x="62" y="${data.ability.description.length > 50 ? 290 : 286}" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="900" fill="white">${data.xp.toLocaleString()}</text>
+  <text x="42" y="${data.ability.description.length > 50 ? 286 : 282}" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.84)" letter-spacing="1" stroke="rgba(0,0,0,0.55)" stroke-width="0.6" paint-order="stroke">XP</text>
+  <text x="62" y="${data.ability.description.length > 50 ? 290 : 286}" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="900" fill="white" stroke="rgba(0,0,0,0.6)" stroke-width="0.7" paint-order="stroke">${data.xp.toLocaleString()}</text>
   
   <rect x="180" y="${data.ability.description.length > 50 ? 276 : 272}" width="158" height="24" rx="6" fill="rgba(0,0,0,0.42)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-  <text x="198" y="${data.ability.description.length > 50 ? 286 : 282}" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.84)" letter-spacing="1">VELOCITY</text>
-  <text x="256" y="${data.ability.description.length > 50 ? 290 : 286}" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="900" fill="white">${data.codeVelocity}%</text>
+  <text x="198" y="${data.ability.description.length > 50 ? 286 : 282}" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.84)" letter-spacing="1" stroke="rgba(0,0,0,0.55)" stroke-width="0.6" paint-order="stroke">VELOCITY</text>
+  <text x="256" y="${data.ability.description.length > 50 ? 290 : 286}" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="900" fill="white" stroke="rgba(0,0,0,0.6)" stroke-width="0.7" paint-order="stroke">${data.codeVelocity}%</text>
+
+  <!-- ═══ ATTACKS PANEL ═══ -->
+  <rect x="12" y="306" width="326" height="90" rx="8" fill="rgba(0,0,0,0.38)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
 
   <!-- ═══ ATTACK 1 ═══ -->
   <g>
     ${Array.from({ length: attack1EnergyIcons }).map((_, i) =>
-        `<circle cx="${20 + i * 22}" cy="312" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
+        `<circle cx="${20 + i * 22}" cy="318" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
-    <text x="${30 + attack1EnergyIcons * 22}" y="316" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2">${escapeXml(data.attack1.name)}</text>
-    <text x="330" y="318" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="26" font-weight="900" fill="white">${data.attack1.damage}</text>
-    <text x="${30 + attack1EnergyIcons * 22}" y="333" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.94)">${escapeXml(cleanText(data.attack1.description.length > 48 ? data.attack1.description.slice(0, 45) + "..." : data.attack1.description))}</text>
+    <text x="${30 + attack1EnergyIcons * 22}" y="322" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack1.name)}</text>
+    <text x="326" y="324" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack1.damage}</text>
+    <text x="${30 + attack1EnergyIcons * 22}" y="339" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.95)" stroke="rgba(0,0,0,0.55)" stroke-width="0.6" paint-order="stroke">${escapeXml(cleanText(data.attack1.description.length > 48 ? data.attack1.description.slice(0, 45) + "..." : data.attack1.description))}</text>
   </g>
 
   <!-- Divider -->
-  <line x1="20" y1="344" x2="330" y2="344" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+  <line x1="20" y1="350" x2="330" y2="350" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
 
   <!-- ═══ ATTACK 2 ═══ -->
   <g>
     ${Array.from({ length: attack2EnergyIcons }).map((_, i) =>
-        `<circle cx="${20 + i * 22}" cy="362" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
+        `<circle cx="${20 + i * 22}" cy="368" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
-    <text x="${30 + attack2EnergyIcons * 22}" y="366" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2">${escapeXml(data.attack2.name)}</text>
-    <text x="330" y="368" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="26" font-weight="900" fill="white">${data.attack2.damage}</text>
-    <text x="${30 + attack2EnergyIcons * 22}" y="383" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.94)">${escapeXml(cleanText(data.attack2.description.length > 48 ? data.attack2.description.slice(0, 45) + "..." : data.attack2.description))}</text>
+    <text x="${30 + attack2EnergyIcons * 22}" y="372" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack2.name)}</text>
+    <text x="326" y="374" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack2.damage}</text>
+    <text x="${30 + attack2EnergyIcons * 22}" y="389" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.95)" stroke="rgba(0,0,0,0.55)" stroke-width="0.6" paint-order="stroke">${escapeXml(cleanText(data.attack2.description.length > 48 ? data.attack2.description.slice(0, 45) + "..." : data.attack2.description))}</text>
   </g>
 
   <!-- ═══ BOTTOM STATS BAR ═══ -->

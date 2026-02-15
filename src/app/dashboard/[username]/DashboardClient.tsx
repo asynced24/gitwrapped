@@ -396,7 +396,7 @@ function PokemonCardView({ stats }: DashboardClientProps) {
     const cardData = useMemo(() => buildCardData(stats), [stats]);
     const [copied, setCopied] = useState(false);
     const [isCapturing, setIsCapturing] = useState(false);
-    const cardPreviewRef = useRef<HTMLDivElement>(null);
+    const cardExportRef = useRef<HTMLDivElement>(null);
 
     const origin = typeof window !== "undefined" ? window.location.origin : "https://gitwrapped.aryansync.com";
     const cardUrl = `${origin}/api/card/${stats.user.login}`;
@@ -409,13 +409,13 @@ function PokemonCardView({ stats }: DashboardClientProps) {
     };
 
     const handleDownloadImage = async () => {
-        if (!cardPreviewRef.current || isCapturing) return;
+        if (!cardExportRef.current || isCapturing) return;
         try {
             setIsCapturing(true);
             // Wait for captureMode to take effect
             await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
-            const dataUrl = await domToPng(cardPreviewRef.current, {
+            const dataUrl = await domToPng(cardExportRef.current, {
                 scale: 2,
                 backgroundColor: null,
                 style: { margin: "0", padding: "0" },
@@ -454,8 +454,13 @@ function PokemonCardView({ stats }: DashboardClientProps) {
                     </p>
                 </div>
 
-                <div className="pokemon-card-view__card-wrapper" ref={cardPreviewRef}>
-                    <PokemonCard data={cardData} captureMode={isCapturing} />
+                <div className="pokemon-card-view__card-wrapper">
+                    <div
+                        ref={cardExportRef}
+                        className={`png-export-shell ${isCapturing ? "is-capturing" : ""}`}
+                    >
+                        <PokemonCard data={cardData} captureMode={isCapturing} />
+                    </div>
                 </div>
 
                 <div className="pokemon-card-view__actions">

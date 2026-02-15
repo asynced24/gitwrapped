@@ -14,7 +14,7 @@ export default function GenerateClient() {
     const [error, setError] = useState("");
     const [copied, setCopied] = useState<"markdown" | "url" | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
-    const cardPreviewRef = useRef<HTMLDivElement>(null);
+    const cardExportRef = useRef<HTMLDivElement>(null);
 
     const origin = typeof window !== "undefined" ? window.location.origin : "https://gitwrapped.aryansync.com";
 
@@ -50,14 +50,14 @@ export default function GenerateClient() {
     };
 
     const handleDownloadPng = async () => {
-        if (!cardData || !cardPreviewRef.current || isCapturing) return;
+        if (!cardData || !cardExportRef.current || isCapturing) return;
         
         try {
             setIsCapturing(true);
             // Wait for captureMode to take effect
             await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
-            const dataUrl = await domToPng(cardPreviewRef.current, {
+            const dataUrl = await domToPng(cardExportRef.current, {
                 scale: 2,
                 backgroundColor: null,
                 style: { margin: "0", padding: "0" },
@@ -134,8 +134,13 @@ export default function GenerateClient() {
                         {/* Interactive Preview */}
                         <div className="generate-results__preview">
                             <h3 className="generate-results__label">Interactive Preview</h3>
-                            <div className="generate-results__card-wrap" ref={cardPreviewRef}>
-                                <PokemonCard data={cardData} captureMode={isCapturing} />
+                            <div className="generate-results__card-wrap">
+                                <div
+                                    ref={cardExportRef}
+                                    className={`png-export-shell ${isCapturing ? "is-capturing" : ""}`}
+                                >
+                                    <PokemonCard data={cardData} captureMode={isCapturing} />
+                                </div>
                             </div>
                             <button onClick={handleDownloadPng} className="generate-actions__btn mt-3" disabled={isCapturing}>
                                 <Download size={14} />
