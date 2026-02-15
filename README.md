@@ -14,7 +14,7 @@ No login required—just type your username.
 
 Poke Card -
 
-![asynced24's Dev Card](https://gitwrapped.aryansync.com/api/card/asynced24)
+![asynced24's Dev Card](https://gitwrapped-lemon.vercel.app/api/card/asynced24)
 
 </div>
 
