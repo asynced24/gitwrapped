@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { PokemonCardData, getCardArtPath, getLanguageTheme } from "@/lib/card";
 
 interface PokemonCardProps {
     data: PokemonCardData;
     className?: string;
+    captureMode?: boolean;
 }
 
 /* ─────────────────────────────────────────────
@@ -30,7 +31,7 @@ function EnergyCircle({ type, size = "md" }: { type: string; size?: "md" | "sm" 
 /* ─────────────────────────────────────────────
    Main Component — Modern V Card
    ───────────────────────────────────────────── */
-export function PokemonCard({ data, className = "" }: PokemonCardProps) {
+export function PokemonCard({ data, className = "", captureMode = false }: PokemonCardProps) {
     const cardRef = useRef<HTMLDivElement>(null);
     const [isHovering, setIsHovering] = useState(false);
 
@@ -43,9 +44,34 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
 
     const theme = getLanguageTheme(data.topLanguage);
     const cardArtPath = getCardArtPath(data.topLanguage);
+    const cleanText = (text: string) => text.replace(/[—–]/g, "-");
+    const effectiveHoloPos = captureMode ? { x: 50, y: 50 } : holoPos;
+    const showHoverEffects = !captureMode && isHovering;
+
+    useEffect(() => {
+        if (!captureMode) return;
+        rotateX.set(0);
+        rotateY.set(0);
+    }, [captureMode, rotateX, rotateY]);
+
+    const supportAttacks = [
+        {
+            name: "Velocity Pulse",
+            description: `Maintains ${data.codeVelocity}% active repo momentum`,
+            damage: Math.max(16, Math.min(90, Math.round(data.codeVelocity * 1.2))),
+            energyCost: 1,
+        },
+        {
+            name: "XP Burst",
+            description: `Channels ${data.xp.toLocaleString()} XP into focused output`,
+            damage: Math.max(24, Math.min(120, Math.round(data.xp / 120))),
+            energyCost: 2,
+        },
+    ];
 
     const handleMouseMove = useCallback(
         (e: React.MouseEvent<HTMLDivElement>) => {
+            if (captureMode) return;
             if (!cardRef.current) return;
             const rect = cardRef.current.getBoundingClientRect();
             const x = (e.clientX - rect.left) / rect.width;
@@ -54,16 +80,20 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
             rotateY.set((x - 0.5) * 20);
             setHoloPos({ x: x * 100, y: y * 100 });
         },
-        [rotateX, rotateY]
+        [captureMode, rotateX, rotateY]
     );
 
     const handleMouseLeave = useCallback(() => {
+        if (captureMode) return;
         rotateX.set(0);
         rotateY.set(0);
         setIsHovering(false);
-    }, [rotateX, rotateY]);
+    }, [captureMode, rotateX, rotateY]);
 
-    const handleMouseEnter = useCallback(() => setIsHovering(true), []);
+    const handleMouseEnter = useCallback(() => {
+        if (captureMode) return;
+        setIsHovering(true);
+    }, [captureMode]);
 
     return (
         <div className={`perspective-[1400px] ${className}`}>
@@ -74,12 +104,12 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                 onMouseLeave={handleMouseLeave}
                 animate={{
                     y: 0,
-                    scale: isHovering ? 1.01 : 1,
+                    scale: showHoverEffects ? 1.01 : 1,
                 }}
                 transition={{
                     scale: { duration: 0.3, ease: "easeOut" },
                 }}
-                className="relative w-[350px] h-[490px] rounded-[16px] cursor-pointer select-none overflow-hidden"
+                className={`relative w-[350px] h-[490px] rounded-[16px] select-none overflow-hidden ${captureMode ? "cursor-default" : "cursor-pointer"}`}
                 style={{
                     rotateX: springX,
                     rotateY: springY,
@@ -113,7 +143,7 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
 
                 {/* ═══ GEOMETRIC PATTERN OVERLAY ═══ */}
                 <div
-                    className="absolute inset-0 opacity-[0.20]"
+                    className="absolute inset-0 opacity-[0.14]"
                     style={{
                         backgroundImage: `
                             repeating-linear-gradient(135deg, transparent, transparent 12px, rgba(255,255,255,0.25) 12px, rgba(255,255,255,0.25) 13px)
@@ -147,9 +177,9 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                 <div className="relative h-full flex flex-col">
                     {/* ── HEADER BAR ── */}
                     <div
-                        className="relative px-4 py-2"
+                        className="relative px-[18px] py-[9px]"
                         style={{
-                            background: "linear-gradient(180deg, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.35) 100%)",
+                            background: "linear-gradient(180deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.54) 100%)",
                             backdropFilter: "blur(8px)",
                             WebkitBackdropFilter: "blur(8px)",
                         }}
@@ -158,7 +188,7 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                             <div className="flex items-center gap-2 min-w-0">
                                 {/* Evolution badge */}
                                 <span
-                                    className="text-[9px] font-bold tracking-[1.4px] px-2.5 py-[3px] rounded-full uppercase whitespace-nowrap"
+                                    className="text-[11px] font-bold tracking-[1px] px-2.5 py-[3px] rounded-full uppercase whitespace-nowrap"
                                     style={{
                                         background:
                                             data.evolutionStage === "STAGE 2"
@@ -176,7 +206,7 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                                 </span>
                                 {/* Username V */}
                                 <span
-                                    className="text-[18px] font-black text-white truncate tracking-tight drop-shadow-md"
+                                    className="text-[19px] font-black text-white truncate tracking-tight drop-shadow-md"
                                     style={{ fontFamily: "'Mona Sans', sans-serif", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}
                                 >
                                     {data.username.length > 14 ? data.username.slice(0, 14) + "…" : data.username} V
@@ -184,7 +214,7 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                                 {/* HP */}
-                                <span className="text-[10px] font-semibold text-white/70 tracking-[1.2px]">HP</span>
+                                <span className="text-[11px] font-semibold text-white/90 tracking-[1.2px]">HP</span>
                                 <span
                                     className="text-[30px] font-black text-white leading-none"
                                     style={{
@@ -195,25 +225,25 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                                     {data.hp}
                                 </span>
                                 {/* Type emoji */}
-                                <span className="text-[20px] drop-shadow-lg">{theme.emoji}</span>
+                                <span className="text-[21px] drop-shadow-lg">{theme.emoji}</span>
                             </div>
                         </div>
                     </div>
 
                     {/* ── AVATAR SECTION ── */}
-                    <div className="relative flex-shrink-0 flex justify-center items-center pt-1 pb-2">
+                    <div className="relative flex-shrink-0 flex justify-center items-center pt-2 pb-2">
                         {/* Hexagonal frame */}
                         <div
                             className="relative w-[160px] h-[160px] flex items-center justify-center"
                             style={{
                                 clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
-                                background: "rgba(255,255,255,0.15)",
-                                backdropFilter: "blur(10px)",
-                                WebkitBackdropFilter: "blur(10px)",
+                                background: "rgba(10,12,18,0.68)",
+                                backdropFilter: "blur(4px)",
+                                WebkitBackdropFilter: "blur(4px)",
                                 boxShadow: `
-                                    0 8px 32px rgba(0,0,0,0.25),
-                                    0 0 0 3px rgba(255,255,255,0.3),
-                                    inset 0 0 20px rgba(255,255,255,0.1)
+                                    0 10px 34px rgba(0,0,0,0.34),
+                                    0 0 0 3px rgba(255,255,255,0.42),
+                                    inset 0 0 24px rgba(0,0,0,0.38)
                                 `,
                             }}
                         >
@@ -221,19 +251,32 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                                 className="w-[150px] h-[150px] overflow-hidden relative"
                                 style={{
                                     clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
+                                    background: "rgba(17,24,39,0.86)",
+                                    boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.2)",
                                 }}
                             >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                     src={data.avatarUrl}
                                     alt={data.username}
+                                    crossOrigin="anonymous"
                                     className="w-full h-full object-cover"
+                                    style={{
+                                        filter: "contrast(1.08) saturate(1.07)",
+                                    }}
                                 />
                                 {/* Soft vignette fade */}
                                 <div
                                     className="absolute inset-0 pointer-events-none"
                                     style={{
-                                        background: `radial-gradient(ellipse 60% 60% at 50% 50%, transparent 56%, ${theme.borderColor}80 100%)`,
+                                        background: `radial-gradient(ellipse 62% 62% at 50% 50%, transparent 56%, rgba(0,0,0,0.6) 100%)`,
+                                    }}
+                                />
+                                <div
+                                    className="absolute inset-0 pointer-events-none"
+                                    style={{
+                                        background: `linear-gradient(160deg, ${theme.accentColor}1F 0%, transparent 35%, rgba(0,0,0,0.28) 100%)`,
+                                        mixBlendMode: "soft-light",
                                     }}
                                 />
                             </div>
@@ -244,7 +287,7 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                     {data.location && (
                         <div className="relative px-4 pb-2 text-center">
                             <p
-                                className="text-[9px] text-white/70 tracking-wide font-medium drop-shadow-md leading-[1.35]"
+                                className="text-[11px] text-white/90 tracking-wide font-semibold drop-shadow-md leading-[1.35]"
                                 style={{ fontFamily: "'JetBrains Mono', monospace" }}
                             >
                                 @{data.username} · {data.location} · Since{" "}
@@ -266,7 +309,7 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                     >
                         <div className="flex items-start gap-2">
                             <span
-                                className="text-[8px] font-black tracking-wider px-1.5 py-[1px] rounded uppercase whitespace-nowrap mt-[1px]"
+                                className="text-[10px] font-black tracking-[0.8px] px-1.5 py-[1px] rounded uppercase whitespace-nowrap mt-[1px]"
                                 style={{
                                     background: "linear-gradient(135deg, #FF4444, #CC0000)",
                                     color: "white",
@@ -277,13 +320,13 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                             </span>
                             <div className="flex-1 min-w-0">
                                 <h3
-                                    className="text-[11px] font-bold text-white leading-tight"
+                                    className="text-[13px] font-bold text-white leading-tight"
                                     style={{ fontFamily: "'Mona Sans', sans-serif" }}
                                 >
                                     {data.ability.name}
                                 </h3>
                                 <p
-                                    className="text-[8px] text-white/80 leading-[1.35] mt-0.5 italic"
+                                    className="text-[10px] text-white/95 leading-[1.35] mt-0.5 italic"
                                     style={{
                                         fontFamily: "'Mona Sans', sans-serif",
                                         display: "-webkit-box",
@@ -293,7 +336,7 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                                         maxWidth: "100%",
                                     }}
                                 >
-                                    {data.ability.description}
+                                    {cleanText(data.ability.description)}
                                 </p>
                             </div>
                         </div>
@@ -309,9 +352,9 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                                 border: "1px solid rgba(255,255,255,0.10)",
                             }}
                         >
-                            <span className="text-[8px] font-bold text-white/60 uppercase tracking-wider"
+                                <span className="text-[9px] font-bold text-white/80 uppercase tracking-wider"
                                   style={{ fontFamily: "'JetBrains Mono', monospace" }}>XP</span>
-                            <span className="text-[13px] font-black text-white tabular-nums"
+                                <span className="text-[14px] font-black text-white tabular-nums"
                                   style={{ fontFamily: "'JetBrains Mono', monospace", textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>
                                 {data.xp.toLocaleString()}
                             </span>
@@ -324,9 +367,9 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                                 border: "1px solid rgba(255,255,255,0.10)",
                             }}
                         >
-                            <span className="text-[8px] font-bold text-white/60 uppercase tracking-wider"
+                                <span className="text-[9px] font-bold text-white/80 uppercase tracking-wider"
                                   style={{ fontFamily: "'JetBrains Mono', monospace" }}>Velocity</span>
-                            <span className="text-[13px] font-black text-white tabular-nums"
+                                <span className="text-[14px] font-black text-white tabular-nums"
                                   style={{ fontFamily: "'JetBrains Mono', monospace", textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>
                                 {data.codeVelocity}%
                             </span>
@@ -334,7 +377,7 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                     </div>
 
                     {/* ── ATTACKS SECTION ── */}
-                    <div className="relative flex-1 px-4 pt-2 pb-2 flex flex-col justify-evenly gap-2">
+                    <div className="relative flex-1 px-4 pt-1 pb-1 flex flex-col gap-1.5">
                         {/* Attack 1 */}
                         <div className="pb-1">
                             <div className="flex items-center gap-2">
@@ -346,14 +389,14 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                                 </div>
                                 {/* Attack name */}
                                 <span
-                                    className="flex-1 text-[14px] font-black text-white tracking-tight drop-shadow-md leading-[1.1]"
+                                    className="flex-1 text-[15px] font-black text-white tracking-tight drop-shadow-md leading-[1.1]"
                                     style={{ fontFamily: "'Mona Sans', sans-serif" }}
                                 >
                                     {data.attack1.name}
                                 </span>
                                 {/* Damage */}
                                 <span
-                                    className="w-[54px] text-right text-[28px] font-black text-white leading-none tabular-nums drop-shadow-lg"
+                                    className="w-[54px] text-right text-[26px] font-black text-white leading-none tabular-nums drop-shadow-lg"
                                     style={{
                                         fontFamily: "'JetBrains Mono', monospace",
                                         textShadow: "0 2px 4px rgba(0,0,0,0.8)",
@@ -363,17 +406,17 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                                 </span>
                             </div>
                             <p
-                                className="text-[8px] text-white/80 mt-1 leading-[1.35] ml-[42px]"
+                                className="text-[10px] text-white/95 mt-1 leading-[1.35] ml-[42px]"
                                 style={{
                                     fontFamily: "'Mona Sans', sans-serif",
                                     display: "-webkit-box",
                                     WebkitLineClamp: 2,
                                     WebkitBoxOrient: "vertical",
                                     overflow: "hidden",
-                                    maxWidth: "240px",
+                                    maxWidth: "250px",
                                 }}
                             >
-                                {data.attack1.description}
+                                {cleanText(data.attack1.description)}
                             </p>
                         </div>
 
@@ -396,14 +439,14 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                                 </div>
                                 {/* Attack name */}
                                 <span
-                                    className="flex-1 text-[14px] font-black text-white tracking-tight drop-shadow-md leading-[1.1]"
+                                    className="flex-1 text-[15px] font-black text-white tracking-tight drop-shadow-md leading-[1.1]"
                                     style={{ fontFamily: "'Mona Sans', sans-serif" }}
                                 >
                                     {data.attack2.name}
                                 </span>
                                 {/* Damage */}
                                 <span
-                                    className="w-[54px] text-right text-[28px] font-black text-white leading-none tabular-nums drop-shadow-lg"
+                                    className="w-[54px] text-right text-[26px] font-black text-white leading-none tabular-nums drop-shadow-lg"
                                     style={{
                                         fontFamily: "'JetBrains Mono', monospace",
                                         textShadow: "0 2px 4px rgba(0,0,0,0.8)",
@@ -413,26 +456,120 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                                 </span>
                             </div>
                             <p
-                                className="text-[8px] text-white/80 mt-1 leading-[1.35] ml-[42px]"
+                                className="text-[10px] text-white/95 mt-1 leading-[1.35] ml-[42px]"
                                 style={{
                                     fontFamily: "'Mona Sans', sans-serif",
                                     display: "-webkit-box",
                                     WebkitLineClamp: 2,
                                     WebkitBoxOrient: "vertical",
                                     overflow: "hidden",
-                                    maxWidth: "240px",
+                                    maxWidth: "250px",
                                 }}
                             >
-                                {data.attack2.description}
+                                {cleanText(data.attack2.description)}
+                            </p>
+                        </div>
+
+                        {/* Divider */}
+                        <div
+                            style={{
+                                height: "1px",
+                                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+                            }}
+                        />
+
+                        {/* Support Attack 1 */}
+                        <div className="pt-0.5">
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-[3px] shrink-0 h-[20px]">
+                                    {Array.from({ length: supportAttacks[0].energyCost }).map((_, i) => (
+                                        <EnergyCircle key={`s1-${i}`} type={data.topLanguage} />
+                                    ))}
+                                </div>
+                                <span
+                                    className="flex-1 text-[15px] font-black text-white tracking-tight drop-shadow-md leading-[1.1]"
+                                    style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                >
+                                    {supportAttacks[0].name}
+                                </span>
+                                <span
+                                    className="w-[54px] text-right text-[26px] font-black text-white leading-none tabular-nums drop-shadow-lg"
+                                    style={{
+                                        fontFamily: "'JetBrains Mono', monospace",
+                                        textShadow: "0 2px 4px rgba(0,0,0,0.8)",
+                                    }}
+                                >
+                                    {supportAttacks[0].damage}
+                                </span>
+                            </div>
+                            <p
+                                className="text-[10px] text-white/95 mt-1 leading-[1.35] ml-[42px]"
+                                style={{
+                                    fontFamily: "'Mona Sans', sans-serif",
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden",
+                                    maxWidth: "250px",
+                                }}
+                            >
+                                {cleanText(supportAttacks[0].description)}
+                            </p>
+                        </div>
+
+                        {/* Divider */}
+                        <div
+                            style={{
+                                height: "1px",
+                                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+                            }}
+                        />
+
+                        {/* Support Attack 2 */}
+                        <div className="pt-0.5">
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-[3px] shrink-0 h-[20px]">
+                                    {Array.from({ length: supportAttacks[1].energyCost }).map((_, i) => (
+                                        <EnergyCircle key={`s2-${i}`} type={data.topLanguage} />
+                                    ))}
+                                </div>
+                                <span
+                                    className="flex-1 text-[15px] font-black text-white tracking-tight drop-shadow-md leading-[1.1]"
+                                    style={{ fontFamily: "'Mona Sans', sans-serif" }}
+                                >
+                                    {supportAttacks[1].name}
+                                </span>
+                                <span
+                                    className="w-[54px] text-right text-[26px] font-black text-white leading-none tabular-nums drop-shadow-lg"
+                                    style={{
+                                        fontFamily: "'JetBrains Mono', monospace",
+                                        textShadow: "0 2px 4px rgba(0,0,0,0.8)",
+                                    }}
+                                >
+                                    {supportAttacks[1].damage}
+                                </span>
+                            </div>
+                            <p
+                                className="text-[10px] text-white/95 mt-1 leading-[1.35] ml-[42px]"
+                                style={{
+                                    fontFamily: "'Mona Sans', sans-serif",
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden",
+                                    maxWidth: "250px",
+                                }}
+                            >
+                                {cleanText(supportAttacks[1].description)}
                             </p>
                         </div>
                     </div>
 
                     {/* ── BOTTOM STATS BAR ── */}
                     <div
-                        className="relative px-4 py-2"
+                        className="relative px-5 py-2.5"
                         style={{
-                            background: "linear-gradient(0deg, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.35) 100%)",
+                            background: "linear-gradient(0deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.52) 100%)",
                             backdropFilter: "blur(8px)",
                             WebkitBackdropFilter: "blur(8px)",
                         }}
@@ -441,14 +578,14 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                             {/* Weakness */}
                             <div className="flex-1 flex items-center gap-1.5 pr-2">
                                 <span
-                                    className="text-[7px] font-bold uppercase tracking-[1.2px] text-white/75"
+                                    className="text-[8px] font-bold uppercase tracking-[1.1px] text-white/85"
                                     style={{ fontFamily: "'JetBrains Mono', monospace" }}
                                 >
                                     Weakness
                                 </span>
                                 <div className="flex items-center gap-0.5">
                                     <EnergyCircle type={data.weakness.type} size="sm" />
-                                    <span className="text-[10px] font-bold">{data.weakness.modifier}</span>
+                                    <span className="text-[11px] font-bold text-white">{data.weakness.modifier}</span>
                                 </div>
                             </div>
 
@@ -457,14 +594,14 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                             {/* Resistance */}
                             <div className="flex-1 flex items-center gap-1.5 px-2 justify-center">
                                 <span
-                                    className="text-[7px] font-bold uppercase tracking-[1.2px] text-white/75"
+                                    className="text-[8px] font-bold uppercase tracking-[1.1px] text-white/85"
                                     style={{ fontFamily: "'JetBrains Mono', monospace" }}
                                 >
                                     Resistance
                                 </span>
                                 <div className="flex items-center gap-0.5">
                                     <EnergyCircle type={data.resistance.type} size="sm" />
-                                    <span className="text-[10px] font-bold">{data.resistance.modifier}</span>
+                                    <span className="text-[11px] font-bold text-white">{data.resistance.modifier}</span>
                                 </div>
                             </div>
 
@@ -473,7 +610,7 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                             {/* Retreat */}
                             <div className="flex-1 flex items-center gap-1.5 pl-2 justify-end">
                                 <span
-                                    className="text-[7px] font-bold uppercase tracking-[1.2px] text-white/75"
+                                    className="text-[8px] font-bold uppercase tracking-[1.1px] text-white/85"
                                     style={{ fontFamily: "'JetBrains Mono', monospace" }}
                                 >
                                     Retreat
@@ -489,7 +626,7 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                         {/* Footer branding */}
                         <div className="text-center mt-1.5 pt-1.5 border-t border-white/10">
                             <p
-                                className="text-[7px] text-white/60 tracking-wider"
+                                className="text-[9px] text-white/78 tracking-wider"
                                 style={{ fontFamily: "'JetBrains Mono', monospace" }}
                             >
                                 gitwrapped · {data.programmingLanguageCount} lang · {data.topLanguage}
@@ -502,10 +639,10 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                 <div
                     className="absolute inset-0 pointer-events-none transition-opacity duration-300"
                     style={{
-                        opacity: isHovering ? 0.22 : 0.01,
+                        opacity: captureMode ? 0 : showHoverEffects ? 0.2 : 0.01,
                         background: `
                             conic-gradient(
-                                from ${holoPos.x * 3.6}deg at ${holoPos.x}% ${holoPos.y}%,
+                                from ${effectiveHoloPos.x * 3.6}deg at ${effectiveHoloPos.x}% ${effectiveHoloPos.y}%,
                                 rgba(255,0,127,0.15),
                                 rgba(255,127,0,0.12),
                                 rgba(255,255,0,0.15),
@@ -524,7 +661,7 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                 <div
                     className="absolute inset-0 pointer-events-none transition-opacity duration-300"
                     style={{
-                        opacity: isHovering ? 0.07 : 0,
+                        opacity: captureMode ? 0 : showHoverEffects ? 0.06 : 0,
                         backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255,255,255,0.3) 1px, rgba(255,255,255,0.3) 2px)`,
                         backgroundSize: "3px 100%",
                         mixBlendMode: "overlay",
@@ -535,9 +672,9 @@ export function PokemonCard({ data, className = "" }: PokemonCardProps) {
                 <div
                     className="absolute inset-0 pointer-events-none transition-opacity duration-400"
                     style={{
-                        opacity: isHovering ? 0.12 : 0,
+                        opacity: captureMode ? 0 : showHoverEffects ? 0.1 : 0,
                         background: `radial-gradient(
-                            ellipse 50% 40% at ${holoPos.x}% ${holoPos.y}%,
+                            ellipse 50% 40% at ${effectiveHoloPos.x}% ${effectiveHoloPos.y}%,
                             rgba(255,255,255,0.4) 0%,
                             transparent 70%
                         )`,

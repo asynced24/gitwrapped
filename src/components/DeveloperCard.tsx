@@ -49,7 +49,9 @@ export function DeveloperCard({
 
             {/* Card Label Overlay (Optional, if we want text on the card) */}
             <div className="absolute bottom-4 left-4 z-20">
-                <h3 className="text-white font-bold text-lg drop-shadow-md">{name}</h3>
+                <div className="rounded-md border border-white/15 bg-black/55 px-3 py-1.5 backdrop-blur-sm">
+                    <h3 className="text-white font-bold text-xl leading-tight tracking-tight drop-shadow-md">{name}</h3>
+                </div>
             </div>
         </div>
     );

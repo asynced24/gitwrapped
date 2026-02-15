@@ -1,5 +1,5 @@
-import { UserStats, Repository } from "@/types/github";
-import { fetchUser, fetchRepositories } from "./github";
+import { UserStats } from "@/types/github";
+import { fetchUserStats } from "./github";
 
 /* ─────────────────────────────────────────────
    Types
@@ -499,13 +499,13 @@ const MARKUP_LANGUAGES = new Set(["HTML", "CSS", "Markdown", "SCSS", "Less", "Ju
 
 export function buildCardData(stats: UserStats): PokemonCardData {
     const ageYears = stats.accountAgeYears;
-    const topLanguage = stats.topLanguage ?? "Polyglot";
-    const theme = getLanguageTheme(topLanguage);
-
-    // Filter programming languages
     const programmingLangs = stats.languageStats.filter(
         (l) => !l.isMarkup && !MARKUP_LANGUAGES.has(l.language)
     );
+    const topLanguage = stats.topLanguage ?? programmingLangs[0]?.language ?? "Polyglot";
+    const theme = getLanguageTheme(topLanguage);
+
+    // Filter programming languages
     const languageCount = programmingLangs.length;
 
     // Calculate evolution stage
@@ -588,7 +588,7 @@ export function buildCardData(stats: UserStats): PokemonCardData {
         resistance,
         retreatCost,
         xp: computeXP(ageYears, stats.ownRepoCount, stats.totalStars, languageCount),
-        codeVelocity: computeCodeVelocity(stats.ownRepoCount, stats.topRepositories.length > 0 ? stats.topRepositories.filter(r => {
+        codeVelocity: computeCodeVelocity(stats.topRepositories.length, stats.topRepositories.length > 0 ? stats.topRepositories.filter(r => {
             const pushed = new Date(r.pushed_at ?? r.created_at);
             const monthsAgo = (Date.now() - pushed.getTime()) / (30 * 24 * 60 * 60 * 1000);
             return monthsAgo <= 6;
@@ -602,105 +602,6 @@ export function buildCardData(stats: UserStats): PokemonCardData {
    ───────────────────────────────────────────── */
 
 export async function fetchCardData(username: string): Promise<PokemonCardData> {
-    const [user, repositories] = await Promise.all([
-        fetchUser(username),
-        fetchRepositories(username),
-    ]);
-
-    const ownRepos = repositories.filter((r) => !r.fork);
-    const totalStars = ownRepos.reduce((s, r) => s + r.stargazers_count, 0);
-
-    // Language counting by repo
-    const langCount = new Map<string, number>();
-    for (const repo of ownRepos) {
-        if (repo.language && !MARKUP_LANGUAGES.has(repo.language)) {
-            langCount.set(repo.language, (langCount.get(repo.language) ?? 0) + 1);
-        }
-    }
-    const sortedLangs = [...langCount.entries()].sort((a, b) => b[1] - a[1]);
-    const topLanguage = sortedLangs.length > 0 ? sortedLangs[0][0] : "Polyglot";
-    const languageCount = sortedLangs.length;
-
-    const accountCreated = new Date(user.created_at);
-    const now = new Date();
-    const ageYears = Math.floor(
-        (now.getTime() - accountCreated.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-    );
-
-    const evolutionStage = getEvolutionStage(ageYears, ownRepos.length, totalStars);
-
-    const theme = getLanguageTheme(topLanguage);
-
-    // Estimate consistency from recent repo activity
-    const recentRepos = ownRepos
-        .filter((r) => {
-            const pushed = new Date(r.pushed_at ?? r.created_at);
-            const monthsAgo = (now.getTime() - pushed.getTime()) / (30 * 24 * 60 * 60 * 1000);
-            return monthsAgo <= 6;
-        });
-    const estimatedConsistency = Math.min(recentRepos.length / Math.max(ownRepos.length, 1), 1);
-
-    // Estimate average monthly activity from repo count & age
-    const avgMonthlyActivity = ageYears > 0 ? ownRepos.length / (ageYears * 12) : 0;
-
-    const hp = computeHP(estimatedConsistency, totalStars, ageYears);
-
-    const ability = generateAbility(languageCount, ownRepos.length, totalStars, estimatedConsistency);
-
-    // Calculate top repo stars
-    const topRepoStars = ownRepos.length > 0
-        ? Math.max(...ownRepos.map((r) => r.stargazers_count))
-        : 0;
-
-    const attack1Damage = calculateAttack1Damage(avgMonthlyActivity);
-    const attack2Damage = calculateAttack2Damage(topRepoStars, totalStars);
-
-    const attack1: Attack = {
-        name: theme.attacks.light.name,
-        description: theme.attacks.light.description,
-        damage: attack1Damage,
-        energyCost: attack1Damage < 30 ? 1 : 2,
-    };
-
-    const attack2: Attack = {
-        name: theme.attacks.heavy.name,
-        description: theme.attacks.heavy.description,
-        damage: attack2Damage,
-        energyCost: attack2Damage < 80 ? 2 : 3,
-    };
-
-    const weakness = getWeakness(theme.type);
-    const resistance = getResistance(theme.type);
-
-    const avgRepoSize =
-        ownRepos.length > 0
-            ? ownRepos.reduce((sum, r) => sum + (r.size ?? 0), 0) / ownRepos.length
-            : 0;
-    const retreatCost = calculateRetreatCost(languageCount, avgRepoSize);
-
-    return {
-        username: user.login,
-        name: user.name ?? user.login,
-        avatarUrl: user.avatar_url,
-        bio:
-            user.bio
-                ? user.bio.length > 100
-                    ? user.bio.slice(0, 97) + "..."
-                    : user.bio
-                : "A developer on GitHub.",
-        location: user.location ?? "",
-        hp,
-        topLanguage,
-        accountAgeYears: ageYears,
-        evolutionStage,
-        programmingLanguageCount: languageCount,
-        ability,
-        attack1,
-        attack2,
-        weakness,
-        resistance,
-        retreatCost,
-        xp: computeXP(ageYears, ownRepos.length, totalStars, languageCount),
-        codeVelocity: computeCodeVelocity(ownRepos.length, recentRepos.length),
-    };
+    const stats = await fetchUserStats(username);
+    return buildCardData(stats);
 }

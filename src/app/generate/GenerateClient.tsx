@@ -13,6 +13,7 @@ export default function GenerateClient() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [copied, setCopied] = useState<"markdown" | "url" | null>(null);
+    const [isCapturing, setIsCapturing] = useState(false);
     const cardPreviewRef = useRef<HTMLDivElement>(null);
 
     const origin = typeof window !== "undefined" ? window.location.origin : "https://gitwrapped.aryansync.com";
@@ -49,21 +50,29 @@ export default function GenerateClient() {
     };
 
     const handleDownloadPng = async () => {
-        if (!cardData || !cardPreviewRef.current) return;
+        if (!cardData || !cardPreviewRef.current || isCapturing) return;
         
         try {
+            setIsCapturing(true);
+            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+            const { width, height } = cardPreviewRef.current.getBoundingClientRect();
             const canvas = await html2canvas(cardPreviewRef.current, {
                 scale: 2,
                 backgroundColor: null,
                 useCORS: true,
-                allowTaint: true,
                 logging: false,
-                width: 350,
-                height: 490,
+                width: Math.max(1, Math.round(width)),
+                height: Math.max(1, Math.round(height)),
             });
 
             canvas.toBlob((blob) => {
-                if (!blob) return;
+                if (!blob) {
+                    console.error("Failed to create PNG blob from canvas");
+                    setError("Could not generate PNG. Please try again.");
+                    return;
+                }
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
@@ -73,6 +82,9 @@ export default function GenerateClient() {
             }, "image/png");
         } catch (error) {
             console.error("Failed to download PNG:", error);
+            setError("Failed to download PNG. Please try again.");
+        } finally {
+            setIsCapturing(false);
         }
     };
 
@@ -136,11 +148,11 @@ export default function GenerateClient() {
                         <div className="generate-results__preview">
                             <h3 className="generate-results__label">Interactive Preview</h3>
                             <div className="generate-results__card-wrap" ref={cardPreviewRef}>
-                                <PokemonCard data={cardData} />
+                                <PokemonCard data={cardData} captureMode={isCapturing} />
                             </div>
-                            <button onClick={handleDownloadPng} className="generate-actions__btn mt-3">
+                            <button onClick={handleDownloadPng} className="generate-actions__btn mt-3" disabled={isCapturing}>
                                 <Download size={14} />
-                                Download PNG
+                                {isCapturing ? "Preparing PNG..." : "Download PNG"}
                             </button>
                         </div>
 
@@ -182,14 +194,6 @@ export default function GenerateClient() {
                             >
                                 <ExternalLink size={14} />
                                 View Image
-                            </a>
-                            <a
-                                href={`/api/card/${cardData.username}`}
-                                download={`${cardData.username}-dev-card.svg`}
-                                className="generate-actions__btn"
-                            >
-                                <Download size={14} />
-                                Download Image
                             </a>
                         </div>
                     </div>

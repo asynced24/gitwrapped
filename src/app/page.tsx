@@ -23,7 +23,7 @@ export default function Home() {
 
       {/* Header */}
       <div className="landing-header">
-        <a href="https://github.com/yourusername/gitwrapped" target="_blank" rel="noopener noreferrer" className="landing-header-link">
+        <a href="https://github.com/asynced24/gitwrapped" target="_blank" rel="noopener noreferrer" className="landing-header-link">
           <Github size={14} />
           Source
         </a>

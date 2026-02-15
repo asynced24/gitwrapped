@@ -96,6 +96,10 @@ function escapeXml(str: string): string {
         .replace(/'/g, "&apos;");
 }
 
+function cleanText(str: string): string {
+  return str.replace(/[—–]/g, "-");
+}
+
 async function generateCardSVG(data: PokemonCardData): Promise<string> {
     const theme = getLanguageTheme(data.topLanguage);
   const cardArtPath = getCardArtPath(data.topLanguage);
@@ -113,6 +117,10 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
 
     const usernameDisplay =
         data.username.length > 14 ? data.username.slice(0, 14) + "…" : data.username;
+
+    const maxEnergyIcons = 14;
+    const attack1EnergyIcons = Math.min(Math.max(data.attack1.energyCost ?? 0, 0), maxEnergyIcons);
+    const attack2EnergyIcons = Math.min(Math.max(data.attack2.energyCost ?? 0, 0), maxEnergyIcons);
 
     const proxiedAvatarUrl = `https://images.weserv.nl/?url=${encodeURIComponent(data.avatarUrl.replace("https://", ""))}`;
     const avatarDataUri =
@@ -160,7 +168,7 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
   <rect width="350" height="490" rx="16" fill="url(#bgGradient)" opacity="0.72"/>
   
   <!-- ═══ SUBTLE DIAGONAL PATTERN OVERLAY ═══ -->
-  <g opacity="0.06">
+  <g opacity="0.04">
     ${Array.from({ length: 60 }).map((_, i) => {
         return `<line x1="${i * 10 - 100}" y1="0" x2="${i * 10 + 400}" y2="490" stroke="white" stroke-width="0.5"/>`;
     }).join("\n    ")}
@@ -174,26 +182,27 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
   <rect width="350" height="490" rx="16" fill="none" stroke="rgba(220,220,220,0.6)" stroke-width="2"/>
 
   <!-- ═══ HEADER BAR ═══ -->
-  <rect width="350" height="48" rx="16" fill="rgba(0,0,0,0.58)"/>
-  <rect width="350" height="48" fill="rgba(0,0,0,0.36)"/>
+  <rect width="350" height="48" rx="16" fill="rgba(0,0,0,0.74)"/>
+  <rect width="350" height="48" fill="rgba(0,0,0,0.52)"/>
   
   <!-- Evolution badge -->
   <rect x="16" y="10" width="${Math.max(data.evolutionStage.length * 9 + 20, 80)}" height="26" rx="13" fill="url(#evoBadge)" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
-  <text x="${16 + Math.max(data.evolutionStage.length * 9 + 20, 80) / 2}" y="28" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="800" fill="#1a1a1a" letter-spacing="1.4">${escapeXml(data.evolutionStage)}</text>
+  <text x="${16 + Math.max(data.evolutionStage.length * 9 + 20, 80) / 2}" y="28" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="800" fill="#1a1a1a" letter-spacing="1">${escapeXml(data.evolutionStage)}</text>
   
   <!-- Username V -->
-  <text x="${28 + Math.max(data.evolutionStage.length * 9 + 20, 80)}" y="30" font-family="'Mona Sans', -apple-system, sans-serif" font-size="18" font-weight="900" fill="white" letter-spacing="-0.4" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">${escapeXml(usernameDisplay)} V</text>
+  <text x="${28 + Math.max(data.evolutionStage.length * 9 + 20, 80)}" y="30" font-family="'Mona Sans', -apple-system, sans-serif" font-size="19" font-weight="900" fill="white" letter-spacing="-0.4" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">${escapeXml(usernameDisplay)} V</text>
   
   <!-- HP -->
-  <text x="260" y="26" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.72)" letter-spacing="1.2">HP</text>
+  <text x="260" y="26" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.90)" letter-spacing="1.2">HP</text>
   <text x="280" y="34" font-family="'Mona Sans', -apple-system, sans-serif" font-size="30" font-weight="900" fill="white" letter-spacing="-0.5">${data.hp}</text>
   
   <!-- Type emoji -->
   <text x="320" y="33" font-size="20">${theme.emoji}</text>
 
   <!-- ═══ AVATAR (Octagon - Larger) ═══ -->
-  <polygon points="175,60 212,73 225,110 225,150 212,187 175,200 138,187 125,150 125,110 138,73" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
-  <polygon points="175,64 209,76 221,110 221,150 209,184 175,196 141,184 129,150 129,110 141,76" fill="white" fill-opacity="0.1"/>
+  <polygon points="175,60 212,73 225,110 225,150 212,187 175,200 138,187 125,150 125,110 138,73" fill="rgba(10,12,18,0.68)" stroke="rgba(255,255,255,0.42)" stroke-width="3"/>
+  <polygon points="175,64 209,76 221,110 221,150 209,184 175,196 141,184 129,150 129,110 141,76" fill="white" fill-opacity="0.14"/>
+  <polygon points="175,64 209,76 221,110 221,150 209,184 175,196 141,184 129,150 129,110 141,76" fill="rgba(17,24,39,0.45)"/>
   ${avatarDataUri ? `<image href="${avatarDataUri}" x="125" y="60" width="100" height="140" clip-path="url(#octClip)" preserveAspectRatio="xMidYMid slice"/>` : `
   <!-- Initials fallback -->
   <circle cx="175" cy="130" r="35" fill="${theme.borderColor}" opacity="0.8"/>
@@ -202,10 +211,11 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
   
   <!-- Vignette fade on avatar -->
   <radialGradient id="avatarFade" cx="50%" cy="50%" r="50%">
-    <stop offset="50%" stop-color="white" stop-opacity="0"/>
-    <stop offset="100%" stop-color="${theme.borderColor}" stop-opacity="0.8"/>
+    <stop offset="56%" stop-color="white" stop-opacity="0"/>
+    <stop offset="100%" stop-color="black" stop-opacity="0.6"/>
   </radialGradient>
   <rect x="125" y="60" width="100" height="140" fill="url(#avatarFade)" clip-path="url(#octClip)"/>
+  <rect x="125" y="60" width="100" height="140" fill="url(#bgGradient)" clip-path="url(#octClip)" opacity="0.08"/>
   
   <!-- Avatar drop shadow -->
   <ellipse cx="175" cy="205" rx="35" ry="8" fill="rgba(0,0,0,0.2)" filter="url(#blur)"/>
@@ -213,36 +223,36 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
   <!-- ═══ INFO BAR ═══ -->
   ${
       data.location
-            ? `<text x="175" y="220" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" fill="rgba(255,255,255,0.72)" letter-spacing="0.5">@${escapeXml(data.username)} · ${escapeXml(data.location.length > 15 ? data.location.slice(0, 13) + ".." : data.location)} · Since ${sinceYear}</text>`
+            ? `<text x="175" y="220" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="rgba(255,255,255,0.90)" letter-spacing="0.4">@${escapeXml(data.username)} · ${escapeXml(data.location.length > 15 ? data.location.slice(0, 13) + ".." : data.location)} · Since ${sinceYear}</text>`
           : ""
   }
 
   <!-- ═══ ABILITY SECTION ═══ -->
-          <rect x="12" y="228" width="326" height="${data.ability.description.length > 50 ? 40 : 36}" rx="8" fill="rgba(0,0,0,0.40)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+            <rect x="12" y="228" width="326" height="${data.ability.description.length > 50 ? 44 : 40}" rx="8" fill="rgba(0,0,0,0.52)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
           <rect x="16" y="234" width="42" height="13" rx="3" fill="#FF4444"/>
   <linearGradient id="abilityBadge"><stop offset="0%" stop-color="#FF4444"/><stop offset="100%" stop-color="#CC0000"/></linearGradient>
           <rect x="16" y="234" width="42" height="13" rx="3" fill="url(#abilityBadge)"/>
-          <text x="37" y="243.8" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="7.5" font-weight="900" fill="white" letter-spacing="1">ABILITY</text>
-          <text x="66" y="243" font-family="'Mona Sans', -apple-system, sans-serif" font-size="12" font-weight="750" fill="white">${escapeXml(data.ability.name)}</text>
-          <text x="66" y="256" font-family="'Mona Sans', -apple-system, sans-serif" font-size="8.4" fill="rgba(255,255,255,0.84)" font-style="italic">${escapeXml(data.ability.description.length > 58 ? data.ability.description.slice(0, 55) + "..." : data.ability.description)}</text>
+            <text x="37" y="244" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="9" font-weight="900" fill="white" letter-spacing="0.8">ABILITY</text>
+            <text x="66" y="244" font-family="'Mona Sans', -apple-system, sans-serif" font-size="13" font-weight="760" fill="white">${escapeXml(data.ability.name)}</text>
+            <text x="66" y="259" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.94)" font-style="italic">${escapeXml(cleanText(data.ability.description.length > 54 ? data.ability.description.slice(0, 51) + "..." : data.ability.description))}</text>
 
   <!-- ═══ POWER STATS (XP + Velocity) ═══ -->
-  <rect x="12" y="${data.ability.description.length > 50 ? 272 : 268}" width="158" height="24" rx="6" fill="rgba(0,0,0,0.30)" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
-  <text x="42" y="${data.ability.description.length > 50 ? 282 : 278}" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="rgba(255,255,255,0.62)" letter-spacing="1.2">XP</text>
-  <text x="62" y="${data.ability.description.length > 50 ? 286 : 282}" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="900" fill="white">${data.xp.toLocaleString()}</text>
+  <rect x="12" y="${data.ability.description.length > 50 ? 276 : 272}" width="158" height="24" rx="6" fill="rgba(0,0,0,0.42)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <text x="42" y="${data.ability.description.length > 50 ? 286 : 282}" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.84)" letter-spacing="1">XP</text>
+  <text x="62" y="${data.ability.description.length > 50 ? 290 : 286}" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="900" fill="white">${data.xp.toLocaleString()}</text>
   
-  <rect x="180" y="${data.ability.description.length > 50 ? 272 : 268}" width="158" height="24" rx="6" fill="rgba(0,0,0,0.30)" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
-  <text x="198" y="${data.ability.description.length > 50 ? 282 : 278}" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="rgba(255,255,255,0.62)" letter-spacing="1.2">VELOCITY</text>
-  <text x="256" y="${data.ability.description.length > 50 ? 286 : 282}" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="900" fill="white">${data.codeVelocity}%</text>
+  <rect x="180" y="${data.ability.description.length > 50 ? 276 : 272}" width="158" height="24" rx="6" fill="rgba(0,0,0,0.42)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <text x="198" y="${data.ability.description.length > 50 ? 286 : 282}" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.84)" letter-spacing="1">VELOCITY</text>
+  <text x="256" y="${data.ability.description.length > 50 ? 290 : 286}" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="900" fill="white">${data.codeVelocity}%</text>
 
   <!-- ═══ ATTACK 1 ═══ -->
   <g>
-    ${Array.from({ length: data.attack1.energyCost }).map((_, i) =>
+    ${Array.from({ length: attack1EnergyIcons }).map((_, i) =>
         `<circle cx="${20 + i * 22}" cy="312" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
-    <text x="${30 + data.attack1.energyCost * 22}" y="316" font-family="'Mona Sans', -apple-system, sans-serif" font-size="14" font-weight="850" fill="white" letter-spacing="-0.2">${escapeXml(data.attack1.name)}</text>
-    <text x="330" y="318" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="28" font-weight="900" fill="white">${data.attack1.damage}</text>
-    <text x="${30 + data.attack1.energyCost * 22}" y="332" font-family="'Mona Sans', -apple-system, sans-serif" font-size="8.4" fill="rgba(255,255,255,0.8)">${escapeXml(data.attack1.description.length > 52 ? data.attack1.description.slice(0, 49) + "..." : data.attack1.description)}</text>
+    <text x="${30 + attack1EnergyIcons * 22}" y="316" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2">${escapeXml(data.attack1.name)}</text>
+    <text x="330" y="318" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="26" font-weight="900" fill="white">${data.attack1.damage}</text>
+    <text x="${30 + attack1EnergyIcons * 22}" y="333" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.94)">${escapeXml(cleanText(data.attack1.description.length > 48 ? data.attack1.description.slice(0, 45) + "..." : data.attack1.description))}</text>
   </g>
 
   <!-- Divider -->
@@ -250,31 +260,31 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
 
   <!-- ═══ ATTACK 2 ═══ -->
   <g>
-    ${Array.from({ length: data.attack2.energyCost }).map((_, i) =>
+    ${Array.from({ length: attack2EnergyIcons }).map((_, i) =>
         `<circle cx="${20 + i * 22}" cy="362" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
-    <text x="${30 + data.attack2.energyCost * 22}" y="366" font-family="'Mona Sans', -apple-system, sans-serif" font-size="14" font-weight="850" fill="white" letter-spacing="-0.2">${escapeXml(data.attack2.name)}</text>
-    <text x="330" y="368" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="28" font-weight="900" fill="white">${data.attack2.damage}</text>
-    <text x="${30 + data.attack2.energyCost * 22}" y="382" font-family="'Mona Sans', -apple-system, sans-serif" font-size="8.4" fill="rgba(255,255,255,0.8)">${escapeXml(data.attack2.description.length > 52 ? data.attack2.description.slice(0, 49) + "..." : data.attack2.description)}</text>
+    <text x="${30 + attack2EnergyIcons * 22}" y="366" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2">${escapeXml(data.attack2.name)}</text>
+    <text x="330" y="368" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="26" font-weight="900" fill="white">${data.attack2.damage}</text>
+    <text x="${30 + attack2EnergyIcons * 22}" y="383" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.94)">${escapeXml(cleanText(data.attack2.description.length > 48 ? data.attack2.description.slice(0, 45) + "..." : data.attack2.description))}</text>
   </g>
 
   <!-- ═══ BOTTOM STATS BAR ═══ -->
-  <rect y="398" width="350" height="92" fill="rgba(0,0,0,0.56)"/>
+  <rect y="398" width="350" height="92" fill="rgba(0,0,0,0.72)"/>
   <line x1="116" y1="414" x2="116" y2="448" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
   <line x1="234" y1="414" x2="234" y2="448" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
   
   <!-- Weakness -->
-  <text x="24" y="416" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="rgba(255,255,255,0.74)" letter-spacing="1.2">WEAKNESS</text>
+  <text x="24" y="416" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="rgba(255,255,255,0.88)" letter-spacing="1">WEAKNESS</text>
   <circle cx="24" cy="432" r="8" fill="url(#energyWeak)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
   <text x="36" y="436" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="700" fill="white">${escapeXml(data.weakness.modifier)}</text>
   
   <!-- Resistance -->
-  <text x="133" y="416" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="rgba(255,255,255,0.74)" letter-spacing="1.2">RESISTANCE</text>
+  <text x="133" y="416" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="rgba(255,255,255,0.88)" letter-spacing="1">RESISTANCE</text>
   <circle cx="133" cy="432" r="8" fill="url(#energyResist)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
   <text x="145" y="436" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="700" fill="white">${escapeXml(data.resistance.modifier)}</text>
   
   <!-- Retreat -->
-  <text x="252" y="416" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="rgba(255,255,255,0.74)" letter-spacing="1.2">RETREAT</text>
+  <text x="252" y="416" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="rgba(255,255,255,0.88)" letter-spacing="1">RETREAT</text>
   <g>
     ${Array.from({ length: Math.min(data.retreatCost, 4) }).map((_, i) =>
         `<circle cx="${252 + i * 18}" cy="432" r="8" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
@@ -283,7 +293,7 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
   
   <!-- Footer branding -->
   <line x1="20" y1="456" x2="330" y2="456" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
-  <text x="175" y="474" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="7" fill="rgba(255,255,255,0.52)" letter-spacing="1">gitwrapped · ${data.programmingLanguageCount} lang · ${data.topLanguage}</text>
+  <text x="175" y="474" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="8" fill="rgba(255,255,255,0.72)" letter-spacing="1">gitwrapped · ${data.programmingLanguageCount} lang · ${escapeXml(data.topLanguage ?? "")}</text>
 </svg>`;
 }
 

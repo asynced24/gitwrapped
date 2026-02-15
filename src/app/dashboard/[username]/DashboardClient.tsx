@@ -24,7 +24,6 @@ import {
     Copy,
     Check,
     Download,
-    ExternalLink,
 } from "lucide-react";
 
 interface DashboardClientProps {
@@ -396,6 +395,7 @@ function PokemonCardView({ stats }: DashboardClientProps) {
     const { setMode } = useViewMode();
     const cardData = useMemo(() => buildCardData(stats), [stats]);
     const [copied, setCopied] = useState(false);
+    const [isCapturing, setIsCapturing] = useState(false);
     const cardPreviewRef = useRef<HTMLDivElement>(null);
 
     const origin = typeof window !== "undefined" ? window.location.origin : "https://gitwrapped.aryansync.com";
@@ -409,19 +409,27 @@ function PokemonCardView({ stats }: DashboardClientProps) {
     };
 
     const handleDownloadImage = async () => {
-        if (!cardPreviewRef.current) return;
+        if (!cardPreviewRef.current || isCapturing) return;
         try {
+            setIsCapturing(true);
+            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+            const { width, height } = cardPreviewRef.current.getBoundingClientRect();
             const canvas = await html2canvas(cardPreviewRef.current, {
                 scale: 2,
                 backgroundColor: null,
                 useCORS: true,
-                allowTaint: true,
                 logging: false,
-                width: 350,
-                height: 490,
+                width: Math.max(1, Math.round(width)),
+                height: Math.max(1, Math.round(height)),
             });
             canvas.toBlob((blob) => {
-                if (!blob) return;
+                if (!blob) {
+                    console.error("Failed to create PNG blob from canvas");
+                    alert("Could not generate image. Please try again.");
+                    return;
+                }
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
@@ -429,8 +437,11 @@ function PokemonCardView({ stats }: DashboardClientProps) {
                 link.click();
                 URL.revokeObjectURL(url);
             }, "image/png");
-        } catch {
-            // noop
+        } catch (error) {
+            console.error("Failed to download image:", error);
+            alert("Failed to download image. Please try again.");
+        } finally {
+            setIsCapturing(false);
         }
     };
 
@@ -456,7 +467,7 @@ function PokemonCardView({ stats }: DashboardClientProps) {
                 </div>
 
                 <div className="pokemon-card-view__card-wrapper" ref={cardPreviewRef}>
-                    <PokemonCard data={cardData} />
+                    <PokemonCard data={cardData} captureMode={isCapturing} />
                 </div>
 
                 <div className="pokemon-card-view__actions">
@@ -472,17 +483,8 @@ function PokemonCardView({ stats }: DashboardClientProps) {
                         </button>
                         <button onClick={handleDownloadImage} className="btn badge-copy-btn">
                             <Download size={14} />
-                            Download Image
+                            {isCapturing ? "Preparing PNG..." : "Download Image"}
                         </button>
-                        <a
-                            href={`/api/card/${stats.user.login}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn badge-copy-btn"
-                        >
-                            <ExternalLink size={14} />
-                            View Image
-                        </a>
                     </div>
 
                     <button
