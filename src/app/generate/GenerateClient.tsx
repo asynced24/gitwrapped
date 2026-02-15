@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import html2canvas from "html2canvas";
+import { domToPng } from "modern-screenshot";
 import { PokemonCard } from "@/components/PokemonCard";
 import { TechCursor } from "@/components/TechCursor";
 import { PokemonCardData } from "@/lib/card";
@@ -54,32 +54,19 @@ export default function GenerateClient() {
         
         try {
             setIsCapturing(true);
-            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+            // Wait for captureMode to take effect
+            await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
-            const { width, height } = cardPreviewRef.current.getBoundingClientRect();
-            const canvas = await html2canvas(cardPreviewRef.current, {
+            const dataUrl = await domToPng(cardPreviewRef.current, {
                 scale: 2,
                 backgroundColor: null,
-                useCORS: true,
-                logging: false,
-                width: Math.max(1, Math.round(width)),
-                height: Math.max(1, Math.round(height)),
+                style: { margin: "0", padding: "0" },
             });
 
-            canvas.toBlob((blob) => {
-                if (!blob) {
-                    console.error("Failed to create PNG blob from canvas");
-                    setError("Could not generate PNG. Please try again.");
-                    return;
-                }
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = `${cardData.username}-dev-card.png`;
-                link.click();
-                URL.revokeObjectURL(url);
-            }, "image/png");
+            const link = document.createElement("a");
+            link.href = dataUrl;
+            link.download = `${cardData.username}-dev-card.png`;
+            link.click();
         } catch (error) {
             console.error("Failed to download PNG:", error);
             setError("Failed to download PNG. Please try again.");
@@ -90,6 +77,7 @@ export default function GenerateClient() {
 
     return (
         <div className="generate-page">
+            <TechCursor />
             <nav className="generate-nav">
                 <a href="/" className="generate-nav__back">
                     <ArrowLeft size={16} />
@@ -99,7 +87,6 @@ export default function GenerateClient() {
 
             <div className="generate-hero">
                 <div className="generate-hero__box">
-                    <TechCursor mode="absolute" className="generate-hero__cursor" />
                     <div className="generate-hero__badge">
                         <Zap size={14} />
                         <span>Dev Pokémon Card Generator</span>

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { fetchUser, fetchRepositories } from "@/lib/github";
+import { rateLimit, GITHUB_USERNAME_RE } from "@/lib/rate-limit";
 
 type BadgeVariant = "compact" | "minimal" | "identity";
 type BadgeTheme = "light" | "dark" | "mono";
@@ -19,6 +20,20 @@ export async function GET(
 ) {
   try {
     const { username } = await params;
+
+    // Validate username format
+    if (!GITHUB_USERNAME_RE.test(username)) {
+      return new Response(JSON.stringify({ error: "Invalid GitHub username" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Rate limit: 30 requests per minute per IP
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const limited = rateLimit(`badge:${ip}`, 30, 60_000);
+    if (limited) return limited;
+
     const { searchParams } = new URL(request.url);
 
     const variant = (searchParams.get("variant") || "compact") as BadgeVariant;

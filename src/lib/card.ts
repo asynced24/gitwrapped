@@ -502,7 +502,9 @@ export function buildCardData(stats: UserStats): PokemonCardData {
     const programmingLangs = stats.languageStats.filter(
         (l) => !l.isMarkup && !MARKUP_LANGUAGES.has(l.language)
     );
-    const topLanguage = stats.topLanguage ?? programmingLangs[0]?.language ?? "Polyglot";
+    const topLanguage =
+        stats.topLanguage ??
+        (programmingLangs.length > 0 ? programmingLangs[0].language : "Polyglot");
     const theme = getLanguageTheme(topLanguage);
 
     // Filter programming languages

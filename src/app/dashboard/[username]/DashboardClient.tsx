@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import html2canvas from "html2canvas";
+import { domToPng } from "modern-screenshot";
 import { UserStats } from "@/types/github";
 import { ViewModeProvider, useViewMode } from "@/context/ViewModeContext";
 import { ModeToggle } from "@/components/ModeToggle";
@@ -412,31 +412,19 @@ function PokemonCardView({ stats }: DashboardClientProps) {
         if (!cardPreviewRef.current || isCapturing) return;
         try {
             setIsCapturing(true);
-            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-            await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+            // Wait for captureMode to take effect
+            await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
-            const { width, height } = cardPreviewRef.current.getBoundingClientRect();
-            const canvas = await html2canvas(cardPreviewRef.current, {
+            const dataUrl = await domToPng(cardPreviewRef.current, {
                 scale: 2,
                 backgroundColor: null,
-                useCORS: true,
-                logging: false,
-                width: Math.max(1, Math.round(width)),
-                height: Math.max(1, Math.round(height)),
+                style: { margin: "0", padding: "0" },
             });
-            canvas.toBlob((blob) => {
-                if (!blob) {
-                    console.error("Failed to create PNG blob from canvas");
-                    alert("Could not generate image. Please try again.");
-                    return;
-                }
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = `${stats.user.login}-dev-card.png`;
-                link.click();
-                URL.revokeObjectURL(url);
-            }, "image/png");
+
+            const link = document.createElement("a");
+            link.href = dataUrl;
+            link.download = `${stats.user.login}-dev-card.png`;
+            link.click();
         } catch (error) {
             console.error("Failed to download image:", error);
             alert("Failed to download image. Please try again.");
