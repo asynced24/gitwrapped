@@ -1,7 +1,7 @@
 "use client";
 
 import { useViewMode } from "@/context/ViewModeContext";
-import { BarChart3, Sparkles } from "lucide-react";
+import { BarChart3, Sparkles, CreditCard } from "lucide-react";
 
 export function ModeToggle() {
     const { mode, setMode } = useViewMode();
@@ -23,6 +23,14 @@ export function ModeToggle() {
             >
                 <Sparkles size={16} />
                 <span>Wrapped</span>
+            </button>
+            <button
+                onClick={() => setMode("card")}
+                className="view-toggle-btn"
+                data-active={mode === "card"}
+            >
+                <CreditCard size={16} />
+                <span>Card</span>
             </button>
         </div>
     );

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#08172a"/>
+      <stop offset="100%" stop-color="#0a2238"/>
+    </linearGradient>
+    <linearGradient id="cube" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#24374f"/>
+      <stop offset="100%" stop-color="#182a41"/>
+    </linearGradient>
+    <linearGradient id="neon" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6af2a3"/>
+      <stop offset="100%" stop-color="#7CFF74"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+
+  <rect x="120" y="156" width="272" height="252" rx="36" fill="url(#cube)" stroke="#2f4663" stroke-width="4"/>
+  <rect x="120" y="156" width="272" height="92" rx="30" fill="#2b405b"/>
+
+  <rect x="244" y="156" width="24" height="252" rx="12" fill="url(#neon)" filter="url(#glow)"/>
+  <rect x="120" y="190" width="272" height="20" rx="10" fill="url(#neon)" filter="url(#glow)"/>
+
+  <path d="M256 156C241 128 220 110 197 110c-17 0-28 17-22 31 7 17 36 28 81 40Z" fill="none" stroke="url(#neon)" stroke-width="14" stroke-linecap="round" filter="url(#glow)"/>
+  <path d="M256 156C271 128 292 110 315 110c17 0 28 17 22 31-7 17-36 28-81 40Z" fill="none" stroke="url(#neon)" stroke-width="14" stroke-linecap="round" filter="url(#glow)"/>
+
+  <g stroke="url(#neon)" stroke-width="3" stroke-linecap="round" opacity="0.9" filter="url(#glow)">
+    <path d="M144 286h46"/><path d="M144 308h32"/><path d="M144 330h52"/>
+    <path d="M368 286h-46"/><path d="M368 308h-32"/><path d="M368 330h-52"/>
+    <path d="M214 390v-42"/><path d="M298 390v-42"/>
+  </g>
+
+  <circle cx="190" cy="314" r="48" fill="#1f334d" stroke="#6f8198" stroke-width="8"/>
+  <circle cx="322" cy="314" r="48" fill="#1f334d" stroke="#6f8198" stroke-width="8"/>
+
+  <g fill="none" stroke="url(#neon)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+    <path d="M176 332c0-18 12-30 26-34 4-1 6 1 6 4v20"/>
+    <path d="M206 322c-8 4-12 9-12 14"/>
+    <path d="M308 332c0-18 12-30 26-34 4-1 6 1 6 4v20"/>
+    <path d="M338 322c-8 4-12 9-12 14"/>
+  </g>
+</svg>

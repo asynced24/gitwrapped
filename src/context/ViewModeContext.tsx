@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type ViewMode = "dashboard" | "wrapped";
+export type ViewMode = "dashboard" | "wrapped" | "card";
 export type Theme = "monochrome" | "dark-minimal" | "light-clean";
 
 interface ViewModeContextType {
@@ -20,7 +20,7 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         // Wrapped mode always stays dark
-        if (mode === "wrapped") {
+        if (mode === "wrapped" || mode === "card") {
             document.documentElement.setAttribute("data-theme", "wrapped");
         } else {
             document.documentElement.setAttribute("data-theme", theme);

@@ -78,6 +78,12 @@ export default function Home() {
             <a href="/dashboard/gaearon">gaearon</a>,{" "}
             <a href="/dashboard/sindresorhus">sindresorhus</a>
           </p>
+
+          <a href="/generate" className="landing-card-cta">
+            <span className="landing-card-cta__badge">NEW</span>
+            <span className="landing-card-cta__title">Generate your Dev Pokémon Card</span>
+            <span className="landing-card-cta__meta">Interactive preview + README-ready SVG →</span>
+          </a>
         </div>
       </div>
     </>

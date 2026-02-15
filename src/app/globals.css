@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import "@fontsource-variable/mona-sans";
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
@@ -1074,19 +1075,7 @@ a {
   margin: 0 auto;
 }
 
-.readme-newtab-variant {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px dashed var(--border-default);
-}
 
-.readme-newtab-note {
-  font-size: 12.5px;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
-  font-style: italic;
-  line-height: 1.5;
-}
 
 .badge-input-grid {
   display: grid;
@@ -1695,4 +1684,396 @@ a {
   color: var(--text-primary);
   margin-top: 8px;
   font-weight: 500;
+}
+
+/* =============================================================================
+   LANDING CARD CTA
+   ============================================================================= */
+
+.landing-card-cta {
+  margin-top: 20px;
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.landing-card-cta:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.landing-card-cta__badge {
+  width: fit-content;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--accent-primary);
+  border: 1px solid var(--accent-primary);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.landing-card-cta__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.landing-card-cta__meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* =============================================================================
+   GENERATE PAGE
+   ============================================================================= */
+
+.generate-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 420px at 10% -10%, rgba(78, 225, 160, 0.16), transparent 55%),
+    radial-gradient(900px 420px at 90% -10%, rgba(88, 166, 255, 0.12), transparent 55%),
+    var(--bg-primary);
+  color: var(--text-primary);
+  padding-bottom: 48px;
+}
+
+.generate-nav {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px 24px;
+}
+
+.generate-nav__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.generate-nav__back:hover {
+  color: var(--text-primary);
+}
+
+.generate-hero {
+  max-width: 760px;
+  margin: 8px auto 0;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.generate-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.generate-hero__title {
+  margin-top: 14px;
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  line-height: 1.1;
+}
+
+.generate-hero__subtitle {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.generate-form {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.generate-form__input {
+  width: min(420px, 100%);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 12px 14px;
+  font-size: 14px;
+}
+
+.generate-form__input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 20%, transparent);
+}
+
+.generate-form__btn {
+  border: 1px solid var(--accent-primary);
+  border-radius: 10px;
+  background: var(--accent-primary);
+  color: var(--bg-primary);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 0 16px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.16s ease, filter 0.16s ease;
+}
+
+.generate-form__btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.generate-form__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.generate-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-bottom-color: transparent;
+  border-radius: 999px;
+  animation: generate-spin 0.8s linear infinite;
+}
+
+@keyframes generate-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.generate-error {
+  margin-top: 10px;
+  color: #ef4444;
+  font-size: 13px;
+}
+
+.generate-results {
+  max-width: 1160px;
+  margin: 30px auto 0;
+  padding: 0 24px;
+}
+
+.generate-results__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.generate-results__preview {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  padding: 16px;
+}
+
+.generate-results__label {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.generate-results__card-wrap,
+.generate-results__svg-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 530px;
+}
+
+.generate-results__svg-img {
+  width: 350px;
+  height: 490px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+}
+
+.generate-actions {
+  margin-top: 18px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  padding: 16px;
+}
+
+.generate-actions__label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.generate-actions__code {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 12px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+}
+
+.generate-actions__buttons {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.generate-actions__btn {
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 9px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.generate-actions__btn:hover {
+  border-color: var(--accent-primary);
+}
+
+.generate-cta {
+  margin-top: 14px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.generate-cta__link {
+  margin-left: 6px;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* =============================================================================
+   DASHBOARD CARD MODE
+   ============================================================================= */
+
+.pokemon-card-view {
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 420px at 10% -10%, rgba(78, 225, 160, 0.14), transparent 55%),
+    radial-gradient(900px 420px at 90% -10%, rgba(88, 166, 255, 0.1), transparent 55%),
+    var(--bg-primary);
+}
+
+.pokemon-card-view__content {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 26px 24px 48px;
+}
+
+.pokemon-card-view__header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.pokemon-card-view__title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.1;
+}
+
+.pokemon-card-view__subtitle {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.pokemon-card-view__card-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.pokemon-card-view__actions {
+  margin-top: 20px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  padding: 14px;
+}
+
+.pokemon-card-view__embed-label {
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.pokemon-card-view__embed-code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-secondary);
+  overflow-x: auto;
+}
+
+.pokemon-card-view__buttons {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pokemon-card-view__back {
+  margin-top: 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+}
+
+@media (max-width: 900px) {
+  .generate-results__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .generate-results__card-wrap,
+  .generate-results__svg-wrap {
+    min-height: auto;
+    padding: 8px 0 4px;
+  }
+}
+
+@media (max-width: 640px) {
+  .generate-form {
+    flex-direction: column;
+  }
+
+  .generate-form__btn {
+    justify-content: center;
+  }
+
+  .landing-card-cta {
+    padding: 12px 14px;
+  }
 }

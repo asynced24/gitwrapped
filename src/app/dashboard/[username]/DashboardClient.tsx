@@ -10,6 +10,8 @@ import { LanguageBar } from "@/components/LanguageBar";
 import { RepoCard } from "@/components/RepoCard";
 import { ActivityChart } from "@/components/ActivityChart";
 import { WrappedStory } from "@/components/WrappedStory";
+import { PokemonCard } from "@/components/PokemonCard";
+import { buildCardData } from "@/lib/card";
 import {
     Activity,
     Code2,
@@ -39,7 +41,6 @@ function DashboardContent({ stats }: DashboardClientProps) {
     const { mode } = useViewMode();
     const [repoSort, setRepoSort] = useState<RepoSort>("stars");
     const [badgeCopied, setBadgeCopied] = useState(false);
-    const [newTabCopied, setNewTabCopied] = useState(false);
     const [portfolioUrl, setPortfolioUrl] = useState("");
     const [linkedinUsername, setLinkedinUsername] = useState("");
 
@@ -58,7 +59,7 @@ function DashboardContent({ stats }: DashboardClientProps) {
         }
     }, [stats.topRepositories, repoSort]);
 
-    const { badgePath, readmeSnippet, readmeSnippetNewTab } = useMemo(() => {
+    const { badgePath, readmeSnippet } = useMemo(() => {
         const normalizedPortfolio = portfolioUrl
             .trim()
             .replace(/^https?:\/\//i, "")
@@ -99,21 +100,20 @@ function DashboardContent({ stats }: DashboardClientProps) {
         ].filter(Boolean);
 
         const topLang = (stats.topLanguage ?? "Polyglot").replace(/-/g, "--").replace(/_/g, "__").replace(/ /g, "_");
+        const topLangQuery = encodeURIComponent(stats.topLanguage ?? "");
+        const githubProfileUrl = `https://github.com/${stats.user.login}`;
 
         const statButtons = [
-            `<img src="https://img.shields.io/badge/Languages-${programmingLanguageCount}-1F2937?style=flat-square&logo=codefactor&logoColor=white" alt="Languages" />`,
-            `<img src="https://img.shields.io/badge/Repositories-${stats.ownRepoCount}-1F2937?style=flat-square&logo=github&logoColor=white" alt="Repositories" />`,
-            `<img src="https://img.shields.io/badge/Top_Language-${topLang}-1F2937?style=flat-square&logo=stackblitz&logoColor=white" alt="Top Language" />`,
+            `<a href="${dashboardUrl}"><img src="https://img.shields.io/badge/Languages-${programmingLanguageCount}-1F2937?style=flat-square&logo=codefactor&logoColor=white" alt="Languages" /></a>`,
+            `<a href="${githubProfileUrl}?tab=repositories"><img src="https://img.shields.io/badge/Repositories-${stats.ownRepoCount}-1F2937?style=flat-square&logo=github&logoColor=white" alt="Repositories" /></a>`,
+            `<a href="${githubProfileUrl}?tab=repositories&language=${topLangQuery}"><img src="https://img.shields.io/badge/Top_Language-${topLang}-1F2937?style=flat-square&logo=stackblitz&logoColor=white" alt="Top Language" /></a>`,
         ];
 
         const snippet = `<div align="center">\n\n<a href="${dashboardUrl}">\n  <img src="${absoluteBadgeUrl}" alt="GitWrapped Badge" />\n</a>\n\n${socialButtons.join(" ")}\n\n${statButtons.join(" ")}\n\n</div>`;
 
-        const snippetNewTab = snippet.replace(/<a href="/g, '<a target="_blank" href="');
-
         return {
             badgePath: computedBadgePath,
             readmeSnippet: snippet,
-            readmeSnippetNewTab: snippetNewTab,
         };
     }, [portfolioUrl, linkedinUsername, stats.languageStats, stats.ownRepoCount, stats.user.login, stats.topLanguage]);
 
@@ -124,14 +124,12 @@ function DashboardContent({ stats }: DashboardClientProps) {
         setTimeout(() => setBadgeCopied(false), 2000);
     };
 
-    const handleCopyNewTab = async () => {
-        await navigator.clipboard.writeText(readmeSnippetNewTab);
-        setNewTabCopied(true);
-        setTimeout(() => setNewTabCopied(false), 2000);
-    };
-
     if (mode === "wrapped") {
         return <WrappedStory stats={stats} />;
+    }
+
+    if (mode === "card") {
+        return <PokemonCardView stats={stats} />;
     }
 
     return (
@@ -379,21 +377,83 @@ function DashboardContent({ stats }: DashboardClientProps) {
                         {badgeCopied ? <Check size={14} /> : <Copy size={14} />}
                         {badgeCopied ? "Copied!" : "Copy README Snippet"}
                     </button>
+                </section>
+            </div>
+        </div>
+    );
+}
 
-                    <div className="readme-newtab-variant">
-                        <p className="readme-newtab-note">
-                            Want links to open in a new tab? Use this version so your GitHub profile stays open.
-                        </p>
-                        <pre className="readme-snippet">{readmeSnippetNewTab}</pre>
-                        <button
-                            onClick={handleCopyNewTab}
+/* ─────────────────────────────────────────────
+   Pokémon Card View (third mode)
+   ───────────────────────────────────────────── */
+
+function PokemonCardView({ stats }: DashboardClientProps) {
+    const { setMode } = useViewMode();
+    const cardData = useMemo(() => buildCardData(stats), [stats]);
+    const [copied, setCopied] = useState(false);
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://gitwrapped.aryansync.com";
+    const cardUrl = `${origin}/api/card/${stats.user.login}`;
+    const markdownSnippet = `![${stats.user.login}'s Dev Card](${cardUrl})`;
+
+    const handleCopyMarkdown = async () => {
+        await navigator.clipboard.writeText(markdownSnippet);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div className="pokemon-card-view">
+            <nav className="dashboard-nav">
+                <div className="dashboard-nav__left">
+                    <a href="/" className="dashboard-nav__logo">GitWrapped</a>
+                </div>
+                <div className="dashboard-nav__center">
+                    <ModeToggle />
+                </div>
+                <div className="dashboard-nav__right" />
+            </nav>
+
+            <div className="pokemon-card-view__content">
+                <div className="pokemon-card-view__header">
+                    <h2 className="pokemon-card-view__title">Your Dev Pokémon Card</h2>
+                    <p className="pokemon-card-view__subtitle">
+                        A collectible trading card generated from your GitHub profile
+                    </p>
+                </div>
+
+                <div className="pokemon-card-view__card-wrapper">
+                    <PokemonCard data={cardData} />
+                </div>
+
+                <div className="pokemon-card-view__actions">
+                    <div className="pokemon-card-view__embed">
+                        <p className="pokemon-card-view__embed-label">Embed in your README:</p>
+                        <pre className="pokemon-card-view__embed-code">{markdownSnippet}</pre>
+                    </div>
+
+                    <div className="pokemon-card-view__buttons">
+                        <button onClick={handleCopyMarkdown} className="btn badge-copy-btn">
+                            {copied ? <Check size={14} /> : <Copy size={14} />}
+                            {copied ? "Copied!" : "Copy Markdown"}
+                        </button>
+                        <a
+                            href={`/api/card/${stats.user.login}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="btn badge-copy-btn"
                         >
-                            {newTabCopied ? <Check size={14} /> : <Copy size={14} />}
-                            {newTabCopied ? "Copied!" : "Copy New-Tab Variant"}
-                        </button>
+                            View SVG
+                        </a>
                     </div>
-                </section>
+
+                    <button
+                        onClick={() => setMode("dashboard")}
+                        className="pokemon-card-view__back"
+                    >
+                        ← Back to Dashboard
+                    </button>
+                </div>
             </div>
         </div>
     );
