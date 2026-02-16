@@ -2,10 +2,17 @@
 
 # GitWrapped
 
-[![GitWrapped Badge](https://gitwrapped.aryansync.com/api/badge/asynced24?variant=compact&theme=light)](https://gitwrapped.aryansync.com/dashboard/asynced24)
-[![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=flat-square&logo=vercel&logoColor=white)](https://gitwrapped.aryansync.com)
+<div align="center">
+
+<a href="https://gitwrapped.aryansync.com/dashboard/asynced24">
+  <img src="https://gitwrapped.aryansync.com/api/badge/asynced24?portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24" alt="GitWrapped Badge" />
+</a>
+
+<a href="https://gitwrapped.aryansync.com/dashboard/asynced24"><img src="https://img.shields.io/badge/GitWrapped-0F172A?style=for-the-badge&logo=github&logoColor=white" alt="GitWrapped" /></a> <a href="https://aryansync.com"><img src="https://img.shields.io/badge/Portfolio-111827?style=for-the-badge&logo=vercel&logoColor=white" alt="Portfolio" /></a> <a href="https://linkedin.com/in/aryansingh24"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>
+
+<a href="https://gitwrapped.aryansync.com/dashboard/asynced24"><img src="https://img.shields.io/badge/Languages-6-1F2937?style=flat-square&logo=codefactor&logoColor=white" alt="Languages" /></a> <a href="https://github.com/asynced24?tab=repositories"><img src="https://img.shields.io/badge/Repositories-13-1F2937?style=flat-square&logo=github&logoColor=white" alt="Repositories" /></a> <a href="https://github.com/asynced24?tab=repositories&language=TypeScript"><img src="https://img.shields.io/badge/Top_Language-TypeScript-1F2937?style=flat-square&logo=stackblitz&logoColor=white" alt="Top Language" /></a>
+
+</div>
 
 **Your coding journey, unboxed.**
 
