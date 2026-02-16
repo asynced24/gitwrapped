@@ -27,7 +27,7 @@ No login required—just type your username.
 
 <td align="center">
 <a href="https://gitwrapped.aryansync.com/dashboard/gaearon">
-<img src="https://gitwrapped.aryansync.com/api/card/gaearon" width="300"/>
+<img src="https://gitwrapped.aryansync.com/api/card/gaearon?v=2" width="300"/>
 </a>
 <br/>
 <sub>gaearon</sub>
