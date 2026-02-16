@@ -2,6 +2,11 @@
 
 # GitWrapped
 
+[![GitWrapped Badge](https://gitwrapped.aryansync.com/api/badge/asynced24?variant=compact&theme=light)](https://gitwrapped.aryansync.com/dashboard/asynced24)
+[![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=flat-square&logo=vercel&logoColor=white)](https://gitwrapped.aryansync.com)
+
 **Your coding journey, unboxed.**
 
 Think Spotify Wrapped, but for your GitHub commits.
