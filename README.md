@@ -1,7 +1,7 @@
 <div align="center">
-
 # GitWrapped
 
+## Featured Personalized Readme Badge
 <div align="center">
 
 <a href="https://gitwrapped.aryansync.com/dashboard/asynced24">
