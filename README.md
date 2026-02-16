@@ -9,7 +9,6 @@ GitWrapped turns your raw commit history into a cinematic story and a profession
 No login required—just type your username.
 
 [**Live Demo →**](https://gitwrapped.aryansync.com)
-
 <br>
 
 ## Featured Developer Poke Cards
