@@ -599,6 +599,216 @@ export function buildCardData(stats: UserStats): PokemonCardData {
 }
 
 /* ─────────────────────────────────────────────
+   Edge-compatible GitHub API layer for card route
+   ───────────────────────────────────────────── */
+
+const GITHUB_API = "https://api.github.com";
+
+interface GitHubUser {
+    login: string;
+    name: string | null;
+    avatar_url: string;
+    bio: string | null;
+    location: string | null;
+    created_at: string;
+    public_repos: number;
+}
+
+interface Repository {
+    name: string;
+    fork: boolean;
+    stargazers_count: number;
+    forks_count: number;
+    language: string | null;
+    pushed_at: string;
+    created_at: string;
+    size: number;
+}
+
+async function fetchGitHubEdge<T>(endpoint: string): Promise<T> {
+    const headers: Record<string, string> = {
+        Accept: "application/vnd.github.v3+json",
+    };
+
+    if (process.env.GITHUB_TOKEN) {
+        headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+    try {
+        const res = await fetch(`${GITHUB_API}${endpoint}`, {
+            headers,
+            signal: controller.signal,
+        });
+
+        if (!res.ok) {
+            throw new Error(`GitHub API error: ${res.status}`);
+        }
+
+        return res.json();
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+async function fetchUserEdge(username: string): Promise<GitHubUser> {
+    return fetchGitHubEdge<GitHubUser>(`/users/${username}`);
+}
+
+async function fetchRepositoriesEdge(username: string): Promise<Repository[]> {
+    // Only fetch first page (100 repos) for card — enough for stats
+    return fetchGitHubEdge<Repository[]>(
+        `/users/${username}/repos?per_page=100&sort=updated`
+    );
+}
+
+async function fetchRepoLanguagesEdge(
+    owner: string,
+    repo: string
+): Promise<Record<string, number>> {
+    try {
+        return await fetchGitHubEdge<Record<string, number>>(
+            `/repos/${owner}/${repo}/languages`
+        );
+    } catch {
+        return {};
+    }
+}
+
+/**
+ * Lightweight card stats fetch — Edge-compatible, minimal API calls
+ * ~12 total API calls vs 50+ from fetchUserStats
+ */
+export async function fetchCardStatsEdge(username: string): Promise<PokemonCardData> {
+    const [user, repositories] = await Promise.all([
+        fetchUserEdge(username),
+        fetchRepositoriesEdge(username),
+    ]);
+
+    const ownRepos = repositories.filter(r => !r.fork);
+    const topRepos = ownRepos
+        .sort((a, b) => new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime())
+        .slice(0, 10);
+
+    // Fetch language data for top 10 repos only
+    const languagePromises = topRepos.map(repo =>
+        fetchRepoLanguagesEdge(username, repo.name)
+    );
+    const languageData = await Promise.all(languagePromises);
+
+    // Calculate language stats
+    const aggregated: Record<string, number> = {};
+    for (const repoLangs of languageData) {
+        for (const [lang, bytes] of Object.entries(repoLangs)) {
+            if (lang !== "Jupyter Notebook") {
+                aggregated[lang] = (aggregated[lang] || 0) + bytes;
+            }
+        }
+    }
+
+    const total = Object.values(aggregated).reduce((a, b) => a + b, 0);
+    const programmingLangs = Object.entries(aggregated)
+        .filter(([lang]) => !MARKUP_LANGUAGES.has(lang))
+        .sort((a, b) => b[1] - a[1]);
+
+    const topLanguage = programmingLangs.length > 0 ? programmingLangs[0][0] : "Polyglot";
+    const languageCount = programmingLangs.length;
+
+    // Calculate stats
+    const totalStars = repositories.reduce((sum, r) => sum + r.stargazers_count, 0);
+    const createdDate = new Date(user.created_at);
+    const ageYears = Math.floor((Date.now() - createdDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+
+    // Calculate contribution consistency (simplified)
+    const pushDates = repositories.map(r => new Date(r.pushed_at)).sort((a, b) => a.getTime() - b.getTime());
+    const activeMonthSet = new Set<string>();
+    for (const d of pushDates) {
+        activeMonthSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+    const firstDate = pushDates[0] || new Date();
+    const lastDate = pushDates[pushDates.length - 1] || new Date();
+    const totalMonths = Math.max(1,
+        (lastDate.getFullYear() - firstDate.getFullYear()) * 12 +
+        (lastDate.getMonth() - firstDate.getMonth()) + 1
+    );
+    const consistency = activeMonthSet.size / totalMonths;
+
+    // Calculate evolution stage
+    const evolutionStage = getEvolutionStage(ageYears, ownRepos.length, totalStars);
+
+    // Calculate HP
+    const hp = computeHP(consistency, totalStars, ageYears);
+
+    // Generate ability
+    const ability = generateAbility(languageCount, ownRepos.length, totalStars, consistency);
+
+    // Calculate attacks
+    const avgMonthlyActivity = repositories.length > 0 ? repositories.length / Math.max(totalMonths, 1) : 0;
+    const topRepoStars = topRepos.length > 0 ? Math.max(...topRepos.map(r => r.stargazers_count)) : 0;
+    const attack1Damage = calculateAttack1Damage(avgMonthlyActivity);
+    const attack2Damage = calculateAttack2Damage(topRepoStars, totalStars);
+
+    const theme = getLanguageTheme(topLanguage);
+    const attack1: Attack = {
+        name: theme.attacks.light.name,
+        description: theme.attacks.light.description,
+        damage: attack1Damage,
+        energyCost: attack1Damage < 30 ? 1 : 2,
+    };
+
+    const attack2: Attack = {
+        name: theme.attacks.heavy.name,
+        description: theme.attacks.heavy.description,
+        damage: attack2Damage,
+        energyCost: attack2Damage < 80 ? 2 : 3,
+    };
+
+    // Type matchups
+    const weakness = getWeakness(theme.type);
+    const resistance = getResistance(theme.type);
+
+    // Calculate retreat cost
+    const avgRepoSize = repositories.length > 0
+        ? repositories.reduce((sum, r) => sum + (r.size ?? 0), 0) / repositories.length
+        : 0;
+    const retreatCost = calculateRetreatCost(languageCount, avgRepoSize);
+
+    // Code velocity
+    const recentActiveRepos = topRepos.filter(r => {
+        const pushed = new Date(r.pushed_at);
+        const monthsAgo = (Date.now() - pushed.getTime()) / (30 * 24 * 60 * 60 * 1000);
+        return monthsAgo <= 6;
+    }).length;
+
+    return {
+        username: user.login,
+        name: user.name ?? user.login,
+        avatarUrl: user.avatar_url,
+        bio: user.bio
+            ? user.bio.length > 100
+                ? user.bio.slice(0, 97) + "..."
+                : user.bio
+            : "A developer on GitHub.",
+        location: user.location ?? "",
+        hp,
+        topLanguage,
+        accountAgeYears: ageYears,
+        evolutionStage,
+        programmingLanguageCount: languageCount,
+        ability,
+        attack1,
+        attack2,
+        weakness,
+        resistance,
+        retreatCost,
+        xp: computeXP(ageYears, ownRepos.length, totalStars, languageCount),
+        codeVelocity: computeCodeVelocity(topRepos.length, recentActiveRepos),
+    };
+}
+
+/* ─────────────────────────────────────────────
    Lightweight fetch for card API route
    (skips heavy code-health / devops analysis)
    ───────────────────────────────────────────── */

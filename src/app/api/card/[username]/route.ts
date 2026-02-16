@@ -1,101 +1,112 @@
 import { NextRequest } from "next/server";
-import fs from "node:fs";
-import path from "node:path";
-import { fetchCardData, getCardArtPath, getLanguageTheme, PokemonCardData } from "@/lib/card";
+import { fetchCardStatsEdge, getCardArtPath, getLanguageTheme, PokemonCardData } from "@/lib/card";
 import { rateLimit, GITHUB_USERNAME_RE } from "@/lib/rate-limit";
 
-const imageDataUriCache = new Map<string, string>();
+export const runtime = "edge";
 
-function toMimeType(fileExt: string): string {
-  if (fileExt === ".png") return "image/png";
-  if (fileExt === ".webp") return "image/webp";
-  return "image/jpeg";
-}
+/* ─────────────────────────────────────────────
+   Edge-compatible image utilities
+   ───────────────────────────────────────────── */
 
-function readPublicImageAsDataUri(publicPath: string): string | null {
-  const normalizedPath = publicPath.startsWith("/") ? publicPath.slice(1) : publicPath;
-  if (imageDataUriCache.has(normalizedPath)) {
-    return imageDataUriCache.get(normalizedPath) ?? null;
-  }
-
+async function fetchImageAsBase64(imageUrl: string): Promise<string | null> {
   try {
-    const absolutePath = path.join(process.cwd(), "public", normalizedPath);
-    const extension = path.extname(absolutePath).toLowerCase();
-    const mimeType = toMimeType(extension);
-    const fileBuffer = fs.readFileSync(absolutePath);
-    const dataUri = `data:${mimeType};base64,${fileBuffer.toString("base64")}`;
-    imageDataUriCache.set(normalizedPath, dataUri);
-    return dataUri;
-  } catch {
-    return null;
-  }
-}
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-async function fetchImageAsDataUri(imageUrl: string): Promise<string | null> {
-  try {
-    const response = await fetch(imageUrl, { cache: "force-cache" });
-    if (!response.ok) {
-      return null;
-    }
+    const response = await fetch(imageUrl, {
+      signal: controller.signal,
+      cache: "force-cache",
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) return null;
+
+    const arrayBuffer = await response.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
     const mimeType = response.headers.get("content-type") ?? "image/png";
-    const buffer = Buffer.from(await response.arrayBuffer());
-    return `data:${mimeType};base64,${buffer.toString("base64")}`;
+
+    // Edge-compatible base64 encoding
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+
+    return `data:${mimeType};base64,${base64}`;
   } catch {
     return null;
   }
 }
+
+/* ─────────────────────────────────────────────
+   Main route handler
+   ───────────────────────────────────────────── */
 
 export async function GET(
-    request: NextRequest,
-    { params }: { params: Promise<{ username: string }> }
+  request: NextRequest,
+  { params }: { params: Promise<{ username: string }> }
 ) {
-    try {
-        const { username } = await params;
+  const startTime = Date.now();
+  let usedFallback = false;
 
-        // Validate username format
-        if (!GITHUB_USERNAME_RE.test(username)) {
-            return new Response(JSON.stringify({ error: "Invalid GitHub username" }), {
-                status: 400,
-                headers: { "Content-Type": "application/json" },
-            });
-        }
+  try {
+    const { username } = await params;
 
-        // Rate limit: 30 requests per minute per IP
-        const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-        const limited = rateLimit(`card:${ip}`, 30, 60_000);
-        if (limited) return limited;
-
-        const { searchParams } = new URL(request.url);
-        const format = searchParams.get("format");
-        const data = await fetchCardData(username);
-
-        // Return JSON for the generate page client
-        if (format === "json") {
-            return new Response(JSON.stringify(data), {
-                headers: {
-                    "Content-Type": "application/json",
-                    "Cache-Control": "public, max-age=3600, s-maxage=3600",
-                },
-            });
-        }
-
-        const svg = await generateCardSVG(data);
-
-        return new Response(svg, {
-            headers: {
-                "Content-Type": "image/svg+xml",
-                "Cache-Control": "public, max-age=3600, s-maxage=3600",
-            },
-        });
-    } catch {
-        const errorSvg = generateErrorSVG();
-        return new Response(errorSvg, {
-            headers: {
-                "Content-Type": "image/svg+xml",
-                "Cache-Control": "public, max-age=300",
-            },
-        });
+    // Validate username format
+    if (!GITHUB_USERNAME_RE.test(username)) {
+      return new Response(JSON.stringify({ error: "Invalid GitHub username" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
+
+    // Rate limit: 30 requests per minute per IP
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const limited = rateLimit(`card:${ip}`, 30, 60_000);
+    if (limited) return limited;
+
+    const { searchParams } = new URL(request.url);
+    const format = searchParams.get("format");
+
+    // Fetch card data using lightweight Edge-compatible function
+    const data = await fetchCardStatsEdge(username);
+
+    // Return JSON for the generate page client
+    if (format === "json") {
+      return new Response(JSON.stringify(data), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=3600, s-maxage=3600",
+        },
+      });
+    }
+
+    const svg = await generateCardSVG(data, request.url);
+
+    const renderTime = Date.now() - startTime;
+    console.log(`[card] ${username} rendered in ${renderTime}ms`);
+
+    return new Response(svg, {
+      headers: {
+        "Content-Type": "image/svg+xml",
+        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=43200",
+      },
+    });
+  } catch (error) {
+    usedFallback = true;
+    const renderTime = Date.now() - startTime;
+    console.log(`[card] fallback used after ${renderTime}ms:`, error instanceof Error ? error.message : "unknown error");
+
+    const errorSvg = generateErrorSVG();
+    return new Response(errorSvg, {
+      status: 200, // Always 200 for image embeds
+      headers: {
+        "Content-Type": "image/svg+xml",
+        "Cache-Control": "public, max-age=300",
+      },
+    });
+  }
 }
 
 /* ─────────────────────────────────────────────
@@ -103,46 +114,52 @@ export async function GET(
    ───────────────────────────────────────────── */
 
 function escapeXml(str: string): string {
-    return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&apos;");
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 function cleanText(str: string): string {
   return str.replace(/[—–]/g, "-");
 }
 
-async function generateCardSVG(data: PokemonCardData): Promise<string> {
-    const theme = getLanguageTheme(data.topLanguage);
+async function generateCardSVG(data: PokemonCardData, requestUrl: string): Promise<string> {
+  const theme = getLanguageTheme(data.topLanguage);
   const cardArtPath = getCardArtPath(data.topLanguage);
-  const cardArtDataUri = readPublicImageAsDataUri(cardArtPath);
-    const weaknessTheme = getLanguageTheme(data.weakness.type);
-    const resistanceTheme = getLanguageTheme(data.resistance.type);
-    const sinceYear = new Date().getFullYear() - data.accountAgeYears;
+  const weaknessTheme = getLanguageTheme(data.weakness.type);
+  const resistanceTheme = getLanguageTheme(data.resistance.type);
+  const sinceYear = new Date().getFullYear() - data.accountAgeYears;
 
-    const evoBadgeGradient =
-        data.evolutionStage === "STAGE 2"
-            ? "#FFD700, #FFA500"
-            : data.evolutionStage === "STAGE 1"
-            ? "#E8E8E8, #B0B0B0"
-            : "#E6B87D, #C4926E";
+  const evoBadgeGradient =
+    data.evolutionStage === "STAGE 2"
+      ? "#FFD700, #FFA500"
+      : data.evolutionStage === "STAGE 1"
+        ? "#E8E8E8, #B0B0B0"
+        : "#E6B87D, #C4926E";
 
-    const usernameDisplay =
-        data.username.length > 14 ? data.username.slice(0, 14) + "…" : data.username;
+  const usernameDisplay =
+    data.username.length > 14 ? data.username.slice(0, 14) + "…" : data.username;
 
-    const maxEnergyIcons = 14;
-    const attack1EnergyIcons = Math.min(Math.max(data.attack1.energyCost ?? 0, 0), maxEnergyIcons);
-    const attack2EnergyIcons = Math.min(Math.max(data.attack2.energyCost ?? 0, 0), maxEnergyIcons);
+  const maxEnergyIcons = 14;
+  const attack1EnergyIcons = Math.min(Math.max(data.attack1.energyCost ?? 0, 0), maxEnergyIcons);
+  const attack2EnergyIcons = Math.min(Math.max(data.attack2.energyCost ?? 0, 0), maxEnergyIcons);
 
-    const proxiedAvatarUrl = `https://images.weserv.nl/?url=${encodeURIComponent(data.avatarUrl.replace("https://", ""))}`;
-    const avatarDataUri =
-      (await fetchImageAsDataUri(data.avatarUrl)) ??
-      (await fetchImageAsDataUri(proxiedAvatarUrl));
+  // Fetch card art from our own public URL
+  const url = new URL(requestUrl);
+  const origin = url.origin;
+  const cardArtUrl = `${origin}${cardArtPath}`;
+  const cardArtDataUri = await fetchImageAsBase64(cardArtUrl);
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="350" height="490" viewBox="0 0 350 490" fill="none">
+  // Fetch avatar with proxy fallback
+  const proxiedAvatarUrl = `https://images.weserv.nl/?url=${encodeURIComponent(data.avatarUrl.replace("https://", ""))}`;
+  const avatarDataUri =
+    (await fetchImageAsBase64(data.avatarUrl)) ??
+    (await fetchImageAsBase64(proxiedAvatarUrl));
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="350" height="490" viewBox="0 0 350 490" fill="none">
   <defs>
     <!-- Full-art background gradient -->
     <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -185,8 +202,8 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
   <!-- ═══ SUBTLE DIAGONAL PATTERN OVERLAY ═══ -->
   <g opacity="0.04">
     ${Array.from({ length: 60 }).map((_, i) => {
-        return `<line x1="${i * 10 - 100}" y1="0" x2="${i * 10 + 400}" y2="490" stroke="white" stroke-width="0.5"/>`;
-    }).join("\n    ")}
+    return `<line x1="${i * 10 - 100}" y1="0" x2="${i * 10 + 400}" y2="490" stroke="white" stroke-width="0.5"/>`;
+  }).join("\n    ")}
   </g>
   
   <!-- ═══ RADIAL GLOW BEHIND AVATAR ═══ -->
@@ -236,11 +253,10 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
   <ellipse cx="175" cy="205" rx="35" ry="8" fill="rgba(0,0,0,0.2)" filter="url(#blur)"/>
 
   <!-- ═══ INFO BAR ═══ -->
-  ${
-      data.location
-            ? `<text x="175" y="220" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="rgba(255,255,255,0.90)" letter-spacing="0.4">@${escapeXml(data.username)} · ${escapeXml(data.location.length > 15 ? data.location.slice(0, 13) + ".." : data.location)} · Since ${sinceYear}</text>`
-          : ""
-  }
+  ${data.location
+      ? `<text x="175" y="220" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="rgba(255,255,255,0.90)" letter-spacing="0.4">@${escapeXml(data.username)} · ${escapeXml(data.location.length > 15 ? data.location.slice(0, 13) + ".." : data.location)} · Since ${sinceYear}</text>`
+      : ""
+    }
 
   <!-- ═══ ABILITY SECTION ═══ -->
             <rect x="12" y="228" width="326" height="${data.ability.description.length > 50 ? 44 : 40}" rx="8" fill="rgba(0,0,0,0.52)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
@@ -266,7 +282,7 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
   <!-- ═══ ATTACK 1 ═══ -->
   <g>
     ${Array.from({ length: attack1EnergyIcons }).map((_, i) =>
-        `<circle cx="${20 + i * 22}" cy="318" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
+      `<circle cx="${20 + i * 22}" cy="318" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
     <text x="${30 + attack1EnergyIcons * 22}" y="322" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack1.name)}</text>
     <text x="326" y="324" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack1.damage}</text>
@@ -279,7 +295,7 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
   <!-- ═══ ATTACK 2 ═══ -->
   <g>
     ${Array.from({ length: attack2EnergyIcons }).map((_, i) =>
-        `<circle cx="${20 + i * 22}" cy="368" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
+      `<circle cx="${20 + i * 22}" cy="368" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
     <text x="${30 + attack2EnergyIcons * 22}" y="372" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack2.name)}</text>
     <text x="326" y="374" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack2.damage}</text>
@@ -305,7 +321,7 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
   <text x="252" y="416" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="rgba(255,255,255,0.88)" letter-spacing="1">RETREAT</text>
   <g>
     ${Array.from({ length: Math.min(data.retreatCost, 4) }).map((_, i) =>
-        `<circle cx="${252 + i * 18}" cy="432" r="8" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
+      `<circle cx="${252 + i * 18}" cy="432" r="8" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
   </g>
   
@@ -320,7 +336,7 @@ async function generateCardSVG(data: PokemonCardData): Promise<string> {
    ───────────────────────────────────────────── */
 
 function generateErrorSVG(): string {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="350" height="490" viewBox="0 0 350 490" fill="none">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="350" height="490" viewBox="0 0 350 490" fill="none">
   <rect width="350" height="490" rx="16" fill="#6b7280"/>
   <rect x="8" y="8" width="334" height="474" rx="10" fill="#FFF8F0"/>
   <text x="175" y="230" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="16" font-weight="700" fill="#1a1a2e">User Not Found</text>
