@@ -132,6 +132,7 @@ async function generateCardSVG(data: PokemonCardData, requestUrl: string): Promi
   const weaknessTheme = getLanguageTheme(data.weakness.type);
   const resistanceTheme = getLanguageTheme(data.resistance.type);
   const sinceYear = new Date().getFullYear() - data.accountAgeYears;
+  const raritySymbol = data.rarity === "rare" ? "★" : data.rarity === "uncommon" ? "◆" : "●";
 
   const evoBadgeGradient =
     data.evolutionStage === "STAGE 2"
@@ -159,7 +160,7 @@ async function generateCardSVG(data: PokemonCardData, requestUrl: string): Promi
     (await fetchImageAsBase64(data.avatarUrl)) ??
     (await fetchImageAsBase64(proxiedAvatarUrl));
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="350" height="490" viewBox="0 0 350 490" fill="none">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="358" height="498" viewBox="0 0 358 498" fill="none">
   <defs>
     <!-- Full-art background gradient -->
     <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -167,13 +168,19 @@ async function generateCardSVG(data: PokemonCardData, requestUrl: string): Promi
       <stop offset="40%" stop-color="${theme.accentColor}"/>
       <stop offset="100%" stop-color="${theme.borderColor}"/>
     </linearGradient>
-    
+
     <!-- Evolution badge gradient -->
     <linearGradient id="evoBadge" x1="0" y1="0" x2="100%" y2="100%">
       <stop offset="0%" stop-color="${evoBadgeGradient.split(", ")[0]}"/>
       <stop offset="100%" stop-color="${evoBadgeGradient.split(", ")[1]}"/>
     </linearGradient>
-    
+
+    <!-- Ability badge gradient -->
+    <linearGradient id="abilityBadge" x1="0" y1="0" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${theme.accentColor}"/>
+      <stop offset="100%" stop-color="${theme.borderColor}"/>
+    </linearGradient>
+
     <!-- Energy dot gradients -->
     <radialGradient id="energyMain" cx="35%" cy="35%">
       <stop offset="0%" stop-color="${theme.accentColor}"/>
@@ -187,147 +194,154 @@ async function generateCardSVG(data: PokemonCardData, requestUrl: string): Promi
       <stop offset="0%" stop-color="${resistanceTheme.accentColor}"/>
       <stop offset="100%" stop-color="${resistanceTheme.borderColor}"/>
     </radialGradient>
-    
-    <!-- Avatar hexagon clip (larger size) -->
+
+    <!-- Avatar clip -->
     <clipPath id="octClip">
       <polygon points="175,60 212,73 225,110 225,150 212,187 175,200 138,187 125,150 125,110 138,73"/>
     </clipPath>
+
+    <!-- Vignette for avatar -->
+    <radialGradient id="avatarFade" cx="50%" cy="50%" r="50%">
+      <stop offset="56%" stop-color="white" stop-opacity="0"/>
+      <stop offset="100%" stop-color="black" stop-opacity="0.45"/>
+    </radialGradient>
+
+    <!-- Blur filter for drop shadows -->
+    <filter id="blur"><feGaussianBlur stdDeviation="20"/></filter>
+
+    <!-- Gradient border frame -->
+    <linearGradient id="borderGradient" x1="0%" y1="0%" x2="100%" y2="100%" gradientTransform="rotate(145)">
+      <stop offset="0%" stop-color="${theme.borderColor}"/>
+      <stop offset="100%" stop-color="${theme.accentColor}"/>
+    </linearGradient>
+    <clipPath id="cardClip">
+      <rect width="350" height="490" rx="16"/>
+    </clipPath>
+    <clipPath id="abilityClip">
+      <rect x="12" y="228" width="326" height="58" rx="8"/>
+    </clipPath>
+    <clipPath id="attacksClip">
+      <rect x="12" y="292" width="326" height="106" rx="8"/>
+    </clipPath>
   </defs>
+
+  <!-- ═══ OUTER GRADIENT BORDER FRAME ═══ -->
+  <rect width="358" height="498" rx="20" fill="url(#borderGradient)"/>
+
+  <!-- ═══ CARD CONTENT (clipped + offset by 4px border) ═══ -->
+  <g transform="translate(4,4)" clip-path="url(#cardClip)">
 
   <!-- ═══ FULL-ART BACKGROUND ═══ -->
   <rect width="350" height="490" rx="16" fill="url(#bgGradient)"/>
-  ${cardArtDataUri ? `<image href="${cardArtDataUri}" x="0" y="0" width="350" height="490" preserveAspectRatio="xMidYMid slice" opacity="0.58"/>` : ""}
-  <rect width="350" height="490" rx="16" fill="url(#bgGradient)" opacity="0.72"/>
-  
-  <!-- ═══ SUBTLE DIAGONAL PATTERN OVERLAY ═══ -->
-  <g opacity="0.04">
-    ${Array.from({ length: 60 }).map((_, i) => {
-    return `<line x1="${i * 10 - 100}" y1="0" x2="${i * 10 + 400}" y2="490" stroke="white" stroke-width="0.5"/>`;
-  }).join("\n    ")}
-  </g>
-  
-  <!-- ═══ RADIAL GLOW BEHIND AVATAR ═══ -->
-  <circle cx="175" cy="120" r="100" fill="white" opacity="0.15" filter="url(#blur)"/>
-  <defs><filter id="blur"><feGaussianBlur stdDeviation="40"/></filter></defs>
-  
-  <!-- ═══ SILVER BORDER ═══ -->
-  <rect width="350" height="490" rx="16" fill="none" stroke="rgba(220,220,220,0.6)" stroke-width="2"/>
+  ${cardArtDataUri ? `<image href="${cardArtDataUri}" x="0" y="0" width="350" height="490" preserveAspectRatio="xMidYMid slice" opacity="0.62"/>` : ""}
+  <!-- Lighter theme wash — lets illustration show through -->
+  <rect width="350" height="490" rx="16" fill="url(#bgGradient)" opacity="0.50"/>
 
-  <!-- ═══ HEADER BAR ═══ -->
-  <rect width="350" height="48" rx="16" fill="rgba(0,0,0,0.74)"/>
-  <rect width="350" height="48" fill="rgba(0,0,0,0.52)"/>
-  
+  <!-- ═══ INNER BORDER (subtle inset) ═══ -->
+  <rect width="350" height="490" rx="16" fill="none" stroke="rgba(220,220,220,0.35)" stroke-width="1.5"/>
+
+  <!-- ═══ HEADER BAR — lightened ═══ -->
+  <rect width="350" height="48" rx="16" fill="rgba(0,0,0,0.60)"/>
+  <rect width="350" height="48" rx="16" fill="rgba(0,0,0,0.38)"/>
+
   <!-- Evolution badge -->
   <rect x="16" y="10" width="${Math.max(data.evolutionStage.length * 9 + 20, 80)}" height="26" rx="13" fill="url(#evoBadge)" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
-  <text x="${16 + Math.max(data.evolutionStage.length * 9 + 20, 80) / 2}" y="28" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="800" fill="#1a1a1a" letter-spacing="1">${escapeXml(data.evolutionStage)}</text>
-  
-  <!-- Username V -->
-  <text x="${28 + Math.max(data.evolutionStage.length * 9 + 20, 80)}" y="30" font-family="'Mona Sans', -apple-system, sans-serif" font-size="19" font-weight="900" fill="white" letter-spacing="-0.4" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">${escapeXml(usernameDisplay)} V</text>
-  
+  <text x="${16 + Math.max(data.evolutionStage.length * 9 + 20, 80) / 2}" y="28" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="800" fill="#1a1a1a" letter-spacing="0.8">${escapeXml(data.evolutionStage)}</text>
+
+  <!-- Username + metallic V -->
+  <text x="${28 + Math.max(data.evolutionStage.length * 9 + 20, 80)}" y="30" font-family="'Mona Sans', -apple-system, sans-serif" font-size="19" font-weight="900" fill="white" letter-spacing="-0.4" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">${escapeXml(usernameDisplay)}</text>
+  <text x="${28 + Math.max(data.evolutionStage.length * 9 + 20, 80) + usernameDisplay.length * 11}" y="30" font-family="'Mona Sans', -apple-system, sans-serif" font-size="22" font-weight="900" fill="url(#silverV)">V</text>
+  <defs><linearGradient id="silverV" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#aaaaaa"/></linearGradient></defs>
+
   <!-- HP -->
   <text x="260" y="26" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.90)" letter-spacing="1.2">HP</text>
   <text x="280" y="34" font-family="'Mona Sans', -apple-system, sans-serif" font-size="30" font-weight="900" fill="white" letter-spacing="-0.5">${data.hp}</text>
-  
+
   <!-- Type emoji -->
   <text x="320" y="33" font-size="20">${theme.emoji}</text>
 
-  <!-- ═══ AVATAR (Octagon - Larger) ═══ -->
-  <polygon points="175,60 212,73 225,110 225,150 212,187 175,200 138,187 125,150 125,110 138,73" fill="rgba(10,12,18,0.68)" stroke="rgba(255,255,255,0.42)" stroke-width="3"/>
-  <polygon points="175,64 209,76 221,110 221,150 209,184 175,196 141,184 129,150 129,110 141,76" fill="white" fill-opacity="0.14"/>
-  <polygon points="175,64 209,76 221,110 221,150 209,184 175,196 141,184 129,150 129,110 141,76" fill="rgba(17,24,39,0.45)"/>
+  <!-- ═══ AVATAR — lighter shell ═══ -->
+  <polygon points="175,60 212,73 225,110 225,150 212,187 175,200 138,187 125,150 125,110 138,73" fill="rgba(10,12,18,0.42)" stroke="rgba(255,255,255,0.38)" stroke-width="2.5"/>
+  <polygon points="175,64 209,76 221,110 221,150 209,184 175,196 141,184 129,150 129,110 141,76" fill="rgba(17,24,39,0.50)"/>
   ${avatarDataUri ? `<image href="${avatarDataUri}" x="125" y="60" width="100" height="140" clip-path="url(#octClip)" preserveAspectRatio="xMidYMid slice"/>` : `
   <!-- Initials fallback -->
   <circle cx="175" cy="130" r="35" fill="${theme.borderColor}" opacity="0.8"/>
   <text x="175" y="140" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="32" font-weight="900" fill="white" opacity="0.9">${escapeXml(data.username.charAt(0).toUpperCase())}</text>
   `}
-  
-  <!-- Vignette fade on avatar -->
-  <radialGradient id="avatarFade" cx="50%" cy="50%" r="50%">
-    <stop offset="56%" stop-color="white" stop-opacity="0"/>
-    <stop offset="100%" stop-color="black" stop-opacity="0.6"/>
-  </radialGradient>
   <rect x="125" y="60" width="100" height="140" fill="url(#avatarFade)" clip-path="url(#octClip)"/>
-  <rect x="125" y="60" width="100" height="140" fill="url(#bgGradient)" clip-path="url(#octClip)" opacity="0.08"/>
-  
-  <!-- Avatar drop shadow -->
-  <ellipse cx="175" cy="205" rx="35" ry="8" fill="rgba(0,0,0,0.2)" filter="url(#blur)"/>
 
   <!-- ═══ INFO BAR ═══ -->
-  ${data.location
-      ? `<text x="175" y="220" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="rgba(255,255,255,0.90)" letter-spacing="0.4">@${escapeXml(data.username)} · ${escapeXml(data.location.length > 15 ? data.location.slice(0, 13) + ".." : data.location)} · Since ${sinceYear}</text>`
-      : ""
-    }
+  <text x="175" y="220" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="white" letter-spacing="0.3" stroke="rgba(0,0,0,0.6)" stroke-width="0.6" paint-order="stroke">@${escapeXml(data.username)}${data.location ? ` · ${escapeXml(data.location.length > 15 ? data.location.slice(0, 13) + ".." : data.location)}` : ""} · Since ${sinceYear}</text>
 
-  <!-- ═══ ABILITY SECTION ═══ -->
-            <rect x="12" y="228" width="326" height="${data.ability.description.length > 50 ? 44 : 40}" rx="8" fill="rgba(0,0,0,0.52)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-          <rect x="16" y="234" width="42" height="13" rx="3" fill="#FF4444"/>
-  <linearGradient id="abilityBadge"><stop offset="0%" stop-color="#FF4444"/><stop offset="100%" stop-color="#CC0000"/></linearGradient>
-          <rect x="16" y="234" width="42" height="13" rx="3" fill="url(#abilityBadge)"/>
-            <text x="37" y="244" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="9" font-weight="900" fill="white" letter-spacing="0.8">ABILITY</text>
-            <text x="66" y="244" font-family="'Mona Sans', -apple-system, sans-serif" font-size="13" font-weight="760" fill="white">${escapeXml(data.ability.name)}</text>
-            <text x="66" y="259" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.94)" font-style="italic">${escapeXml(cleanText(data.ability.description.length > 54 ? data.ability.description.slice(0, 51) + "..." : data.ability.description))}</text>
+  <!-- ═══ ABILITY + XP/VELOCITY (combined panel) ═══ -->
+  <rect x="12" y="228" width="326" height="58" rx="8" fill="rgba(0,0,0,0.28)" stroke="${theme.accentColor}60" stroke-width="1.5"/>
+  <!-- Accent left border -->
+  <rect x="12" y="228" width="3" height="58" rx="1.5" fill="${theme.accentColor}80"/>
+  <g clip-path="url(#abilityClip)">
+    <rect x="19" y="234" width="44" height="14" rx="3" fill="url(#abilityBadge)"/>
+    <text x="41" y="245" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="900" fill="white" letter-spacing="0.5">ABILITY</text>
+    <text x="70" y="245" font-family="'Mona Sans', -apple-system, sans-serif" font-size="13" font-weight="760" fill="white">${escapeXml(data.ability.name.length > 22 ? data.ability.name.slice(0, 20) + "…" : data.ability.name)}</text>
+    <text x="70" y="260" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.90)" font-style="italic">${escapeXml(cleanText(data.ability.description.length > 42 ? data.ability.description.slice(0, 39) + "..." : data.ability.description))}</text>
+    <!-- XP + Velocity merged into ability panel -->
+    <text x="70" y="278" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="500" fill="rgba(255,255,255,0.55)" letter-spacing="0.3">XP ${data.xp.toLocaleString()} · Velocity ${data.codeVelocity}%</text>
+  </g>
 
-  <!-- ═══ POWER STATS (XP + Velocity) ═══ -->
-  <rect x="12" y="${data.ability.description.length > 50 ? 276 : 272}" width="158" height="24" rx="6" fill="rgba(0,0,0,0.42)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-  <text x="42" y="${data.ability.description.length > 50 ? 286 : 282}" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.84)" letter-spacing="1" stroke="rgba(0,0,0,0.55)" stroke-width="0.6" paint-order="stroke">XP</text>
-  <text x="62" y="${data.ability.description.length > 50 ? 290 : 286}" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="900" fill="white" stroke="rgba(0,0,0,0.6)" stroke-width="0.7" paint-order="stroke">${data.xp.toLocaleString()}</text>
-  
-  <rect x="180" y="${data.ability.description.length > 50 ? 276 : 272}" width="158" height="24" rx="6" fill="rgba(0,0,0,0.42)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-  <text x="198" y="${data.ability.description.length > 50 ? 286 : 282}" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="rgba(255,255,255,0.84)" letter-spacing="1" stroke="rgba(0,0,0,0.55)" stroke-width="0.6" paint-order="stroke">VELOCITY</text>
-  <text x="256" y="${data.ability.description.length > 50 ? 290 : 286}" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="900" fill="white" stroke="rgba(0,0,0,0.6)" stroke-width="0.7" paint-order="stroke">${data.codeVelocity}%</text>
+  <!-- ═══ ATTACKS PANEL — moved up, taller, lighter ═══ -->
+  <rect x="12" y="292" width="326" height="106" rx="8" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
 
-  <!-- ═══ ATTACKS PANEL ═══ -->
-  <rect x="12" y="306" width="326" height="90" rx="8" fill="rgba(0,0,0,0.38)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-
+  <g clip-path="url(#attacksClip)">
   <!-- ═══ ATTACK 1 ═══ -->
   <g>
     ${Array.from({ length: attack1EnergyIcons }).map((_, i) =>
-      `<circle cx="${20 + i * 22}" cy="318" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
+      `<circle cx="${24 + i * 20}" cy="306" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
-    <text x="${30 + attack1EnergyIcons * 22}" y="322" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack1.name)}</text>
-    <text x="326" y="324" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack1.damage}</text>
-    <text x="${30 + attack1EnergyIcons * 22}" y="339" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.95)" stroke="rgba(0,0,0,0.55)" stroke-width="0.6" paint-order="stroke">${escapeXml(cleanText(data.attack1.description.length > 48 ? data.attack1.description.slice(0, 45) + "..." : data.attack1.description))}</text>
+    <text x="${20 + attack1EnergyIcons * 20}" y="310" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack1.name)}</text>
+    <text x="326" y="312" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack1.damage}</text>
+    <text x="${20 + attack1EnergyIcons * 20}" y="325" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.45)" stroke-width="0.5" paint-order="stroke">${escapeXml(cleanText(data.attack1.description.length > 42 ? data.attack1.description.slice(0, 39) + "..." : data.attack1.description))}</text>
   </g>
 
   <!-- Divider -->
-  <line x1="20" y1="350" x2="330" y2="350" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <line x1="20" y1="338" x2="330" y2="338" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
 
   <!-- ═══ ATTACK 2 ═══ -->
   <g>
     ${Array.from({ length: attack2EnergyIcons }).map((_, i) =>
-      `<circle cx="${20 + i * 22}" cy="368" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
+      `<circle cx="${24 + i * 20}" cy="354" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
-    <text x="${30 + attack2EnergyIcons * 22}" y="372" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack2.name)}</text>
-    <text x="326" y="374" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack2.damage}</text>
-    <text x="${30 + attack2EnergyIcons * 22}" y="389" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.95)" stroke="rgba(0,0,0,0.55)" stroke-width="0.6" paint-order="stroke">${escapeXml(cleanText(data.attack2.description.length > 48 ? data.attack2.description.slice(0, 45) + "..." : data.attack2.description))}</text>
+    <text x="${20 + attack2EnergyIcons * 20}" y="358" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack2.name)}</text>
+    <text x="326" y="360" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack2.damage}</text>
+    <text x="${20 + attack2EnergyIcons * 20}" y="373" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.45)" stroke-width="0.5" paint-order="stroke">${escapeXml(cleanText(data.attack2.description.length > 42 ? data.attack2.description.slice(0, 39) + "..." : data.attack2.description))}</text>
+  </g>
   </g>
 
-  <!-- ═══ BOTTOM STATS BAR ═══ -->
-  <rect y="398" width="350" height="92" fill="rgba(0,0,0,0.72)"/>
-  <line x1="116" y1="414" x2="116" y2="448" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-  <line x1="234" y1="414" x2="234" y2="448" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-  
+  <!-- ═══ BOTTOM STATS BAR — lightened ═══ -->
+  <rect y="402" width="350" height="88" rx="16" fill="rgba(0,0,0,0.62)"/>
+  <line x1="116" y1="416" x2="116" y2="450" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <line x1="234" y1="416" x2="234" y2="450" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+
   <!-- Weakness -->
-  <text x="24" y="416" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="rgba(255,255,255,0.88)" letter-spacing="1">WEAKNESS</text>
-  <circle cx="24" cy="432" r="8" fill="url(#energyWeak)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-  <text x="36" y="436" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="700" fill="white">${escapeXml(data.weakness.modifier)}</text>
-  
+  <text x="58" y="420" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="rgba(255,255,255,0.60)" letter-spacing="0.5">WEAKNESS</text>
+  <circle cx="46" cy="436" r="8" fill="url(#energyWeak)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+  <text x="58" y="440" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="700" fill="white">${escapeXml(data.weakness.modifier)}</text>
+
   <!-- Resistance -->
-  <text x="133" y="416" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="rgba(255,255,255,0.88)" letter-spacing="1">RESISTANCE</text>
-  <circle cx="133" cy="432" r="8" fill="url(#energyResist)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-  <text x="145" y="436" font-family="'Mona Sans', -apple-system, sans-serif" font-size="10" font-weight="700" fill="white">${escapeXml(data.resistance.modifier)}</text>
-  
+  <text x="175" y="420" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="rgba(255,255,255,0.60)" letter-spacing="0.5">RESIST</text>
+  <circle cx="163" cy="436" r="8" fill="url(#energyResist)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+  <text x="175" y="440" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="700" fill="white">${escapeXml(data.resistance.modifier)}</text>
+
   <!-- Retreat -->
-  <text x="252" y="416" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="rgba(255,255,255,0.88)" letter-spacing="1">RETREAT</text>
+  <text x="292" y="420" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="rgba(255,255,255,0.60)" letter-spacing="0.5">RETREAT</text>
   <g>
     ${Array.from({ length: Math.min(data.retreatCost, 4) }).map((_, i) =>
-      `<circle cx="${252 + i * 18}" cy="432" r="8" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
+      `<circle cx="${272 + i * 18}" cy="436" r="8" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
   </g>
-  
+
   <!-- Footer branding -->
-  <line x1="20" y1="456" x2="330" y2="456" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
-  <text x="175" y="474" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="8" fill="rgba(255,255,255,0.72)" letter-spacing="1">gitwrapped · ${data.programmingLanguageCount} lang · ${escapeXml(data.topLanguage ?? "")}</text>
+  <line x1="20" y1="458" x2="330" y2="458" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="20" y="476" font-family="'JetBrains Mono', monospace" font-size="11" fill="rgba(255,255,255,0.45)" letter-spacing="0.5">gitwrapped · ${data.programmingLanguageCount} lang · ${escapeXml(data.topLanguage ?? "")}</text>
+  <text x="330" y="476" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="11" fill="rgba(255,255,255,0.45)" letter-spacing="0.3">#${data.cardNumber} ${raritySymbol}</text>
+  </g>
 </svg>`;
 }
 

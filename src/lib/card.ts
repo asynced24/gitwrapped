@@ -43,6 +43,8 @@ export interface PokemonCardData {
     retreatCost: number;
     xp: number;
     codeVelocity: number;
+    cardNumber: string;
+    rarity: "common" | "uncommon" | "rare";
 }
 
 /* ─────────────────────────────────────────────
@@ -411,7 +413,8 @@ export function generateAbility(
     languageCount: number,
     repoCount: number,
     totalStars: number,
-    consistency: number
+    consistency: number,
+    accountAgeYears: number
 ): Ability {
     // Priority-based ability selection
     if (languageCount >= 6) {
@@ -438,10 +441,28 @@ export function generateAbility(
             description: `High coding consistency — can't be put to sleep`,
         };
     }
+    if (accountAgeYears >= 8) {
+        return {
+            name: "Ancient Protocol",
+            description: `${accountAgeYears} years of commits — attacks bypass resistance`,
+        };
+    }
+    if (accountAgeYears >= 4) {
+        return {
+            name: "Veteran Coder",
+            description: `${accountAgeYears} years on GitHub — takes 20 less damage from attacks`,
+        };
+    }
     if (repoCount >= 10 && totalStars < 20) {
         return {
             name: "Lone Wolf",
             description: `Prefers solo projects — retreat cost reduced by 1`,
+        };
+    }
+    if (accountAgeYears >= 2) {
+        return {
+            name: "Apprentice Dev",
+            description: `Building experience for ${accountAgeYears} years — draws an extra card`,
         };
     }
     return {
@@ -497,6 +518,16 @@ function calculateAttack2Damage(topRepoStars: number, totalStars: number): numbe
 
 const MARKUP_LANGUAGES = new Set(["HTML", "CSS", "Markdown", "SCSS", "Less", "Jupyter Notebook"]);
 
+/** Deterministic 4-digit card number from username, always the same for the same user */
+function computeCardNumber(username: string): string {
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+        hash = ((hash << 5) - hash + username.charCodeAt(i)) | 0;
+    }
+    const num = (Math.abs(hash) % 9999) + 1;
+    return String(num).padStart(4, "0");
+}
+
 export function buildCardData(stats: UserStats): PokemonCardData {
     const ageYears = stats.accountAgeYears;
     const programmingLangs = stats.languageStats.filter(
@@ -524,7 +555,8 @@ export function buildCardData(stats: UserStats): PokemonCardData {
         languageCount,
         stats.ownRepoCount,
         stats.totalStars,
-        consistency
+        consistency,
+        ageYears
     );
 
     // Calculate average monthly activity
@@ -595,6 +627,8 @@ export function buildCardData(stats: UserStats): PokemonCardData {
             const monthsAgo = (Date.now() - pushed.getTime()) / (30 * 24 * 60 * 60 * 1000);
             return monthsAgo <= 6;
         }).length : 0),
+        cardNumber: computeCardNumber(stats.user.login),
+        rarity: evolutionStage === "STAGE 2" ? "rare" : evolutionStage === "STAGE 1" ? "uncommon" : "common",
     };
 }
 
@@ -742,7 +776,7 @@ export async function fetchCardStatsEdge(username: string): Promise<PokemonCardD
     const hp = computeHP(consistency, totalStars, ageYears);
 
     // Generate ability
-    const ability = generateAbility(languageCount, ownRepos.length, totalStars, consistency);
+    const ability = generateAbility(languageCount, ownRepos.length, totalStars, consistency, ageYears);
 
     // Calculate attacks
     const avgMonthlyActivity = repositories.length > 0 ? repositories.length / Math.max(totalMonths, 1) : 0;
@@ -805,6 +839,8 @@ export async function fetchCardStatsEdge(username: string): Promise<PokemonCardD
         retreatCost,
         xp: computeXP(ageYears, ownRepos.length, totalStars, languageCount),
         codeVelocity: computeCodeVelocity(topRepos.length, recentActiveRepos),
+        cardNumber: computeCardNumber(user.login),
+        rarity: evolutionStage === "STAGE 2" ? "rare" : evolutionStage === "STAGE 1" ? "uncommon" : "common",
     };
 }
 
