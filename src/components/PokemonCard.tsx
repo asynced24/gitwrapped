@@ -82,7 +82,7 @@ function AttackRow({
                     WebkitBoxOrient: "vertical",
                     overflow: "hidden",
                     paddingLeft: `${energyCost * 18 + 4}px`,
-                    paddingRight: "52px",
+                    paddingRight: "8px",
                 }}
             >
                 {cleanText(description)}
@@ -422,7 +422,7 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
 
                         {/* ── ATTACKS — intrinsic height, no flex-1 ── */}
                         <div
-                            className="relative mx-3 mb-2.5 px-3 pt-2.5 pb-2.5 rounded-lg flex flex-col gap-2 overflow-hidden"
+                            className="relative mx-3 mb-2 px-3 pt-2.5 pb-2.5 rounded-lg flex flex-col gap-2 overflow-hidden"
                             style={{
                                 background: "rgba(0,0,0,0.25)",
                                 backdropFilter: "blur(4px)",
@@ -458,7 +458,7 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
 
                         {/* ── BOTTOM STATS BAR ── */}
                         <div
-                            className="relative px-4 pt-2.5 pb-5"
+                            className="relative px-4 pt-2.5 pb-4"
                             style={{
                                 background: "linear-gradient(0deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.40) 100%)",
                                 backdropFilter: "blur(8px)",
@@ -519,7 +519,7 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                                     gitwrapped · {data.programmingLanguageCount} lang · {data.topLanguage}
                                 </p>
                                 <p
-                                    className="text-[11px] text-white/45 tracking-wide"
+                                    className="text-[11px] text-white/45 tracking-wide shrink-0"
                                     style={{ fontFamily: "'JetBrains Mono', monospace" }}
                                 >
                                     #{data.cardNumber}
