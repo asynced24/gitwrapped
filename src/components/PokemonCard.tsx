@@ -458,15 +458,15 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
 
                         {/* ── BOTTOM STATS BAR ── */}
                         <div
-                            className="relative px-4 pt-2.5 pb-4"
+                            className="relative px-4 py-3"
                             style={{
                                 background: "linear-gradient(0deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.40) 100%)",
                                 backdropFilter: "blur(8px)",
                                 WebkitBackdropFilter: "blur(8px)",
                             }}
                         >
-                            <div className="flex items-center text-white/90">
-                                <div className="flex-1 flex flex-col items-center gap-1">
+                            <div className="flex items-center justify-center gap-10 text-white/90">
+                                <div className="flex flex-col items-center gap-1">
                                     <span
                                         className="text-[11px] font-bold uppercase tracking-[1px] text-white/60"
                                         style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -479,9 +479,7 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                                     </div>
                                 </div>
 
-                                <div className="h-6 w-px bg-white/15" />
-
-                                <div className="flex-1 flex flex-col items-center gap-1">
+                                <div className="flex flex-col items-center gap-1">
                                     <span
                                         className="text-[11px] font-bold uppercase tracking-[1px] text-white/60"
                                         style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -494,9 +492,7 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                                     </div>
                                 </div>
 
-                                <div className="h-6 w-px bg-white/15" />
-
-                                <div className="flex-1 flex flex-col items-center gap-1">
+                                <div className="flex flex-col items-center gap-1">
                                     <span
                                         className="text-[11px] font-bold uppercase tracking-[1px] text-white/60"
                                         style={{ fontFamily: "'JetBrains Mono', monospace" }}

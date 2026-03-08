@@ -160,6 +160,21 @@ async function generateCardSVG(data: PokemonCardData, requestUrl: string): Promi
     (await fetchImageAsBase64(data.avatarUrl)) ??
     (await fetchImageAsBase64(proxiedAvatarUrl));
 
+  // Split ability description at the em-dash separator so both lines show in SVG
+  const cleanedAbilityDesc = cleanText(data.ability.description);
+  const descDashIdx = cleanedAbilityDesc.indexOf(' - ');
+  let svgDescLine1: string;
+  let svgDescLine2: string;
+  if (descDashIdx !== -1) {
+    svgDescLine1 = cleanedAbilityDesc.slice(0, descDashIdx + 2); // e.g. "Fluent in 7 languages -"
+    svgDescLine2 = cleanedAbilityDesc.slice(descDashIdx + 3);    // e.g. "attacks deal 10 extra damage"
+  } else {
+    svgDescLine1 = cleanedAbilityDesc.length > 40 ? cleanedAbilityDesc.slice(0, 38) + '...' : cleanedAbilityDesc;
+    svgDescLine2 = '';
+  }
+  if (svgDescLine1.length > 42) svgDescLine1 = svgDescLine1.slice(0, 40) + '...';
+  if (svgDescLine2.length > 42) svgDescLine2 = svgDescLine2.slice(0, 40) + '...';
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="358" height="498" viewBox="0 0 358 498" fill="none">
   <defs>
     <!-- Full-art background gradient -->
@@ -218,11 +233,16 @@ async function generateCardSVG(data: PokemonCardData, requestUrl: string): Promi
       <rect width="350" height="490" rx="16"/>
     </clipPath>
     <clipPath id="abilityClip">
-      <rect x="12" y="228" width="326" height="58" rx="8"/>
+      <rect x="12" y="228" width="326" height="68" rx="8"/>
     </clipPath>
     <clipPath id="attacksClip">
-      <rect x="12" y="292" width="326" height="106" rx="8"/>
+      <rect x="12" y="300" width="326" height="100" rx="8"/>
     </clipPath>
+    <!-- Metallic V gradient for header -->
+    <linearGradient id="silverV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#aaaaaa"/>
+    </linearGradient>
   </defs>
 
   <!-- ═══ OUTER GRADIENT BORDER FRAME ═══ -->
@@ -248,10 +268,8 @@ async function generateCardSVG(data: PokemonCardData, requestUrl: string): Promi
   <rect x="16" y="10" width="${Math.max(data.evolutionStage.length * 9 + 20, 80)}" height="26" rx="13" fill="url(#evoBadge)" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
   <text x="${16 + Math.max(data.evolutionStage.length * 9 + 20, 80) / 2}" y="28" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="800" fill="#1a1a1a" letter-spacing="0.8">${escapeXml(data.evolutionStage)}</text>
 
-  <!-- Username + metallic V -->
-  <text x="${28 + Math.max(data.evolutionStage.length * 9 + 20, 80)}" y="30" font-family="'Mona Sans', -apple-system, sans-serif" font-size="19" font-weight="900" fill="white" letter-spacing="-0.4" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">${escapeXml(usernameDisplay)}</text>
-  <text x="${28 + Math.max(data.evolutionStage.length * 9 + 20, 80) + usernameDisplay.length * 11}" y="30" font-family="'Mona Sans', -apple-system, sans-serif" font-size="22" font-weight="900" fill="url(#silverV)">V</text>
-  <defs><linearGradient id="silverV" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#aaaaaa"/></linearGradient></defs>
+  <!-- Username + metallic V (single text element so SVG handles spacing natively) -->
+  <text x="${28 + Math.max(data.evolutionStage.length * 9 + 20, 80)}" y="30" font-family="'Mona Sans', -apple-system, sans-serif" font-size="19" font-weight="900" fill="white" letter-spacing="-0.4" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">${escapeXml(usernameDisplay)}<tspan fill="url(#silverV)" stroke="none" letter-spacing="0" dx="8">V</tspan></text>
 
   <!-- HP -->
   <text x="260" y="26" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.90)" letter-spacing="1.2">HP</text>
@@ -273,44 +291,46 @@ async function generateCardSVG(data: PokemonCardData, requestUrl: string): Promi
   <!-- ═══ INFO BAR ═══ -->
   <text x="175" y="220" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="white" letter-spacing="0.3" stroke="rgba(0,0,0,0.6)" stroke-width="0.6" paint-order="stroke">@${escapeXml(data.username)}${data.location ? ` · ${escapeXml(data.location.length > 15 ? data.location.slice(0, 13) + ".." : data.location)}` : ""} · Since ${sinceYear}</text>
 
-  <!-- ═══ ABILITY + XP/VELOCITY (combined panel) ═══ -->
-  <rect x="12" y="228" width="326" height="58" rx="8" fill="rgba(0,0,0,0.28)" stroke="${theme.accentColor}60" stroke-width="1.5"/>
+  <!-- ═══ ABILITY + XP/VELOCITY (combined panel — height 68px) ═══ -->
+  <rect x="12" y="228" width="326" height="68" rx="8" fill="rgba(0,0,0,0.28)" stroke="${theme.accentColor}60" stroke-width="1.5"/>
   <!-- Accent left border -->
-  <rect x="12" y="228" width="3" height="58" rx="1.5" fill="${theme.accentColor}80"/>
+  <rect x="12" y="228" width="3" height="68" rx="1.5" fill="${theme.accentColor}80"/>
   <g clip-path="url(#abilityClip)">
     <rect x="19" y="234" width="44" height="14" rx="3" fill="url(#abilityBadge)"/>
     <text x="41" y="245" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="900" fill="white" letter-spacing="0.5">ABILITY</text>
-    <text x="70" y="245" font-family="'Mona Sans', -apple-system, sans-serif" font-size="13" font-weight="760" fill="white">${escapeXml(data.ability.name.length > 22 ? data.ability.name.slice(0, 20) + "…" : data.ability.name)}</text>
-    <text x="70" y="260" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.90)" font-style="italic">${escapeXml(cleanText(data.ability.description.length > 42 ? data.ability.description.slice(0, 39) + "..." : data.ability.description))}</text>
-    <!-- XP + Velocity merged into ability panel -->
-    <text x="70" y="278" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="500" fill="rgba(255,255,255,0.55)" letter-spacing="0.3">XP ${data.xp.toLocaleString()} · Velocity ${data.codeVelocity}%</text>
+    <text x="70" y="245" font-family="'Mona Sans', -apple-system, sans-serif" font-size="13" font-weight="760" fill="white">${escapeXml(data.ability.name.length > 26 ? data.ability.name.slice(0, 24) + "…" : data.ability.name)}</text>
+    <!-- Description split across 2 lines so nothing is cut -->
+    <text x="19" y="261" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.90)" font-style="italic">${escapeXml(svgDescLine1)}</text>
+    ${svgDescLine2 ? `<text x="19" y="275" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.90)" font-style="italic">${escapeXml(svgDescLine2)}</text>` : ""}
+    <!-- XP + Velocity -->
+    <text x="19" y="289" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="500" fill="rgba(255,255,255,0.55)" letter-spacing="0.3">XP ${data.xp.toLocaleString()} · Velocity ${data.codeVelocity}%</text>
   </g>
 
-  <!-- ═══ ATTACKS PANEL — moved up, taller, lighter ═══ -->
-  <rect x="12" y="292" width="326" height="106" rx="8" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+  <!-- ═══ ATTACKS PANEL (shifted down 8px, height trimmed to 100px) ═══ -->
+  <rect x="12" y="300" width="326" height="100" rx="8" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
 
   <g clip-path="url(#attacksClip)">
   <!-- ═══ ATTACK 1 ═══ -->
   <g>
     ${Array.from({ length: attack1EnergyIcons }).map((_, i) =>
-      `<circle cx="${24 + i * 20}" cy="306" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
+      `<circle cx="${24 + i * 20}" cy="314" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
-    <text x="${20 + attack1EnergyIcons * 20}" y="310" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack1.name)}</text>
-    <text x="326" y="312" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack1.damage}</text>
-    <text x="${20 + attack1EnergyIcons * 20}" y="325" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.45)" stroke-width="0.5" paint-order="stroke">${escapeXml(cleanText(data.attack1.description.length > 42 ? data.attack1.description.slice(0, 39) + "..." : data.attack1.description))}</text>
+    <text x="${20 + attack1EnergyIcons * 20}" y="318" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack1.name)}</text>
+    <text x="326" y="320" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack1.damage}</text>
+    <text x="${20 + attack1EnergyIcons * 20}" y="333" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.45)" stroke-width="0.5" paint-order="stroke">${escapeXml(cleanText(data.attack1.description.length > 42 ? data.attack1.description.slice(0, 39) + "..." : data.attack1.description))}</text>
   </g>
 
   <!-- Divider -->
-  <line x1="20" y1="338" x2="330" y2="338" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+  <line x1="20" y1="346" x2="330" y2="346" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
 
   <!-- ═══ ATTACK 2 ═══ -->
   <g>
     ${Array.from({ length: attack2EnergyIcons }).map((_, i) =>
-      `<circle cx="${24 + i * 20}" cy="354" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
+      `<circle cx="${24 + i * 20}" cy="362" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
     ).join("\n    ")}
-    <text x="${20 + attack2EnergyIcons * 20}" y="358" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack2.name)}</text>
-    <text x="326" y="360" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack2.damage}</text>
-    <text x="${20 + attack2EnergyIcons * 20}" y="373" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.45)" stroke-width="0.5" paint-order="stroke">${escapeXml(cleanText(data.attack2.description.length > 42 ? data.attack2.description.slice(0, 39) + "..." : data.attack2.description))}</text>
+    <text x="${20 + attack2EnergyIcons * 20}" y="366" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack2.name)}</text>
+    <text x="326" y="368" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack2.damage}</text>
+    <text x="${20 + attack2EnergyIcons * 20}" y="381" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.45)" stroke-width="0.5" paint-order="stroke">${escapeXml(cleanText(data.attack2.description.length > 42 ? data.attack2.description.slice(0, 39) + "..." : data.attack2.description))}</text>
   </g>
   </g>
 

@@ -75,6 +75,45 @@ export default function GenerateClient() {
         }
     };
 
+    const [isDownloadingStatic, setIsDownloadingStatic] = useState(false);
+
+    const handleDownloadStaticPng = async () => {
+        if (!cardData || isDownloadingStatic) return;
+        setIsDownloadingStatic(true);
+        try {
+            const svgUrl = `/api/card/${cardData.username}`;
+            const response = await fetch(svgUrl);
+            const svgText = await response.text();
+            const blob = new Blob([svgText], { type: "image/svg+xml" });
+            const objectUrl = URL.createObjectURL(blob);
+
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.naturalWidth * 2;
+                canvas.height = img.naturalHeight * 2;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return;
+                ctx.scale(2, 2);
+                ctx.drawImage(img, 0, 0);
+                URL.revokeObjectURL(objectUrl);
+                const link = document.createElement("a");
+                link.href = canvas.toDataURL("image/png");
+                link.download = `${cardData.username}-dev-card-static.png`;
+                link.click();
+                setIsDownloadingStatic(false);
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                setIsDownloadingStatic(false);
+            };
+            img.src = objectUrl;
+        } catch (error) {
+            console.error("Failed to download static PNG:", error);
+            setIsDownloadingStatic(false);
+        }
+    };
+
     return (
         <div className="generate-page">
             <TechCursor />
@@ -159,13 +198,17 @@ export default function GenerateClient() {
                                     className="generate-results__svg-img"
                                 />
                             </div>
+                            <button onClick={handleDownloadStaticPng} className="generate-actions__btn mt-3" disabled={isDownloadingStatic}>
+                                <Download size={14} />
+                                {isDownloadingStatic ? "Preparing PNG..." : "Download PNG"}
+                            </button>
                         </div>
                     </div>
 
                     {/* Actions */}
                     <div className="generate-actions">
                         <div className="generate-actions__embed">
-                            <p className="generate-actions__label">Markdown embed code:</p>
+                            <p className="generate-actions__label">Paste this in your GitHub README and watch the magic</p>
                             <pre className="generate-actions__code">{markdownSnippet}</pre>
                         </div>
 
