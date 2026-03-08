@@ -239,9 +239,9 @@ async function generateCardSVG(data: PokemonCardData, requestUrl: string): Promi
       <rect x="12" y="300" width="326" height="100" rx="8"/>
     </clipPath>
     <!-- Metallic V gradient for header -->
-    <linearGradient id="silverV" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="silverName" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#aaaaaa"/>
+      <stop offset="100%" stop-color="#cccccc"/>
     </linearGradient>
   </defs>
 
@@ -268,8 +268,8 @@ async function generateCardSVG(data: PokemonCardData, requestUrl: string): Promi
   <rect x="16" y="10" width="${Math.max(data.evolutionStage.length * 9 + 20, 80)}" height="26" rx="13" fill="url(#evoBadge)" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
   <text x="${16 + Math.max(data.evolutionStage.length * 9 + 20, 80) / 2}" y="28" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="800" fill="#1a1a1a" letter-spacing="0.8">${escapeXml(data.evolutionStage)}</text>
 
-  <!-- Username + metallic V (single text element so SVG handles spacing natively) -->
-  <text x="${28 + Math.max(data.evolutionStage.length * 9 + 20, 80)}" y="30" font-family="'Mona Sans', -apple-system, sans-serif" font-size="19" font-weight="900" fill="white" letter-spacing="-0.4" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">${escapeXml(usernameDisplay)}<tspan fill="url(#silverV)" stroke="none" letter-spacing="0" dx="8">V</tspan></text>
+  <!-- Username with metallic gradient -->
+  <text x="${28 + Math.max(data.evolutionStage.length * 9 + 20, 80)}" y="30" font-family="'Mona Sans', -apple-system, sans-serif" font-size="19" font-weight="900" fill="url(#silverName)" letter-spacing="-0.4" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">${escapeXml(usernameDisplay)}</text>
 
   <!-- HP -->
   <text x="260" y="26" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.90)" letter-spacing="1.2">HP</text>

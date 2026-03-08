@@ -242,9 +242,11 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                         <div
                             className="relative px-[18px] py-[9px]"
                             style={{
-                                background: "linear-gradient(180deg, rgba(0,0,0,0.70) 0%, rgba(0,0,0,0.42) 100%)",
-                                backdropFilter: "blur(8px)",
-                                WebkitBackdropFilter: "blur(8px)",
+                                background: captureMode
+                                    ? "linear-gradient(180deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.60) 100%)"
+                                    : "linear-gradient(180deg, rgba(0,0,0,0.70) 0%, rgba(0,0,0,0.42) 100%)",
+                                backdropFilter: captureMode ? "none" : "blur(8px)",
+                                WebkitBackdropFilter: captureMode ? "none" : "blur(8px)",
                             }}
                         >
                             <div className="flex items-center justify-between">
@@ -268,27 +270,16 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                                     </span>
                                     {/* Phase 2: metallic V treatment */}
                                     <span
-                                        className="text-[19px] font-black text-white truncate tracking-tight"
+                                        className="text-[19px] font-black truncate tracking-tight"
                                         style={{
                                             fontFamily: "'Mona Sans', sans-serif",
-                                            textShadow: "0 2px 4px rgba(0,0,0,0.5)",
+                                            background: "linear-gradient(180deg, #ffffff 0%, #cccccc 100%)",
+                                            WebkitBackgroundClip: "text",
+                                            WebkitTextFillColor: "transparent",
+                                            filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
                                         }}
                                     >
                                         {data.username.length > 14 ? data.username.slice(0, 14) + "…" : data.username}
-                                    </span>
-                                    <span
-                                        style={{
-                                            fontSize: "22px",
-                                            fontWeight: 900,
-                                            background: "linear-gradient(180deg, #fff, #aaa)",
-                                            WebkitBackgroundClip: "text",
-                                            WebkitTextFillColor: "transparent",
-                                            filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))",
-                                            marginLeft: "2px",
-                                            lineHeight: 1,
-                                        }}
-                                    >
-                                        V
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
@@ -370,9 +361,11 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                             className="relative mx-3 mb-2 px-3 py-2 rounded-lg"
                             style={{
                                 /* Phase 2: themed tint + accent border */
-                                background: `linear-gradient(135deg, rgba(0,0,0,0.28), ${theme.borderColor}18)`,
-                                backdropFilter: "blur(6px)",
-                                WebkitBackdropFilter: "blur(6px)",
+                                background: captureMode
+                                    ? `linear-gradient(135deg, rgba(0,0,0,0.55), ${theme.borderColor}30)`
+                                    : `linear-gradient(135deg, rgba(0,0,0,0.28), ${theme.borderColor}18)`,
+                                backdropFilter: captureMode ? "none" : "blur(6px)",
+                                WebkitBackdropFilter: captureMode ? "none" : "blur(6px)",
                                 border: "1px solid rgba(255,255,255,0.15)",
                                 borderLeft: `3px solid ${theme.accentColor}60`,
                                 boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
@@ -424,9 +417,9 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                         <div
                             className="relative mx-3 mb-2 px-3 pt-2.5 pb-2.5 rounded-lg flex flex-col gap-2 overflow-hidden"
                             style={{
-                                background: "rgba(0,0,0,0.25)",
-                                backdropFilter: "blur(4px)",
-                                WebkitBackdropFilter: "blur(4px)",
+                                background: captureMode ? "rgba(0,0,0,0.50)" : "rgba(0,0,0,0.25)",
+                                backdropFilter: captureMode ? "none" : "blur(4px)",
+                                WebkitBackdropFilter: captureMode ? "none" : "blur(4px)",
                                 border: "1px solid rgba(255,255,255,0.10)",
                             }}
                         >
@@ -460,9 +453,11 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                         <div
                             className="relative px-4 py-3"
                             style={{
-                                background: "linear-gradient(0deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.40) 100%)",
-                                backdropFilter: "blur(8px)",
-                                WebkitBackdropFilter: "blur(8px)",
+                                background: captureMode
+                                    ? "linear-gradient(0deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.55) 100%)"
+                                    : "linear-gradient(0deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.40) 100%)",
+                                backdropFilter: captureMode ? "none" : "blur(8px)",
+                                WebkitBackdropFilter: captureMode ? "none" : "blur(8px)",
                             }}
                         >
                             <div className="flex items-center justify-center gap-10 text-white/90">
