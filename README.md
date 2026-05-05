@@ -48,8 +48,8 @@ No login required—just type your username.
 
 <tr>
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/mril-dsilva">
-<img src="https://gitwrapped.aryansync.com/api/card/mril-dsilva" width="300"/>
+<a href="https://gitwrapped.aryansync.com/dashboard/shrikanthv15">
+<img src="https://gitwrapped.aryansync.com/api/card/shrikanthv15" width="300"/>
 </a>
 <br/>
 <sub>mril-dsilva</sub>
