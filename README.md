@@ -5,7 +5,7 @@
 <div align="center">
 
 <a href="https://gitwrapped.aryansync.com/dashboard/asynced24">
-  <img src="https://gitwrapped.aryansync.com/api/badge/asynced24?portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24" alt="GitWrapped Badge" />
+  <img src="https://gitwrapped.aryansync.com/api/badge/asynced24?portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20260512" alt="GitWrapped Badge" />
 </a>
 
 <a href="https://gitwrapped.aryansync.com/dashboard/asynced24"><img src="https://img.shields.io/badge/GitWrapped-0F172A?style=for-the-badge&logo=github&logoColor=white" alt="GitWrapped" /></a> <a href="https://aryansync.com"><img src="https://img.shields.io/badge/Portfolio-111827?style=for-the-badge&logo=vercel&logoColor=white" alt="Portfolio" /></a> <a href="https://linkedin.com/in/aryansingh24"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>
@@ -31,7 +31,7 @@ No login required—just type your username.
 <tr>
 <td align="center">
 <a href="https://gitwrapped.aryansync.com/dashboard/torvalds">
-<img src="https://gitwrapped.aryansync.com/api/card/torvalds" width="300"/>
+<img src="https://gitwrapped.aryansync.com/api/card/torvalds?v=20260512" width="300"/>
 </a>
 <br/>
 <sub>torvalds</sub>
@@ -39,7 +39,7 @@ No login required—just type your username.
 
 <td align="center">
 <a href="https://gitwrapped.aryansync.com/dashboard/gaearon">
-<img src="https://gitwrapped.aryansync.com/api/card/gaearon?v=2" width="300"/>
+<img src="https://gitwrapped.aryansync.com/api/card/gaearon?v=20260512" width="300"/>
 </a>
 <br/>
 <sub>gaearon</sub>
@@ -49,15 +49,15 @@ No login required—just type your username.
 <tr>
 <td align="center">
 <a href="https://gitwrapped.aryansync.com/dashboard/shrikanthv15">
-<img src="https://gitwrapped.aryansync.com/api/card/shrikanthv15" width="300"/>
+<img src="https://gitwrapped.aryansync.com/api/card/shrikanthv15?v=20260512" width="300"/>
 </a>
 <br/>
 <sub>mril-dsilva</sub>
 </td>
 
 <td align="center">
-<a href="https://gitwrapped-lemon.vercel.app/dashboard/asynced24">
-<img src="https://gitwrapped-lemon.vercel.app/api/card/asynced24" width="300"/>
+<a href="https://gitwrapped.aryansync.com/dashboard/asynced24">
+<img src="https://gitwrapped.aryansync.com/api/card/asynced24?v=20260512" width="300"/>
 </a>
 <br/>
 <sub>asynced24</sub>
