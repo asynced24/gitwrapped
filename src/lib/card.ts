@@ -1,5 +1,6 @@
 import { UserStats } from "@/types/github";
 import { fetchUserStats } from "./github";
+import { fetchContributionsLastYear } from "./contributions";
 
 /* ─────────────────────────────────────────────
    Types
@@ -389,10 +390,15 @@ export function getResistance(type: string): TypeMatchup {
 function computeHP(
     contributionConsistency: number,
     totalStars: number,
-    ageYears: number
+    ageYears: number,
+    recentContributions: number
 ): number {
-    // Base HP + consistency + stars + age
-    const raw = 100 + contributionConsistency * 80 + totalStars * 2 + ageYears * 10;
+    // Real contribution volume (commits/PRs/issues/reviews, last 12 months,
+    // incl. opted-in private contributions), capped so a handful of very
+    // high-volume accounts don't dwarf every other term.
+    const contributionBoost = Math.min(recentContributions * 0.15, 130);
+    // Base HP + consistency + stars + age + contribution boost
+    const raw = 100 + contributionConsistency * 80 + totalStars * 2 + ageYears * 10 + contributionBoost;
     // Clamp between 100 and 340 for realistic Pokemon V HP
     return Math.min(Math.max(Math.round(raw), 100), 340);
 }
@@ -548,7 +554,7 @@ export function buildCardData(stats: UserStats): PokemonCardData {
     const consistency = stats.contributionConsistency
         ? stats.contributionConsistency.activeMonths / Math.max(stats.contributionConsistency.totalMonths, 1)
         : 0;
-    const hp = computeHP(consistency, stats.totalStars, ageYears);
+    const hp = computeHP(consistency, stats.totalStars, ageYears, stats.recentContributions);
 
     // Generate ability
     const ability = generateAbility(
@@ -716,9 +722,10 @@ async function fetchRepoLanguagesEdge(
  * ~12 total API calls vs 50+ from fetchUserStats
  */
 export async function fetchCardStatsEdge(username: string): Promise<PokemonCardData> {
-    const [user, repositories] = await Promise.all([
+    const [user, repositories, recentContributions] = await Promise.all([
         fetchUserEdge(username),
         fetchRepositoriesEdge(username),
+        fetchContributionsLastYear(username),
     ]);
 
     const ownRepos = repositories.filter(r => !r.fork);
@@ -773,7 +780,7 @@ export async function fetchCardStatsEdge(username: string): Promise<PokemonCardD
     const evolutionStage = getEvolutionStage(ageYears, ownRepos.length, totalStars);
 
     // Calculate HP
-    const hp = computeHP(consistency, totalStars, ageYears);
+    const hp = computeHP(consistency, totalStars, ageYears, recentContributions);
 
     // Generate ability
     const ability = generateAbility(languageCount, ownRepos.length, totalStars, consistency, ageYears);

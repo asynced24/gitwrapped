@@ -21,6 +21,7 @@ import {
     ExperienceTier,
     getLanguageColor,
 } from "@/types/github";
+import { fetchContributionsLastYear } from "./contributions";
 
 const GITHUB_API = "https://api.github.com";
 
@@ -996,9 +997,10 @@ async function analyzeCodeHealth(
 // =============================================================================
 
 export async function fetchUserStats(username: string): Promise<UserStats> {
-    const [user, repositories] = await Promise.all([
+    const [user, repositories, recentContributions] = await Promise.all([
         fetchUser(username),
         fetchRepositories(username),
+        fetchContributionsLastYear(username),
     ]);
 
     const repoProfile = getRepositoryProfile(repositories);
@@ -1105,6 +1107,9 @@ export async function fetchUserStats(username: string): Promise<UserStats> {
         // Activity & Growth
         monthlyActivity,
         contributionConsistency,
+
+        // Real contribution count (last 12 months, via GraphQL)
+        recentContributions,
 
         // Development Profile
         developmentProfile,

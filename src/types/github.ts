@@ -259,6 +259,10 @@ export interface UserStats {
     monthlyActivity: MonthlyActivity[];
     contributionConsistency: ContributionConsistency;
 
+    // Real contribution count (commits/PRs/issues/reviews, incl. opted-in
+    // private contributions), last 12 months, via the GraphQL API
+    recentContributions: number;
+
     // Development Profile
     developmentProfile: string;
 }
