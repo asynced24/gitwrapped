@@ -52,7 +52,7 @@ No login required—just type your username.
 <img src="https://gitwrapped.aryansync.com/api/card/shrikanthv15?v=20260924" width="300"/>
 </a>
 <br/>
-<sub>mril-dsilva</sub>
+<sub>shrikanthv15</sub>
 </td>
 
 <td align="center">
