@@ -65,12 +65,18 @@ describe("pickArtwork", () => {
         expect(art).toMatchObject({ file: "/cards/python.jpg", poolSize: 0, variant: null, species: "Cable Basilisk" });
     });
 
-    it("never borrows art from another rarity or family", () => {
+    it("borrows the nearest lower tier of the same family, never another family", () => {
         const commons = pool(5);
-        const art = pickArtwork("asynced24", "ts-js", "legendary", commons);
-        expect(art.poolSize).toBe(0);
-        expect(art.file).toBe(FAMILIES["ts-js"].fallbackArt);
-        expect(pickArtwork("asynced24", "python", "common", commons).poolSize).toBe(0);
+        const rareOne: Artwork = { ...commons[0], id: "rare-0", rarity: "rare" };
+        const legendary = pickArtwork("asynced24", "ts-js", "legendary", [...commons, rareOne]);
+        expect(legendary).toMatchObject({ id: "rare-0", rarity: "rare", species: "Thundermane", poolSize: 1 });
+        expect(pickArtwork("asynced24", "ts-js", "uncommon", commons)).toMatchObject({ rarity: "common", poolSize: 5 });
+        expect(pickArtwork("asynced24", "python", "legendary", commons).file).toBe(FAMILIES.python.fallbackArt);
+    });
+
+    it("never gives a lower card a higher tier's art", () => {
+        const rare: Artwork[] = pool(3).map(a => ({ ...a, rarity: "rare" }));
+        expect(pickArtwork("asynced24", "ts-js", "common", rare).file).toBe(FAMILIES["ts-js"].fallbackArt);
     });
 
     it("reports the pool size and variant when the pool has art", () => {

@@ -1,4 +1,4 @@
-import { FAMILIES, type ArtFamily, type Rarity } from "./families";
+import { FAMILIES, RARITIES, type ArtFamily, type Rarity } from "./families";
 import { ARTWORKS, type Artwork } from "./manifest";
 
 export interface CardArt {
@@ -6,6 +6,7 @@ export interface CardArt {
     id: string;
     file: string;
     family: ArtFamily;
+    /** Rarity of the pool the painting came from (can be below the card's). */
     rarity: Rarity;
     species: string;
     variant: string | null;
@@ -58,30 +59,35 @@ export function pickArtwork(
     artworks: readonly Artwork[] = ARTWORKS
 ): CardArt {
     const info = FAMILIES[family];
-    const pool = artworks.filter(a => a.family === family && a.rarity === rarity);
-    const chosen = pickFromPool(login, pool);
 
-    if (!chosen) {
-        // No art for this pool yet: use the family's original painting rather
-        // than borrowing another tier's art, so rarity stays visually honest.
-        return {
-            id: `${family}:fallback`,
-            file: info.fallbackArt,
-            family,
-            rarity,
-            species: info.species[rarity],
-            variant: null,
-            poolSize: 0,
-        };
+    // Earned tier first, then each lower tier of the same family, so a
+    // legendary card shows the best painting that exists for its creature
+    // line. Never another family: that would show the wrong creature.
+    for (let tier = RARITIES.indexOf(rarity); tier >= 0; tier--) {
+        const poolRarity = RARITIES[tier];
+        const pool = artworks.filter(a => a.family === family && a.rarity === poolRarity);
+        const chosen = pickFromPool(login, pool);
+        if (chosen) {
+            return {
+                id: chosen.id,
+                file: chosen.file,
+                family,
+                rarity: poolRarity,
+                species: info.species[poolRarity],
+                variant: chosen.variant,
+                poolSize: pool.length,
+            };
+        }
     }
 
+    // Nothing painted for this family yet: its original painting.
     return {
-        id: chosen.id,
-        file: chosen.file,
+        id: `${family}:fallback`,
+        file: info.fallbackArt,
         family,
         rarity,
         species: info.species[rarity],
-        variant: chosen.variant,
-        poolSize: pool.length,
+        variant: null,
+        poolSize: 0,
     };
 }

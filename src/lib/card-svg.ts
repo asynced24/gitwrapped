@@ -1,6 +1,5 @@
 import { getLanguageTheme, type PokemonCardData } from "@/lib/card";
-import { hash32 } from "@/lib/art/pick";
-import type { Rarity } from "@/lib/art/families";
+import { FAMILIES, type Rarity } from "@/lib/art/families";
 
 /* ─────────────────────────────────────────────
    Image loading (network) — kept apart from rendering so the
@@ -62,42 +61,65 @@ export function cardImageUrls(data: PokemonCardData): CardImages {
 }
 
 /* ─────────────────────────────────────────────
-   Layout — every position on the 358×498 card, in one place.
-   Content is drawn inside a 4px frame, so y=0 below is the frame's inner
-   top edge (350×490).
+   Layout — Kimi's measured spec on the 358×498 card, with the avatar as a
+   large circle in the art window. The painting is full-bleed under
+   everything; the rarity frame is a stroke on top.
    ───────────────────────────────────────────── */
 
 export const LAYOUT = {
-  frame: { width: 358, height: 498, radius: 20, inset: 4 },
-  inner: { width: 350, height: 490, radius: 16 },
-  header: { x: 8, y: 8, width: 334, height: 40, radius: 12 },
-  art: { fadeStart: 0.46, fadeEnd: 0.66 },
-  horizon: { x0: 14, x1: 336, baseline: 272, amplitude: 38 },
-  ability: { x: 12, y: 286, width: 326, height: 64, radius: 10 },
-  attacks: { x: 12, y: 356, width: 326, height: 84, radius: 10 },
-  stats: { x: 12, y: 446, width: 326, height: 24, radius: 8 },
-  footerY: 483,
+  frame: { width: 358, height: 498, radius: 20 },
+  header: { x: 10, y: 10, width: 338, height: 48, radius: 11.5 },
+  stagePill: { x: 20, y: 19, width: 58, height: 30 },
+  avatar: { cx: 179, cy: 132, r: 40 },
+  horizon: { x0: 8, x1: 350, baseline: 277, amplitude: 34 },
+  scrim: { y: 255 },
+  ability: { x: 12, y: 296, width: 334, height: 64, radius: 10 },
+  attacks: { x: 12, y: 366, width: 334, height: 80, radius: 10, rows: [372, 410], dividerY: 406 },
+  stats: { x: 12, y: 452, width: 334, height: 30, radius: 7 },
+  footerY: 494,
 } as const;
 
+/** Sparkle anchors in paint order; a card draws the first N for its rarity. */
+export const SPARKLE_ANCHORS: readonly (readonly [number, number])[] = [
+  [48, 96], [300, 80], [232, 196], [90, 210], [320, 190], [250, 120], [140, 70], [270, 240],
+];
+
 /* ─────────────────────────────────────────────
-   Rarity treatments (Kimi design): frame colour, foil strength, sparkles.
+   Rarity treatments (Kimi spec)
    ───────────────────────────────────────────── */
 
 interface RarityStyle {
-  /** Frame gradient; null = use the language theme's colours. */
-  frame: [string, string] | null;
+  frameColor: string;
+  frameWidth: number;
   label: string;
-  labelColor: string;
   symbol: string;
-  foilOpacity: number;
+  /** Foil intensity "A" in the spec. */
+  foil: number;
   sparkles: number;
 }
 
 export const RARITY_STYLE: Record<Rarity, RarityStyle> = {
-  common: { frame: null, label: "COMMON", labelColor: "#cbd5e1", symbol: "●", foilOpacity: 0, sparkles: 0 },
-  uncommon: { frame: ["#9fb6c9", "#5f7a91"], label: "UNCOMMON", labelColor: "#7dd3fc", symbol: "◆", foilOpacity: 0.10, sparkles: 3 },
-  rare: { frame: ["#d8c7ff", "#8b6fd6"], label: "RARE", labelColor: "#c4b5fd", symbol: "◆", foilOpacity: 0.18, sparkles: 5 },
-  legendary: { frame: ["#ffe27a", "#d99a00"], label: "LEGENDARY", labelColor: "#fbbf24", symbol: "◆", foilOpacity: 0.28, sparkles: 8 },
+  common: { frameColor: "#6B7A90", frameWidth: 1, label: "COMMON", symbol: "●", foil: 0.06, sparkles: 2 },
+  uncommon: { frameColor: "#8FB6D9", frameWidth: 1.5, label: "UNCOMMON", symbol: "◆", foil: 0.10, sparkles: 3 },
+  rare: { frameColor: "#C9B8F0", frameWidth: 2, label: "RARE", symbol: "◆", foil: 0.17, sparkles: 5 },
+  legendary: { frameColor: "#F5C518", frameWidth: 3, label: "LEGENDARY", symbol: "◆", foil: 0.26, sparkles: 8 },
+};
+
+const TEXT = {
+  hpLabel: "#9FB3CC",
+  abilityDesc: "#D5DEEC",
+  abilityStats: "#8CA0BC",
+  attackSub: "#93A5C0",
+  statsLabel: "#7E90AB",
+  statsValue: "#C7D2E2",
+  statsDot: "#9AA7B8",
+  footer: "#A9B8CE",
+};
+
+const STAGE_PILL: Record<string, { bg: string; text: string }> = {
+  BASIC: { bg: "#E6B87D", text: "#0A0F1D" },
+  "STAGE 1": { bg: "#E8EEF6", text: "#0A0F1D" },
+  "STAGE 2": { bg: "#F5C518", text: "#0A0F1D" },
 };
 
 /* ─────────────────────────────────────────────
@@ -123,8 +145,9 @@ function truncate(str: string, max: number): string {
 
 /**
  * The 52-week horizon: one point per calendar week, height relative to the
- * user's own busiest week (square-root scaled so quiet weeks still show),
- * empty weeks sit on the baseline as valleys.
+ * user's own busiest week. Square-root scaled (the spec is linear) so a
+ * quiet week still shows next to one huge week; empty weeks sit on the
+ * baseline as valleys — no invented noise.
  */
 export function horizonPoints(weekly: number[], x0: number, x1: number, baseline: number, amplitude: number): string {
   if (weekly.length === 0) return `${x0},${baseline} ${x1},${baseline}`;
@@ -138,16 +161,12 @@ export function horizonPoints(weekly: number[], x0: number, x1: number, baseline
     .join(" ");
 }
 
-/** Sparkle positions in the art window, fixed per user so cards don't flicker. */
-export function sparklePositions(seed: string, count: number): { x: number; y: number; size: number }[] {
-  return Array.from({ length: count }, (_, i) => {
-    const h = hash32(`${seed}:sparkle:${i}`);
-    return {
-      x: 24 + (h % 302),
-      y: 62 + ((h >>> 9) % 170),
-      size: 4 + ((h >>> 18) % 6),
-    };
-  });
+export function sparkles(rarity: Rarity): { x: number; y: number; size: number }[] {
+  return SPARKLE_ANCHORS.slice(0, RARITY_STYLE[rarity].sparkles).map(([x, y], i) => ({
+    x,
+    y,
+    size: 5 + 2.5 * (i % 3),
+  }));
 }
 
 function sparklePath({ x, y, size }: { x: number; y: number; size: number }): string {
@@ -172,65 +191,67 @@ export interface RenderOptions {
   idPrefix?: string;
 }
 
-const HEADING_FONT = "'Archivo Black', 'Arial Black', 'Segoe UI Black', 'Helvetica Neue', sans-serif";
-const MONO_FONT = "'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace";
+// GitHub's image proxy can't load web fonts, so every stack ends in a
+// heavy system font that looks close (Arial Black for Archivo Black).
+const DISPLAY = "'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif";
+const MONO = "'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace";
 
 /** Pure: the same data + images always renders the same SVG. */
 export function renderCardSVG(data: PokemonCardData, images: CardImages, options: RenderOptions = {}): string {
   const id = (name: string) => `${options.idPrefix ?? "gw"}-${name}`;
   const L = LAYOUT;
+  const W = L.frame.width;
+  const H = L.frame.height;
   const theme = getLanguageTheme(data.topLanguage);
-  const weaknessTheme = getLanguageTheme(data.weakness.type);
-  const resistanceTheme = getLanguageTheme(data.resistance.type);
   const rarity = RARITY_STYLE[data.rarity];
-  const [frameA, frameB] = rarity.frame ?? [theme.borderColor, theme.accentColor];
-  // Horizon, energy and retreat dots: rarity colour, or the language colour for commons.
-  const accent = data.rarity === "common" ? theme.accentColor : rarity.labelColor;
+  const accent = FAMILIES[data.art.family].accent[data.art.rarity];
+  const foil = rarity.foil;
+  const pill = STAGE_PILL[data.evolutionStage] ?? STAGE_PILL.BASIC;
 
-  const stagePill =
-    data.evolutionStage === "STAGE 2"
-      ? { fill: "#fbbf24", text: "#1a1405" }
-      : data.evolutionStage === "STAGE 1"
-        ? { fill: "#e5e7eb", text: "#111827" }
-        : { fill: "#e6b87d", text: "#1f1407" };
-  const pillWidth = data.evolutionStage === "BASIC" ? 52 : 62;
-  const avatarCx = L.header.x + 8 + pillWidth + 6 + 14;
-  const avatarCy = L.header.y + L.header.height / 2;
-  const usernameX = avatarCx + 14 + 8;
+  const art = images.cardArt
+    ? `<image id="${id("art")}" href="${images.cardArt}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMin slice"/>`
+    : `<rect id="${id("art")}" width="${W}" height="${H}" fill="url(#${id("theme")})"/>`;
 
-  const artImage = images.cardArt
-    ? `<image id="${id("art")}" href="${images.cardArt}" x="0" y="0" width="${L.inner.width}" height="${L.inner.height}" preserveAspectRatio="xMidYMin slice"/>`
-    : `<rect id="${id("art")}" width="${L.inner.width}" height="${L.inner.height}" fill="url(#${id("theme")})"/>`;
-
-  // Frosted panels: a blurred copy of the art, clipped to each panel.
-  const panels = [L.ability, L.attacks, L.stats];
-  const glass = panels
-    .map((p, i) => `<clipPath id="${id(`panel${i}`)}"><rect x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}" rx="${p.radius}"/></clipPath>`)
+  // Frosted glass (spec recipe): blurred copy of the art clipped to each
+  // panel, a tint on top, then a hairline border.
+  const panels = [
+    { ...L.ability, tint: "rgba(11,18,32,0.55)" },
+    { ...L.attacks, tint: "rgba(11,18,32,0.55)" },
+    { ...L.stats, tint: "rgba(10,15,29,0.70)" },
+  ];
+  const panelClips = panels
+    .map((p, i) => `<clipPath id="${id(`p${i}`)}"><rect x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}" rx="${p.radius}"/></clipPath>`)
     .join("");
-  const frosted = panels
-    .map((p, i) => `<g clip-path="url(#${id(`panel${i}`)})"><use href="#${id("art")}" filter="url(#${id("frost")})"/></g>
-  <rect x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}" rx="${p.radius}" fill="rgba(10,12,24,0.66)" stroke="rgba(255,255,255,0.13)" stroke-width="1"/>`)
+  const glass = panels
+    .map((p, i) => `<g clip-path="url(#${id(`p${i}`)})"><use href="#${id("art")}" filter="url(#${id("frost")})"/></g>
+  <rect x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}" rx="${p.radius}" fill="${p.tint}" stroke="rgba(255,255,255,0.14)"/>
+  <line x1="${p.x + p.radius}" y1="${p.y + 0.5}" x2="${p.x + p.width - p.radius}" y2="${p.y + 0.5}" stroke="rgba(255,255,255,0.18)"/>`)
     .join("\n  ");
 
   const horizon = horizonPoints(data.weeklyActivity, L.horizon.x0, L.horizon.x1, L.horizon.baseline, L.horizon.amplitude);
-  const sparkles = sparklePositions(data.username.toLowerCase(), rarity.sparkles)
-    .map(s => `<path d="${sparklePath(s)}" fill="white" opacity="0.85"/>`)
+
+  const sparkleShapes = sparkles(data.rarity)
+    .map(s => `<path d="${sparklePath(s)}" fill="#FFFFFF" opacity="${(0.55 + 0.3 * foil).toFixed(2)}" filter="url(#${id("sparkle")})"/>`)
     .join("");
 
-  const ability = cleanText(data.ability.description);
-  const attacks = [data.attack1, data.attack2].map((attack, i) => {
-    const top = L.attacks.y + 8 + i * 40;
+  const attackRows = [data.attack1, data.attack2].map((attack, i) => {
+    const rowY = L.attacks.rows[i];
     const dots = Math.min(Math.max(attack.energyCost, 0), 4);
-    const nameX = L.attacks.x + 12 + dots * 16 + 4;
-    return `${Array.from({ length: dots }, (_, d) =>
-      `<circle cx="${L.attacks.x + 18 + d * 16}" cy="${top + 11}" r="6.5" fill="url(#${id("energy")})"/>`).join("")}
-    <text x="${nameX}" y="${top + 16}" font-family="${HEADING_FONT}" font-size="14" fill="white">${escapeXml(truncate(attack.name, 22))}</text>
-    <text x="${nameX}" y="${top + 30}" font-family="${MONO_FONT}" font-size="8.5" fill="rgba(255,255,255,0.62)">${escapeXml(truncate(cleanText(attack.description), 44))}</text>
-    <text x="${L.attacks.x + L.attacks.width - 12}" y="${top + 24}" text-anchor="end" font-family="${HEADING_FONT}" font-size="24" fill="white">${attack.damage}</text>`;
+    const nameX = 24 + dots * 14 + 6;
+    const dotShapes = Array.from({ length: dots }, (_, d) =>
+      `<circle cx="${24 + d * 14 + 5.5}" cy="${rowY + 7.5}" r="5.5" fill="${accent}" stroke="rgba(255,255,255,0.35)"/>`).join("");
+    return `${dotShapes}
+  <text x="${nameX}" y="${rowY + 12}" font-family="${DISPLAY}" font-size="12.5" fill="#FFFFFF">${escapeXml(truncate(attack.name, 24))}</text>
+  <text x="${nameX}" y="${rowY + 25}" font-family="${MONO}" font-size="8" fill="${TEXT.attackSub}">${escapeXml(truncate(cleanText(attack.description), 48))}</text>
+  <text x="334" y="${rowY + 21}" text-anchor="end" font-family="${DISPLAY}" font-size="21" fill="#FFFFFF" filter="url(#${id("shadow")})">${attack.damage}</text>`;
   });
 
-  const retreatDots = Array.from({ length: Math.min(data.retreatCost, 4) }, (_, i) =>
-    `<circle cx="${292 + i * 10}" cy="${L.stats.y + 12}" r="3.4" fill="${accent}"/>`).join("");
+  // Weakness / resist / retreat: three equal columns, centred.
+  const colW = L.stats.width / 3;
+  const statsBaseline = L.stats.y + 19.5;
+  const column = (i: number, label: string, value: string, dotColor: string) =>
+    `<text x="${(L.stats.x + colW * i + colW / 2).toFixed(1)}" y="${statsBaseline}" text-anchor="middle" font-family="${MONO}"><tspan font-size="7" letter-spacing="1" fill="${TEXT.statsLabel}">${label}</tspan><tspan font-size="9.5" fill="${dotColor}" dx="6">●</tspan><tspan font-size="9.5" fill="${TEXT.statsValue}" dx="4">${escapeXml(value)}</tspan></text>`;
+  const retreat = `<text x="${(L.stats.x + colW * 2 + colW / 2).toFixed(1)}" y="${statsBaseline}" text-anchor="middle" font-family="${MONO}"><tspan font-size="7" letter-spacing="1" fill="${TEXT.statsLabel}">RETREAT</tspan><tspan font-size="9.5" fill="${accent}" dx="6" letter-spacing="1">${"●".repeat(Math.min(data.retreatCost, 4)) || "–"}</tspan></text>`;
 
   const artLabel = data.art.poolSize > 1
     ? `${data.art.species} · ${data.art.variant} · 1 of ${data.art.poolSize}`
@@ -238,100 +259,105 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
       ? `${data.art.species} · ${data.art.variant}`
       : `${data.art.species} · since ${data.memberSince}`;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${L.frame.width}" height="${L.frame.height}" viewBox="0 0 ${L.frame.width} ${L.frame.height}" fill="none">
+  const t = rarity.frameWidth;
+  const { cx, cy, r } = L.avatar;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" fill="none">
   <defs>
-    <linearGradient id="${id("frame")}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${frameA}"/>
-      <stop offset="0.5" stop-color="${frameB}"/>
-      <stop offset="1" stop-color="${frameA}"/>
-    </linearGradient>
     <linearGradient id="${id("theme")}" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="${theme.borderColor}"/>
       <stop offset="1" stop-color="${theme.accentColor}"/>
     </linearGradient>
-    <linearGradient id="${id("fade")}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#070914" stop-opacity="0"/>
-      <stop offset="${L.art.fadeStart}" stop-color="#070914" stop-opacity="0"/>
-      <stop offset="${L.art.fadeEnd}" stop-color="#070914" stop-opacity="0.78"/>
-      <stop offset="1" stop-color="#070914" stop-opacity="0.94"/>
+    <linearGradient id="${id("scrim")}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#05080F" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#05080F" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#05080F" stop-opacity="0.85"/>
     </linearGradient>
-    <linearGradient id="${id("foil")}" x1="0" y1="0" x2="1" y2="0.6">
-      <stop offset="0" stop-color="#ff5ea8"/>
-      <stop offset="0.25" stop-color="#ffd35e"/>
-      <stop offset="0.5" stop-color="#5effc1"/>
-      <stop offset="0.75" stop-color="#5eb8ff"/>
-      <stop offset="1" stop-color="#b45eff"/>
+    <linearGradient id="${id("foil")}" x1="0" y1="0" x2="1" y2="0.7">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="${(0.9 * foil).toFixed(3)}"/>
+      <stop offset="0.28" stop-color="${accent}" stop-opacity="${foil.toFixed(3)}"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.72" stop-color="#FF9FF0" stop-opacity="${(0.8 * foil).toFixed(3)}"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="${(0.6 * foil).toFixed(3)}"/>
     </linearGradient>
-    <radialGradient id="${id("energy")}" cx="35%" cy="35%">
-      <stop offset="0" stop-color="white" stop-opacity="0.9"/>
-      <stop offset="0.35" stop-color="${accent}"/>
-      <stop offset="1" stop-color="${accent}" stop-opacity="0.75"/>
-    </radialGradient>
     <filter id="${id("frost")}" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="7"/></filter>
-    <filter id="${id("glow")}" x="-10%" y="-60%" width="120%" height="220%">
-      <feGaussianBlur stdDeviation="3" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <filter id="${id("glow")}" x="-5%" y="-80%" width="110%" height="260%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="b"/>
+      <feFlood flood-color="${accent}" flood-opacity="0.95"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <clipPath id="${id("card")}"><rect width="${L.inner.width}" height="${L.inner.height}" rx="${L.inner.radius}"/></clipPath>
-    <clipPath id="${id("avatar")}"><circle cx="${avatarCx}" cy="${avatarCy}" r="13"/></clipPath>
-    ${glass}
+    <filter id="${id("sparkle")}" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="b"/>
+      <feFlood flood-color="${accent}" flood-opacity="0.9"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="${id("shadow")}" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.7"/>
+    </filter>
+    <filter id="${id("lift")}" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+    <clipPath id="${id("card")}"><rect width="${W}" height="${H}" rx="${L.frame.radius}"/></clipPath>
+    <clipPath id="${id("avatar")}"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath>
+    ${panelClips}
   </defs>
 
-  <!-- Frame: colour follows rarity -->
-  <rect width="${L.frame.width}" height="${L.frame.height}" rx="${L.frame.radius}" fill="url(#${id("frame")})"/>
-
-  <g transform="translate(${L.frame.inset},${L.frame.inset})" clip-path="url(#${id("card")})">
-  <rect width="${L.inner.width}" height="${L.inner.height}" fill="#070914"/>
-  ${artImage}
-  <rect width="${L.inner.width}" height="${L.inner.height}" fill="url(#${id("fade")})"/>
-  ${rarity.foilOpacity > 0 ? `<rect width="${L.inner.width}" height="${L.horizon.baseline + 10}" fill="url(#${id("foil")})" opacity="${rarity.foilOpacity}" style="mix-blend-mode:screen"/>` : ""}
-  ${sparkles}
+  <g clip-path="url(#${id("card")})">
+  <rect width="${W}" height="${H}" fill="#070914"/>
+  ${art}
+  <rect y="${L.scrim.y}" width="${W}" height="${H - L.scrim.y}" fill="url(#${id("scrim")})"/>
+  <rect width="${W}" height="${H}" fill="url(#${id("foil")})" style="mix-blend-mode:overlay"/>
+  ${sparkleShapes}
 
   <!-- 52-week contribution horizon -->
-  <polyline points="${horizon}" stroke="${accent}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" filter="url(#${id("glow")})"/>
+  <polyline points="${horizon}" stroke="${accent}" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
+  <polyline points="${horizon}" stroke="#EAFBFF" stroke-opacity="0.95" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" filter="url(#${id("glow")})"/>
+
+  <!-- Avatar: large circle over the art -->
+  <circle cx="${cx}" cy="${cy}" r="${r + 3}" fill="rgba(10,15,29,0.55)" filter="url(#${id("lift")})"/>
+  ${images.avatar
+    ? `<image href="${images.avatar}" x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" clip-path="url(#${id("avatar")})" preserveAspectRatio="xMidYMid slice"/>`
+    : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${theme.borderColor}"/><text x="${cx}" y="${cy + 11}" text-anchor="middle" font-family="${DISPLAY}" font-size="30" fill="#FFFFFF">${escapeXml(data.username.charAt(0).toUpperCase())}</text>`}
+  <circle cx="${cx}" cy="${cy}" r="${r + 1.2}" stroke="${accent}" stroke-opacity="0.85" stroke-width="2.4"/>
 
   <!-- Header -->
-  <rect x="${L.header.x}" y="${L.header.y}" width="${L.header.width}" height="${L.header.height}" rx="${L.header.radius}" fill="rgba(8,10,20,0.78)" stroke="rgba(255,255,255,0.10)"/>
-  <rect x="${L.header.x + 8}" y="${avatarCy - 10}" width="${pillWidth}" height="20" rx="10" fill="${stagePill.fill}"/>
-  <text x="${L.header.x + 8 + pillWidth / 2}" y="${avatarCy + 4}" text-anchor="middle" font-family="${HEADING_FONT}" font-size="9.5" letter-spacing="0.6" fill="${stagePill.text}">${escapeXml(data.evolutionStage)}</text>
-  <circle cx="${avatarCx}" cy="${avatarCy}" r="14.5" fill="${frameA}"/>
-  ${images.avatar
-    ? `<image href="${images.avatar}" x="${avatarCx - 13}" y="${avatarCy - 13}" width="26" height="26" clip-path="url(#${id("avatar")})" preserveAspectRatio="xMidYMid slice"/>`
-    : `<circle cx="${avatarCx}" cy="${avatarCy}" r="13" fill="${theme.borderColor}"/><text x="${avatarCx}" y="${avatarCy + 5}" text-anchor="middle" font-family="${HEADING_FONT}" font-size="13" fill="white">${escapeXml(data.username.charAt(0).toUpperCase())}</text>`}
-  <text x="${usernameX}" y="${avatarCy + 6}" font-family="${HEADING_FONT}" font-size="15" fill="white">${escapeXml(truncate(data.username, 13))}</text>
-  <text x="${L.header.x + L.header.width - 12}" y="${avatarCy + 9}" text-anchor="end" font-family="${HEADING_FONT}" font-size="25" fill="white">${data.hp}</text>
-  <text x="${L.header.x + L.header.width - 12 - String(data.hp).length * 17 - 4}" y="${avatarCy + 9}" text-anchor="end" font-family="${HEADING_FONT}" font-size="8.5" fill="rgba(255,255,255,0.7)">HP</text>
+  <rect x="${L.header.x}" y="${L.header.y}" width="${L.header.width}" height="${L.header.height}" rx="${L.header.radius}" fill="rgba(10,15,29,0.92)" stroke="rgba(255,255,255,0.15)"/>
+  <rect x="${L.stagePill.x}" y="${L.stagePill.y}" width="${L.stagePill.width}" height="${L.stagePill.height}" rx="${L.stagePill.height / 2}" fill="${pill.bg}"/>
+  <text x="${L.stagePill.x + L.stagePill.width / 2}" y="${L.stagePill.y + 18.5}" text-anchor="middle" font-family="${DISPLAY}" font-size="9.5" letter-spacing="0.5" fill="${pill.text}">${escapeXml(data.evolutionStage)}</text>
+  <text x="${cx}" y="${L.header.y + 29.5}" text-anchor="middle" font-family="${DISPLAY}" font-size="15.5" fill="#FFFFFF">${escapeXml(truncate(data.username, 14))}</text>
+  <text x="340" y="${L.header.y + 33}" text-anchor="end" font-family="${DISPLAY}" font-size="24" fill="#FFFFFF">${data.hp}</text>
+  <text x="${340 - String(data.hp).length * 16.5 - 4}" y="${L.header.y + 33}" text-anchor="end" font-family="${DISPLAY}" font-size="8" fill="${TEXT.hpLabel}">HP</text>
 
-  <!-- Frosted glass panels -->
-  ${frosted}
+  <!-- Frosted panels -->
+  ${glass}
 
   <!-- Ability -->
-  <text x="${L.ability.x + 12}" y="${L.ability.y + 20}" font-family="${MONO_FONT}" font-size="8" letter-spacing="2" fill="${rarity.labelColor}">ABILITY</text>
-  <text x="${L.ability.x + 64}" y="${L.ability.y + 21}" font-family="${HEADING_FONT}" font-size="14" fill="white">${escapeXml(truncate(data.ability.name, 24))}</text>
-  <text x="${L.ability.x + 12}" y="${L.ability.y + 38}" font-family="${MONO_FONT}" font-size="8.5" font-style="italic" fill="rgba(255,255,255,0.88)">${escapeXml(truncate(ability, 58))}</text>
-  <text x="${L.ability.x + 12}" y="${L.ability.y + 54}" font-family="${MONO_FONT}" font-size="8" fill="rgba(255,255,255,0.55)">${data.contributions.toLocaleString("en-US")} contribs · ${data.activeWeeks}/${data.totalWeeks} wks active</text>
+  <text x="24" y="313" font-family="${MONO}" font-size="7.5" letter-spacing="2" fill="${accent}">ABILITY</text>
+  <text x="84" y="314" font-family="${DISPLAY}" font-size="14.5" fill="#FFFFFF">${escapeXml(truncate(data.ability.name, 24))}</text>
+  <text x="24" y="332" font-family="${MONO}" font-size="9.5" font-style="italic" fill="${TEXT.abilityDesc}">${escapeXml(truncate(cleanText(data.ability.description), 54))}</text>
+  <text x="24" y="347" font-family="${MONO}" font-size="8.5" letter-spacing="0.5" fill="${TEXT.abilityStats}">${data.contributions.toLocaleString("en-US")} contribs · ${data.activeWeeks}/${data.totalWeeks} wks active</text>
 
   <!-- Attacks -->
-  ${attacks[0]}
-  <line x1="${L.attacks.x + 12}" y1="${L.attacks.y + L.attacks.height / 2}" x2="${L.attacks.x + L.attacks.width - 12}" y2="${L.attacks.y + L.attacks.height / 2}" stroke="rgba(255,255,255,0.10)"/>
-  ${attacks[1]}
+  ${attackRows[0]}
+  <rect x="24" y="${L.attacks.dividerY}" width="310" height="1" fill="rgba(255,255,255,0.09)"/>
+  ${attackRows[1]}
 
   <!-- Weakness / resist / retreat -->
-  <text x="${L.stats.x + 14}" y="${L.stats.y + 15}" font-family="${MONO_FONT}" font-size="7.5" letter-spacing="1.2" fill="rgba(255,255,255,0.5)">WEAKNESS</text>
-  <circle cx="${L.stats.x + 70}" cy="${L.stats.y + 12}" r="3.4" fill="${weaknessTheme.accentColor}"/>
-  <text x="${L.stats.x + 77}" y="${L.stats.y + 15.5}" font-family="${MONO_FONT}" font-size="9" fill="white">${escapeXml(data.weakness.modifier)}</text>
-  <line x1="${L.stats.x + 108}" y1="${L.stats.y + 6}" x2="${L.stats.x + 108}" y2="${L.stats.y + 18}" stroke="rgba(255,255,255,0.12)"/>
-  <text x="${L.stats.x + 122}" y="${L.stats.y + 15}" font-family="${MONO_FONT}" font-size="7.5" letter-spacing="1.2" fill="rgba(255,255,255,0.5)">RESIST</text>
-  <circle cx="${L.stats.x + 162}" cy="${L.stats.y + 12}" r="3.4" fill="${resistanceTheme.accentColor}"/>
-  <text x="${L.stats.x + 169}" y="${L.stats.y + 15.5}" font-family="${MONO_FONT}" font-size="9" fill="white">${escapeXml(data.resistance.modifier)}</text>
-  <line x1="${L.stats.x + 214}" y1="${L.stats.y + 6}" x2="${L.stats.x + 214}" y2="${L.stats.y + 18}" stroke="rgba(255,255,255,0.12)"/>
-  <text x="${L.stats.x + 228}" y="${L.stats.y + 15}" font-family="${MONO_FONT}" font-size="7.5" letter-spacing="1.2" fill="rgba(255,255,255,0.5)">RETREAT</text>
-  ${retreatDots}
+  ${column(0, "WEAKNESS", data.weakness.modifier, TEXT.statsDot)}
+  <rect x="${(L.stats.x + colW).toFixed(1)}" y="459" width="1" height="16" fill="rgba(255,255,255,0.09)"/>
+  ${column(1, "RESIST", data.resistance.modifier, TEXT.statsDot)}
+  <rect x="${(L.stats.x + colW * 2).toFixed(1)}" y="459" width="1" height="16" fill="rgba(255,255,255,0.09)"/>
+  ${retreat}
 
   <!-- Footer -->
-  <text x="14" y="${L.footerY}" font-family="${MONO_FONT}" font-size="7.5" fill="rgba(255,255,255,0.5)">gitwrapped · ${escapeXml(truncate(artLabel, 44))}</text>
-  <text x="336" y="${L.footerY}" text-anchor="end" font-family="${MONO_FONT}" font-size="7.5" letter-spacing="1.2" fill="${rarity.labelColor}">${rarity.symbol} ${rarity.label}</text>
+  <text x="18" y="${L.footerY}" font-family="${MONO}" font-size="8" fill="${TEXT.footer}" filter="url(#${id("shadow")})">gitwrapped · ${escapeXml(truncate(artLabel, 42))}</text>
+  <text x="340" y="${L.footerY}" text-anchor="end" font-family="${MONO}" font-size="8" letter-spacing="1" fill="${accent}" filter="url(#${id("shadow")})">${rarity.symbol} ${rarity.label}</text>
   </g>
+
+  <!-- Rarity frame -->
+  <rect x="${t / 2}" y="${t / 2}" width="${W - t}" height="${H - t}" rx="${L.frame.radius - t / 2}" stroke="${rarity.frameColor}" stroke-opacity="0.9" stroke-width="${t}"/>
 </svg>`;
 }
 

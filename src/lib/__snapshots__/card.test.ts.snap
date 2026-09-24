@@ -4,7 +4,7 @@ exports[`buildCardData on real accounts > matches the recorded cards 1`] = `
 {
   "asynced24": {
     "ability": "Polyglot",
-    "art": "ts-js:fallback",
+    "art": "ts-js-uncommon-storm-leap",
     "heavy": "Thunder Compile 30",
     "hp": 190,
     "light": "Type Strike 110",
@@ -15,7 +15,7 @@ exports[`buildCardData on real accounts > matches the recorded cards 1`] = `
   },
   "gaearon": {
     "ability": "Star Collector",
-    "art": "polyglot:fallback",
+    "art": "polyglot-rare-rune-vigil",
     "heavy": "Stack Overflow 190",
     "hp": 270,
     "light": "Code Strike 110",
@@ -26,7 +26,7 @@ exports[`buildCardData on real accounts > matches the recorded cards 1`] = `
   },
   "shrikanthv15": {
     "ability": "Iron Routine",
-    "art": "python:fallback",
+    "art": "python-common-night-slither",
     "heavy": "Inferno Deploy 30",
     "hp": 230,
     "light": "Flame Script 90",
@@ -37,7 +37,7 @@ exports[`buildCardData on real accounts > matches the recorded cards 1`] = `
   },
   "torvalds": {
     "ability": "Star Collector",
-    "art": "systems:fallback",
+    "art": "systems-rare-ember-canyon",
     "heavy": "System Call 200",
     "hp": 340,
     "light": "Memory Alloc 120",

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { analyzeSnapshot } from "@/lib/analysis";
 import { FIXTURE_USERS, loadFixture } from "@/lib/analysis/test-helpers";
 import { buildCardData } from "./card";
-import { RARITY_STYLE, horizonPoints, renderCardSVG, renderErrorSVG, sparklePositions } from "./card-svg";
+import { LAYOUT, RARITY_STYLE, horizonPoints, renderCardSVG, renderErrorSVG, sparkles } from "./card-svg";
 
 const NO_IMAGES = { cardArt: null, avatar: null };
 
@@ -17,7 +17,7 @@ describe("renderCardSVG", () => {
         const svg = renderCardSVG(data, NO_IMAGES);
         expect(svg).toContain(`>${data.hp}</text>`);
         expect(svg).toContain(`${data.contributions.toLocaleString("en-US")} contribs`);
-        expect(svg).toContain(`since ${data.memberSince}`);
+        expect(svg).toContain(`${data.art.species} · ${data.art.variant}`);
         expect(svg).toContain("LEGENDARY");
         expect(svg).not.toMatch(/XP|Velocity/);
     });
@@ -37,20 +37,21 @@ describe("renderCardSVG", () => {
 describe("rarity styling", () => {
     it("frames and sparkles more as rarity rises", () => {
         const data = buildCardData(analyzeSnapshot(loadFixture("asynced24")));
-        const sparkles = (svg: string) => (svg.match(/<path d="M[^"]*Z" fill="white"/g) ?? []).length;
+        const sparkleCount = (svg: string) => (svg.match(/<path d="M[^"]*Z" fill="#FFFFFF"/g) ?? []).length;
         const common = renderCardSVG({ ...data, rarity: "common" }, NO_IMAGES);
         const legendary = renderCardSVG({ ...data, rarity: "legendary" }, NO_IMAGES);
-        expect(sparkles(common)).toBe(0);
-        expect(sparkles(legendary)).toBe(RARITY_STYLE.legendary.sparkles);
-        expect(legendary).toContain(RARITY_STYLE.legendary.frame![0]);
+        expect(sparkleCount(common)).toBe(RARITY_STYLE.common.sparkles);
+        expect(sparkleCount(legendary)).toBe(RARITY_STYLE.legendary.sparkles);
+        expect(legendary).toContain(`stroke="${RARITY_STYLE.legendary.frameColor}"`);
+        expect(legendary).toContain(`stroke-width="${RARITY_STYLE.legendary.frameWidth}"`);
     });
 
-    it("keeps sparkles in the art window and stable per user", () => {
-        const a = sparklePositions("asynced24", 8);
-        expect(a).toEqual(sparklePositions("asynced24", 8));
-        for (const s of a) {
-            expect(s.y).toBeGreaterThanOrEqual(56);
-            expect(s.y + s.size).toBeLessThan(250);
+    it("keeps sparkles in the art window and off the avatar", () => {
+        const { cx, cy, r } = LAYOUT.avatar;
+        for (const s of sparkles("legendary")) {
+            expect(s.y - s.size).toBeGreaterThan(LAYOUT.header.y + LAYOUT.header.height);
+            expect(s.y + s.size).toBeLessThan(LAYOUT.ability.y);
+            expect(Math.hypot(s.x - cx, s.y - cy)).toBeGreaterThan(r + s.size);
         }
     });
 });
