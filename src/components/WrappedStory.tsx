@@ -120,7 +120,7 @@ export function WrappedStory({ stats }: WrappedStoryProps) {
 /**
  * Build the slide deck - only from defensible data
  */
-function buildSlides(stats: UserStats): Slide[] {
+export function buildSlides(stats: UserStats): Slide[] {
     const slides: Slide[] = [
         { id: "intro", type: "intro" },
         { id: "identity", type: "identity" },
@@ -157,7 +157,7 @@ function buildSlides(stats: UserStats): Slide[] {
 /**
  * Render individual slide content
  */
-function renderSlide(slide: Slide, stats: UserStats) {
+export function renderSlide(slide: Slide, stats: UserStats) {
     switch (slide.type) {
         case "intro":
             return (

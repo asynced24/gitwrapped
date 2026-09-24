@@ -119,7 +119,7 @@ Measured with `scripts/count-calls.ts` against live GitHub (cold cache, same tok
 | GitHub requests per dashboard, torvalds / asynced24 / gaearon | 67 / 78 / 91 | 3 / 3 / 6 |
 | Cold load, torvalds / asynced24 / gaearon | 4.1s / 5.7s / 7.5s | 2.0–2.6s / 2.3–2.5s / 4.6s |
 | Repeat load (cached) | — | ~15 ms |
-| Tests | 0 | 71 |
+| Tests | 0 | 75 |
 
 Correctness fixes:
 
