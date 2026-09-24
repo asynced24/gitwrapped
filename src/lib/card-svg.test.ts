@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { analyzeSnapshot } from "@/lib/analysis";
 import { FIXTURE_USERS, loadFixture } from "@/lib/analysis/test-helpers";
 import { buildCardData } from "./card";
-import { EMBER_COUNT, LAYOUT, RARITY_STYLE, embers, fitText, horizonPoints, renderCardSVG, renderErrorSVG, sparkles } from "./card-svg";
+import { GLITCH_BANDS, LAYOUT, RARITY_STYLE, fitText, glitch, horizonPoints, renderCardSVG, renderErrorSVG, sparkles } from "./card-svg";
 
 const NO_IMAGES = { cardArt: null, avatar: null };
 
@@ -89,22 +89,37 @@ describe("real cards", () => {
         const legendary = renderCardSVG({ ...data, rarity: "legendary" }, NO_IMAGES);
         expect(legendary).toContain("@keyframes");
         expect(legendary).toContain("prefers-reduced-motion");
-        expect(legendary).not.toContain("animateTransform");
+        expect(legendary).not.toContain("gw-glint");
         const oneOfOne = renderCardSVG({ ...data, art: { ...data.art, custom: true } }, NO_IMAGES);
-        expect(oneOfOne).toContain("animateTransform");
+        expect(oneOfOne).toContain('class="gw-glint"');
+        expect(oneOfOne).not.toContain("animateTransform"); // SMIL ignores reduced motion
+        expect(oneOfOne).toMatch(/prefers-reduced-motion[^}]*gw-glint/);
         expect(oneOfOne).toContain("ONE OF ONE");
     });
 
-    it("gives one-of-ones rising embers instead of sparkles, fixed per user", () => {
+    it("gives one-of-ones a glitch instead of sparkles, fixed per user and hidden by default", () => {
         const data = buildCardData(analyzeSnapshot(loadFixture("asynced24")), []);
         const svg = renderCardSVG({ ...data, art: { ...data.art, custom: true } }, NO_IMAGES);
-        expect((svg.match(/class="gw-ember"/g) ?? []).length).toBe(EMBER_COUNT);
+        expect((svg.match(/class="gw-tear"/g) ?? []).length).toBe(GLITCH_BANDS);
+        expect((svg.match(/class="gw-split"/g) ?? []).length).toBe(2);
         expect(svg).not.toMatch(/<path d="M[^"]*Z" fill="#FFFFFF"/);
-        expect(embers("asynced24")).toEqual(embers("asynced24"));
-        for (const e of embers("asynced24")) {
-            expect(e.y).toBeLessThan(LAYOUT.ability.y);
-            expect(e.delay).toBeLessThanOrEqual(0);
+        // Every glitch layer is invisible unless the animation shows it.
+        for (const layer of svg.match(/<[^>]*class="gw-(tear|split|line)"[^>]*>/g) ?? []) {
+            expect(layer).toContain('opacity="0"');
         }
+        expect(svg).toMatch(/prefers-reduced-motion[^}]*gw-tear/);
+        const g = glitch("asynced24");
+        expect(glitch("asynced24")).toEqual(g);
+        expect(glitch("shrikanthv15").phase).not.toBe(g.phase);
+        for (const band of g.bands) {
+            expect(band.y).toBeGreaterThan(LAYOUT.header.y + LAYOUT.header.height);
+            expect(band.y + band.height).toBeLessThan(LAYOUT.ability.y);
+        }
+    });
+
+    it("keeps the glitch off every card that isn't a one-of-one", () => {
+        const data = buildCardData(analyzeSnapshot(loadFixture("torvalds")), []);
+        expect(renderCardSVG(data, NO_IMAGES)).not.toContain("gw-tear");
     });
 });
 

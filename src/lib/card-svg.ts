@@ -186,23 +186,47 @@ export function sparkles(rarity: Rarity): { x: number; y: number; size: number }
 }
 
 /**
- * One-of-ones swap sparkles for gold embers rising from the ground line.
- * Positions come from the username, so a card never reshuffles.
+ * One-of-ones swap sparkles for a signal glitch: the painting sits still,
+ * then every few seconds a handful of horizontal bands tear sideways and
+ * the red and cyan channels split for a fraction of a second. Bands, tear
+ * distances and timing come from the username, so a card never reshuffles
+ * and two one-of-ones on the same page don't glitch in sync.
  */
-export const EMBER_COUNT = 20;
+export const GLITCH_BANDS = 4;
 
-export function embers(seed: string): { x: number; y: number; r: number; drift: number; duration: number; delay: number }[] {
-  return Array.from({ length: EMBER_COUNT }, (_, i) => {
-    const h = hash32(`${seed}:ember:${i}`);
-    return {
-      x: 20 + (h % 318),
-      y: 150 + ((h >>> 9) % 120), // start in the lower art window, above the panels
-      r: 1.1 + ((h >>> 17) % 16) / 10, // 1.1–2.6
-      drift: ((h >>> 21) % 41) - 20, // sideways sway, -20..20px
-      duration: 4 + ((h >>> 25) % 5), // 4–8s
-      delay: -(((h >>> 13) % 80) / 10), // negative: already mid-flight on first frame
-    };
-  });
+export interface Glitch {
+  /** Seconds per cycle; the burst sits near the end of it. */
+  period: number;
+  /** Negative start offset, so cards desync. */
+  phase: number;
+  /** Horizontal channel split in px during the burst. */
+  split: number;
+  bands: { y: number; height: number; shift: number; lag: number }[];
+  /** A 1px interference line that flashes with the burst. */
+  lineY: number;
+}
+
+export function glitch(seed: string): Glitch {
+  const h = (key: string) => hash32(`${seed}:glitch:${key}`);
+  const top = LAYOUT.header.y + LAYOUT.header.height + 6;
+  const bottom = LAYOUT.ability.y - 6; // tears stay in the art window, clear of the panels
+  return {
+    period: 6 + (h("period") % 30) / 10, // 6–8.9s
+    phase: -((h("phase") % 60) / 10),
+    split: 2 + (h("split") % 2), // 2–3px: felt more than seen
+    bands: Array.from({ length: GLITCH_BANDS }, (_, i) => {
+      const b = h(`band:${i}`);
+      const height = 3 + (b % 16); // 3–18px
+      const sign = (b >>> 8) & 1 ? 1 : -1;
+      return {
+        y: top + ((b >>> 12) % (bottom - top - height)),
+        height,
+        shift: sign * (6 + ((b >>> 20) % 13)), // 6–18px
+        lag: ((b >>> 26) % 4) * 0.04, // stagger inside the burst
+      };
+    }),
+    lineY: top + (h("line") % (bottom - top)),
+  };
 }
 
 function sparklePath({ x, y, size }: { x: number; y: number; size: number }): string {
@@ -267,30 +291,50 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
   const horizon = horizonPoints(data.weeklyActivity, L.horizon.x0, L.horizon.x1, L.horizon.baseline, L.horizon.amplitude);
 
   // Motion is the top-tier perk: legendary cards shimmer, one-of-ones also
-  // get a rotating holographic frame. Everything else stays static.
+  // get a travelling glint on a gold frame and a signal glitch. Everything else stays static.
   const oneOfOne = data.art.custom;
   const animated = oneOfOne || data.rarity === "legendary";
   const cls = (name: string) => (animated ? ` class="${id(name)}"` : "");
 
   const sparkleShapes = oneOfOne
-    ? embers(data.username.toLowerCase())
-        .map(e => `<circle cx="${e.x}" cy="${e.y}" r="${e.r.toFixed(1)}" fill="${e.r > 1.9 ? "#FFE9A3" : "#F5C518"}" filter="url(#${id("ember")})" class="${id("ember")}" style="--dx:${e.drift}px;animation-duration:${e.duration}s;animation-delay:${e.delay.toFixed(1)}s"/>`)
-        .join("")
+    ? ""
     : sparkles(data.rarity)
         .map((s, i) => `<path d="${sparklePath(s)}" fill="#FFFFFF" opacity="${(0.55 + 0.3 * foil).toFixed(2)}" filter="url(#${id("sparkle")})"${cls("twinkle")}${animated ? ` style="animation-delay:${(i * 0.37).toFixed(2)}s"` : ""}/>`)
         .join("");
+
+  // Glitch layers default to opacity 0, so a renderer without CSS (or a
+  // reduced-motion viewer) sees the painting untouched.
+  const g = oneOfOne ? glitch(data.username.toLowerCase()) : null;
+  const timing = (lag = 0) => g ? `animation-duration:${g.period.toFixed(1)}s;animation-delay:${(g.phase + lag).toFixed(2)}s` : "";
+  const glitchClips = g
+    ? g.bands.map((b, i) => `<clipPath id="${id(`tear${i}`)}"><rect x="0" y="${b.y}" width="${W}" height="${b.height}"/></clipPath>`).join("")
+    : "";
+  const glitchLayers = g
+    ? `<use href="#${id("art")}" filter="url(#${id("red")})" opacity="0" class="${id("split")}" style="--gx:${g.split}px;mix-blend-mode:screen;${timing()}"/>
+  <use href="#${id("art")}" filter="url(#${id("cyan")})" opacity="0" class="${id("split")}" style="--gx:-${g.split}px;mix-blend-mode:screen;${timing()}"/>
+  ${g.bands.map((b, i) => `<g clip-path="url(#${id(`tear${i}`)})"><use href="#${id("art")}" opacity="0" class="${id("tear")}" style="--gx:${b.shift}px;${timing(b.lag)}"/></g>`).join("")}
+  <rect x="0" y="${g.lineY}" width="${W}" height="1" fill="#FFFFFF" opacity="0" class="${id("line")}" style="${timing(0.04)}"/>`
+    : "";
 
   const motionStyle = animated
     ? `<style>
     @keyframes ${id("sweep")} { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
     @keyframes ${id("twinkle")} { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
     @keyframes ${id("pulse")} { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
-    @keyframes ${id("ember")} { 0% { transform: translate(0, 0); opacity: 0 } 15% { opacity: 0.95 } 70% { opacity: 0.6 } 100% { transform: translate(var(--dx), -110px); opacity: 0 } }
-    .${id("ember")} { animation: ${id("ember")} 6s ease-out infinite; transform-box: fill-box; }
+    ${oneOfOne ? `@keyframes ${id("tear")} { 0%, 91% { opacity: 0; transform: translateX(0) } 91.5% { opacity: 1; transform: translateX(var(--gx)) } 93% { transform: translateX(calc(var(--gx) * -0.5)) } 94.5% { opacity: 1; transform: translateX(calc(var(--gx) * 0.25)) } 95.5%, 100% { opacity: 0; transform: translateX(0) } }
+    @keyframes ${id("split")} { 0%, 44% { opacity: 0; transform: translateX(0) } 44.5% { opacity: 0.35; transform: translateX(calc(var(--gx) * 0.5)) } 45.5%, 90.5% { opacity: 0; transform: translateX(0) } 91% { opacity: 0.6; transform: translateX(var(--gx)) } 93.5% { opacity: 0.45; transform: translateX(calc(var(--gx) * -1)) } 96%, 100% { opacity: 0; transform: translateX(0) } }
+    @keyframes ${id("line")} { 0%, 91.5% { opacity: 0 } 92% { opacity: 0.35 } 93% { opacity: 0.1 } 94% { opacity: 0.3 } 95%, 100% { opacity: 0 } }
+    @keyframes ${id("glint")} { to { transform: rotate(360deg) } }
+    .${id("glint")} { animation: ${id("glint")} 6s linear infinite; transform-box: view-box; transform-origin: ${W / 2}px ${H / 2}px; }
+    .${id("tear")}, .${id("split")}, .${id("line")} { animation-timing-function: steps(1, end); animation-iteration-count: infinite; }
+    .${id("tear")} { animation-name: ${id("tear")}; }
+    .${id("split")} { animation-name: ${id("split")}; }
+    .${id("line")} { animation-name: ${id("line")}; }
+    @media (prefers-reduced-motion: reduce) { .${id("tear")}, .${id("split")}, .${id("line")}, .${id("glint")} { animation: none; } }` : ""}
     .${id("sweep")} { animation: ${id("sweep")} 5.5s ease-in-out infinite; }
     .${id("twinkle")} { animation: ${id("twinkle")} 2.4s ease-in-out infinite; }
     .${id("pulse")} { animation: ${id("pulse")} 3s ease-in-out infinite; }
-    @media (prefers-reduced-motion: reduce) { .${id("sweep")}, .${id("twinkle")}, .${id("pulse")}, .${id("ember")} { animation: none; opacity: 0.6; } }
+    @media (prefers-reduced-motion: reduce) { .${id("sweep")}, .${id("twinkle")}, .${id("pulse")} { animation: none; } }
   </style>`
     : "";
   const sweep = animated
@@ -334,7 +378,16 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
   const abilityDesc = fitText(cleanText(data.ability.description), 310, 9.5, "mono", 8);
 
   const t = oneOfOne ? 3.5 : rarity.frameWidth;
-  const frameStroke = oneOfOne ? `url(#${id("holo")})` : rarity.frameColor;
+  const frameRect = (stroke: string, opacity: number) =>
+    `<rect x="${t / 2}" y="${t / 2}" width="${W - t}" height="${H - t}" rx="${L.frame.radius - t / 2}" stroke="${stroke}" stroke-opacity="${opacity}" stroke-width="${t}"/>`;
+  // One-of-ones: the gold gradient is painted on a square that turns behind
+  // a frame-shaped mask, so the bright band travels around the frame (a
+  // glint, not a colour cycle). It's a CSS animation rather than SMIL so
+  // reduced motion can stop it; the square covers the card at every angle.
+  const reach = Math.ceil(Math.hypot(W / 2, H / 2)) + 4;
+  const frame = oneOfOne
+    ? `<g mask="url(#${id("frame")})" opacity="0.9"><rect class="${id("glint")}" x="${W / 2 - reach}" y="${H / 2 - reach}" width="${reach * 2}" height="${reach * 2}" fill="url(#${id("holo")})"/></g>`
+    : frameRect(rarity.frameColor, 0.9);
   const rarityLabel = oneOfOne ? "◆ ONE OF ONE" : `${rarity.symbol} ${rarity.label}`;
   const rarityLabelColor = oneOfOne ? "#F5C518" : accent;
   // Footer left gets whatever the right-hand rarity label leaves (8px mono, 1px tracking).
@@ -356,9 +409,8 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
       <stop offset="0.48" stop-color="#FFF4C2"/>
       <stop offset="0.58" stop-color="#C9971C"/>
       <stop offset="1" stop-color="#6E4F0E"/>
-      <!-- The bright band travels around the frame: a glint, not a colour cycle. -->
-      <animateTransform attributeName="gradientTransform" type="rotate" from="0 ${W / 2} ${H / 2}" to="360 ${W / 2} ${H / 2}" dur="6s" repeatCount="indefinite"/>
-    </linearGradient>` : ""}
+    </linearGradient>
+    <mask id="${id("frame")}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">${frameRect("#FFFFFF", 1)}</mask>` : ""}
     <linearGradient id="${id("theme")}" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="${theme.borderColor}"/>
       <stop offset="1" stop-color="${theme.accentColor}"/>
@@ -388,12 +440,8 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
       <feComposite in2="b" operator="in" result="g"/>
       <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <filter id="${id("ember")}" x="-300%" y="-300%" width="700%" height="700%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="1.4" result="b"/>
-      <feFlood flood-color="#F5C518" flood-opacity="0.9"/>
-      <feComposite in2="b" operator="in" result="g"/>
-      <feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
+    ${oneOfOne ? `<filter id="${id("red")}" color-interpolation-filters="sRGB"><feColorMatrix values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/></filter>
+    <filter id="${id("cyan")}" color-interpolation-filters="sRGB"><feColorMatrix values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"/></filter>` : ""}
     <filter id="${id("shadow")}" x="-20%" y="-20%" width="140%" height="160%">
       <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.7"/>
     </filter>
@@ -403,11 +451,13 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
     <clipPath id="${id("card")}"><rect width="${W}" height="${H}" rx="${L.frame.radius}"/></clipPath>
     <clipPath id="${id("avatar")}"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath>
     ${panelClips}
+    ${glitchClips}
   </defs>
 
   <g clip-path="url(#${id("card")})">
   <rect width="${W}" height="${H}" fill="#070914"/>
   ${art}
+  ${glitchLayers}
   <rect y="${L.scrim.y}" width="${W}" height="${H - L.scrim.y}" fill="url(#${id("scrim")})"/>
   <rect width="${W}" height="${H}" fill="url(#${id("foil")})" style="mix-blend-mode:overlay"/>
   ${sweep}
@@ -459,7 +509,7 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
   </g>
 
   <!-- Rarity frame -->
-  <rect x="${t / 2}" y="${t / 2}" width="${W - t}" height="${H - t}" rx="${L.frame.radius - t / 2}" stroke="${frameStroke}" stroke-opacity="0.9" stroke-width="${t}"/>
+  ${frame}
 </svg>`;
 }
 
