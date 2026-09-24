@@ -1,4 +1,5 @@
-import { getCardArtPath, getLanguageTheme, type PokemonCardData } from "@/lib/card";
+import { getLanguageTheme, type PokemonCardData } from "@/lib/card";
+import { FAMILIES, type Rarity } from "@/lib/art/families";
 
 /* ─────────────────────────────────────────────
    Image loading (network) — kept apart from rendering so the
@@ -23,31 +24,106 @@ export async function fetchImageAsBase64(imageUrl: string): Promise<string | nul
     const bytes = new Uint8Array(arrayBuffer);
     const mimeType = response.headers.get("content-type") ?? "image/png";
 
-    // Edge-compatible base64 encoding
-    let binary = '';
+    let binary = "";
     for (let i = 0; i < bytes.length; i++) {
       binary += String.fromCharCode(bytes[i]);
     }
-    const base64 = btoa(binary);
-
-    return `data:${mimeType};base64,${base64}`;
+    return `data:${mimeType};base64,${btoa(binary)}`;
   } catch {
     return null;
   }
 }
 
-/** Card art from our own /public, avatar from GitHub with a proxy fallback. */
+/** Ask GitHub for a small avatar: the badge is 28px, so 96px is plenty. */
+export function smallAvatarUrl(avatarUrl: string): string {
+  const url = new URL(avatarUrl);
+  url.searchParams.set("s", "96");
+  return url.toString();
+}
+
+/**
+ * Images embedded as data: URIs. README cards are served through GitHub's
+ * image proxy, which won't load anything the SVG references externally.
+ */
 export async function loadCardImages(data: PokemonCardData, origin: string): Promise<CardImages> {
-  const proxiedAvatarUrl = `https://images.weserv.nl/?url=${encodeURIComponent(data.avatarUrl.replace("https://", ""))}`;
+  const avatarUrl = smallAvatarUrl(data.avatarUrl);
+  const proxiedAvatarUrl = `https://images.weserv.nl/?url=${encodeURIComponent(avatarUrl.replace("https://", ""))}`;
   const [cardArt, avatar] = await Promise.all([
-    fetchImageAsBase64(`${origin}${getCardArtPath(data.topLanguage)}`),
-    fetchImageAsBase64(data.avatarUrl).then(uri => uri ?? fetchImageAsBase64(proxiedAvatarUrl)),
+    fetchImageAsBase64(`${origin}${data.art.file}`),
+    fetchImageAsBase64(avatarUrl).then(uri => uri ?? fetchImageAsBase64(proxiedAvatarUrl)),
   ]);
   return { cardArt, avatar };
 }
 
+/** For in-app rendering: plain URLs, the browser loads them itself. */
+export function cardImageUrls(data: PokemonCardData): CardImages {
+  return { cardArt: data.art.file, avatar: smallAvatarUrl(data.avatarUrl) };
+}
+
 /* ─────────────────────────────────────────────
-   SVG rendering
+   Layout — Kimi's measured spec on the 358×498 card, with the avatar as a
+   large circle in the art window. The painting is full-bleed under
+   everything; the rarity frame is a stroke on top.
+   ───────────────────────────────────────────── */
+
+export const LAYOUT = {
+  frame: { width: 358, height: 498, radius: 20 },
+  header: { x: 10, y: 10, width: 338, height: 48, radius: 11.5 },
+  stagePill: { x: 20, y: 19, width: 58, height: 30 },
+  avatar: { cx: 179, cy: 132, r: 40 },
+  horizon: { x0: 8, x1: 350, baseline: 277, amplitude: 34 },
+  scrim: { y: 255 },
+  ability: { x: 12, y: 296, width: 334, height: 64, radius: 10 },
+  attacks: { x: 12, y: 366, width: 334, height: 80, radius: 10, rows: [372, 410], dividerY: 406 },
+  stats: { x: 12, y: 452, width: 334, height: 30, radius: 7 },
+  footerY: 492,
+} as const;
+
+/** Sparkle anchors in paint order; a card draws the first N for its rarity. */
+export const SPARKLE_ANCHORS: readonly (readonly [number, number])[] = [
+  [48, 96], [300, 80], [232, 196], [90, 210], [320, 190], [250, 120], [140, 70], [270, 240],
+];
+
+/* ─────────────────────────────────────────────
+   Rarity treatments (Kimi spec)
+   ───────────────────────────────────────────── */
+
+interface RarityStyle {
+  frameColor: string;
+  frameWidth: number;
+  label: string;
+  symbol: string;
+  /** Foil intensity "A" in the spec. */
+  foil: number;
+  sparkles: number;
+}
+
+export const RARITY_STYLE: Record<Rarity, RarityStyle> = {
+  common: { frameColor: "#6B7A90", frameWidth: 1, label: "COMMON", symbol: "●", foil: 0.06, sparkles: 2 },
+  uncommon: { frameColor: "#8FB6D9", frameWidth: 1.5, label: "UNCOMMON", symbol: "◆", foil: 0.10, sparkles: 3 },
+  rare: { frameColor: "#C9B8F0", frameWidth: 2, label: "RARE", symbol: "◆", foil: 0.17, sparkles: 5 },
+  legendary: { frameColor: "#F5C518", frameWidth: 3, label: "LEGENDARY", symbol: "◆", foil: 0.26, sparkles: 8 },
+};
+
+const TEXT = {
+  hpLabel: "#9FB3CC",
+  abilityDesc: "#D5DEEC",
+  abilityStats: "#8CA0BC",
+  attackSub: "#93A5C0",
+  statsLabel: "#7E90AB",
+  statsValue: "#C7D2E2",
+  statsDot: "#9AA7B8",
+  footer: "#A9B8CE",
+};
+
+const STAGE_PILL: Record<string, { bg: string; text: string }> = {
+  BASIC: { bg: "#E6B87D", text: "#0A0F1D" },
+  "STAGE 1": { bg: "#E8EEF6", text: "#0A0F1D" },
+  "STAGE 2": { bg: "#F5C518", text: "#0A0F1D" },
+};
+
+/* ─────────────────────────────────────────────
+   Pure helpers (exported for tests)
    ───────────────────────────────────────────── */
 
 function escapeXml(str: string): string {
@@ -63,246 +139,302 @@ function cleanText(str: string): string {
   return str.replace(/[—–]/g, "-");
 }
 
+function truncate(str: string, max: number): string {
+  return str.length > max ? str.slice(0, max - 1) + "…" : str;
+}
+
+/** Average glyph width as a fraction of font size (conservative, for fitting). */
+const EM = { mono: 0.6, display: 0.7 } as const;
+
+/**
+ * Shrink text to fit its box, down to a readable minimum; only then
+ * truncate. Returns escaped text plus the size to render it at.
+ */
+export function fitText(text: string, maxWidth: number, size: number, font: keyof typeof EM, minSize: number): { text: string; size: number } {
+  const em = EM[font];
+  if (text.length * size * em <= maxWidth) return { text: escapeXml(text), size };
+  const fitted = maxWidth / (text.length * em);
+  if (fitted >= minSize) return { text: escapeXml(text), size: Math.floor(fitted * 10) / 10 };
+  return { text: escapeXml(truncate(text, Math.floor(maxWidth / (minSize * em)))), size: minSize };
+}
+
+/**
+ * The 52-week horizon: one point per calendar week, height relative to the
+ * user's own busiest week. Square-root scaled (the spec is linear) so a
+ * quiet week still shows next to one huge week; empty weeks sit on the
+ * baseline as valleys — no invented noise.
+ */
+export function horizonPoints(weekly: number[], x0: number, x1: number, baseline: number, amplitude: number): string {
+  if (weekly.length === 0) return `${x0},${baseline} ${x1},${baseline}`;
+  const max = Math.max(1, ...weekly);
+  const step = weekly.length > 1 ? (x1 - x0) / (weekly.length - 1) : 0;
+  return weekly
+    .map((count, i) => {
+      const height = Math.sqrt(count / max) * amplitude;
+      return `${(x0 + i * step).toFixed(1)},${(baseline - height).toFixed(1)}`;
+    })
+    .join(" ");
+}
+
+export function sparkles(rarity: Rarity): { x: number; y: number; size: number }[] {
+  return SPARKLE_ANCHORS.slice(0, RARITY_STYLE[rarity].sparkles).map(([x, y], i) => ({
+    x,
+    y,
+    size: 5 + 2.5 * (i % 3),
+  }));
+}
+
+function sparklePath({ x, y, size }: { x: number; y: number; size: number }): string {
+  const s = size;
+  const w = s * 0.22;
+  return `M${x},${y - s} Q${x + w},${y - w} ${x + s},${y} Q${x + w},${y + w} ${x},${y + s} Q${x - w},${y + w} ${x - s},${y} Q${x - w},${y - w} ${x},${y - s}Z`;
+}
+
+/* ─────────────────────────────────────────────
+   SVG rendering
+   ───────────────────────────────────────────── */
+
 export interface CardImages {
-  /** Background illustration as a data: URI, or null to draw gradient only. */
+  /** Card art (data: URI for README cards, plain URL in-app), or null for gradient only. */
   cardArt: string | null;
-  /** Avatar as a data: URI, or null to draw the initial instead. */
+  /** Avatar (data: URI or URL), or null to draw the initial instead. */
   avatar: string | null;
 }
 
-/** Pure: same data + images always renders the same SVG. */
-export function renderCardSVG(data: PokemonCardData, images: CardImages): string {
+export interface RenderOptions {
+  /** Prefix for SVG element ids, so several inline cards can share a page. */
+  idPrefix?: string;
+}
+
+// GitHub's image proxy can't load web fonts, so every stack ends in a
+// heavy system font that looks close (Arial Black for Archivo Black).
+const DISPLAY = "'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif";
+const MONO = "'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace";
+
+/** Pure: the same data + images always renders the same SVG. */
+export function renderCardSVG(data: PokemonCardData, images: CardImages, options: RenderOptions = {}): string {
+  const id = (name: string) => `${options.idPrefix ?? "gw"}-${name}`;
+  const L = LAYOUT;
+  const W = L.frame.width;
+  const H = L.frame.height;
   const theme = getLanguageTheme(data.topLanguage);
-  const weaknessTheme = getLanguageTheme(data.weakness.type);
-  const resistanceTheme = getLanguageTheme(data.resistance.type);
-  const sinceYear = data.memberSince;
-  const raritySymbol = data.rarity === "rare" ? "★" : data.rarity === "uncommon" ? "◆" : "●";
+  const rarity = RARITY_STYLE[data.rarity];
+  const accent = FAMILIES[data.art.family].accent[data.art.rarity];
+  const foil = rarity.foil;
+  const pill = STAGE_PILL[data.evolutionStage] ?? STAGE_PILL.BASIC;
 
-  const evoBadgeGradient =
-    data.evolutionStage === "STAGE 2"
-      ? "#FFD700, #FFA500"
-      : data.evolutionStage === "STAGE 1"
-        ? "#E8E8E8, #B0B0B0"
-        : "#E6B87D, #C4926E";
+  const art = images.cardArt
+    ? `<image id="${id("art")}" href="${images.cardArt}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMin slice"/>`
+    : `<rect id="${id("art")}" width="${W}" height="${H}" fill="url(#${id("theme")})"/>`;
 
-  const usernameDisplay =
-    data.username.length > 14 ? data.username.slice(0, 14) + "…" : data.username;
+  // Frosted glass (spec recipe): blurred copy of the art clipped to each
+  // panel, a tint on top, then a hairline border.
+  const panels = [
+    { ...L.ability, tint: "rgba(11,18,32,0.55)" },
+    { ...L.attacks, tint: "rgba(11,18,32,0.55)" },
+    { ...L.stats, tint: "rgba(10,15,29,0.70)" },
+  ];
+  const panelClips = panels
+    .map((p, i) => `<clipPath id="${id(`p${i}`)}"><rect x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}" rx="${p.radius}"/></clipPath>`)
+    .join("");
+  const glass = panels
+    .map((p, i) => `<g clip-path="url(#${id(`p${i}`)})"><use href="#${id("art")}" filter="url(#${id("frost")})"/></g>
+  <rect x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}" rx="${p.radius}" fill="${p.tint}" stroke="rgba(255,255,255,0.14)"/>
+  <line x1="${p.x + p.radius}" y1="${p.y + 0.5}" x2="${p.x + p.width - p.radius}" y2="${p.y + 0.5}" stroke="rgba(255,255,255,0.18)"/>`)
+    .join("\n  ");
 
-  const maxEnergyIcons = 14;
-  const attack1EnergyIcons = Math.min(Math.max(data.attack1.energyCost ?? 0, 0), maxEnergyIcons);
-  const attack2EnergyIcons = Math.min(Math.max(data.attack2.energyCost ?? 0, 0), maxEnergyIcons);
+  const horizon = horizonPoints(data.weeklyActivity, L.horizon.x0, L.horizon.x1, L.horizon.baseline, L.horizon.amplitude);
 
-  const cardArtDataUri = images.cardArt;
-  const avatarDataUri = images.avatar;
+  // Motion is the top-tier perk: legendary cards shimmer, one-of-ones also
+  // get a rotating holographic frame. Everything else stays static.
+  const oneOfOne = data.art.custom;
+  const animated = oneOfOne || data.rarity === "legendary";
+  const cls = (name: string) => (animated ? ` class="${id(name)}"` : "");
 
-  // Split ability description at the em-dash separator so both lines show in SVG
-  const cleanedAbilityDesc = cleanText(data.ability.description);
-  const descDashIdx = cleanedAbilityDesc.indexOf(' - ');
-  let svgDescLine1: string;
-  let svgDescLine2: string;
-  if (descDashIdx !== -1) {
-    svgDescLine1 = cleanedAbilityDesc.slice(0, descDashIdx + 2); // e.g. "Fluent in 7 languages -"
-    svgDescLine2 = cleanedAbilityDesc.slice(descDashIdx + 3);    // e.g. "attacks deal 10 extra damage"
-  } else {
-    svgDescLine1 = cleanedAbilityDesc.length > 40 ? cleanedAbilityDesc.slice(0, 38) + '...' : cleanedAbilityDesc;
-    svgDescLine2 = '';
-  }
-  if (svgDescLine1.length > 42) svgDescLine1 = svgDescLine1.slice(0, 40) + '...';
-  if (svgDescLine2.length > 42) svgDescLine2 = svgDescLine2.slice(0, 40) + '...';
+  const sparkleShapes = sparkles(data.rarity)
+    .map((s, i) => `<path d="${sparklePath(s)}" fill="#FFFFFF" opacity="${(0.55 + 0.3 * foil).toFixed(2)}" filter="url(#${id("sparkle")})"${cls("twinkle")}${animated ? ` style="animation-delay:${(i * 0.37).toFixed(2)}s"` : ""}/>`)
+    .join("");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="358" height="498" viewBox="0 0 358 498" fill="none">
+  const motionStyle = animated
+    ? `<style>
+    @keyframes ${id("sweep")} { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
+    @keyframes ${id("twinkle")} { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
+    @keyframes ${id("pulse")} { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
+    .${id("sweep")} { animation: ${id("sweep")} 5.5s ease-in-out infinite; }
+    .${id("twinkle")} { animation: ${id("twinkle")} 2.4s ease-in-out infinite; }
+    .${id("pulse")} { animation: ${id("pulse")} 3s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) { .${id("sweep")}, .${id("twinkle")}, .${id("pulse")} { animation: none; } }
+  </style>`
+    : "";
+  const sweep = animated
+    ? `<g transform="skewX(-18)" style="mix-blend-mode:screen"><rect${cls("sweep")} x="-40" y="-20" width="90" height="${H + 40}" fill="url(#${id("sweepGrad")})"/></g>`
+    : "";
+
+  const attackRows = [data.attack1, data.attack2].map((attack, i) => {
+    const rowY = L.attacks.rows[i];
+    const dots = Math.min(Math.max(attack.energyCost, 0), 4);
+    const nameX = 24 + dots * 14 + 6;
+    // Name and subtitle stop before the damage number (right-aligned at 334).
+    const room = 334 - 52 - 6 - nameX;
+    const name = fitText(attack.name, room, 12.5, "display", 10);
+    const sub = fitText(cleanText(attack.description), room, 8, "mono", 7);
+    const dotShapes = Array.from({ length: dots }, (_, d) =>
+      `<circle cx="${24 + d * 14 + 5.5}" cy="${rowY + 7.5}" r="5.5" fill="${accent}" stroke="rgba(255,255,255,0.35)"/>`).join("");
+    return `${dotShapes}
+  <text x="${nameX}" y="${rowY + 12}" font-family="${DISPLAY}" font-size="${name.size}" fill="#FFFFFF">${name.text}</text>
+  <text x="${nameX}" y="${rowY + 25}" font-family="${MONO}" font-size="${sub.size}" fill="${TEXT.attackSub}">${sub.text}</text>
+  <text x="334" y="${rowY + 21}" text-anchor="end" font-family="${DISPLAY}" font-size="21" fill="#FFFFFF" filter="url(#${id("shadow")})">${attack.damage}</text>`;
+  });
+
+  // Weakness / resist / retreat: three equal columns, centred.
+  const colW = L.stats.width / 3;
+  const statsBaseline = L.stats.y + 19.5;
+  const column = (i: number, label: string, value: string, dotColor: string) =>
+    `<text x="${(L.stats.x + colW * i + colW / 2).toFixed(1)}" y="${statsBaseline}" text-anchor="middle" font-family="${MONO}"><tspan font-size="7" letter-spacing="1" fill="${TEXT.statsLabel}">${label}</tspan><tspan font-size="9.5" fill="${dotColor}" dx="6">●</tspan><tspan font-size="9.5" fill="${TEXT.statsValue}" dx="4">${escapeXml(value)}</tspan></text>`;
+  const retreat = `<text x="${(L.stats.x + colW * 2 + colW / 2).toFixed(1)}" y="${statsBaseline}" text-anchor="middle" font-family="${MONO}"><tspan font-size="7" letter-spacing="1" fill="${TEXT.statsLabel}">RETREAT</tspan><tspan font-size="9.5" fill="${accent}" dx="6" letter-spacing="1">${"●".repeat(Math.min(data.retreatCost, 4)) || "–"}</tspan></text>`;
+
+  // Footer, Kimi style: quiet small print naming the painting.
+  const artLabel = data.art.custom
+      ? `${data.art.variant} · 1 of 1`
+      : data.art.poolSize > 1
+    ? `${data.art.species} · ${data.art.variant} · 1 of ${data.art.poolSize}`
+    : data.art.variant
+      ? `${data.art.species} · ${data.art.variant}`
+      : `${data.art.species} · since ${data.memberSince}`;
+
+  const username = fitText(data.username, 170, 15.5, "display", 11);
+  const abilityName = fitText(data.ability.name, 250, 14.5, "display", 11);
+  const abilityDesc = fitText(cleanText(data.ability.description), 310, 9.5, "mono", 8);
+
+  const t = oneOfOne ? 3.5 : rarity.frameWidth;
+  const frameStroke = oneOfOne ? `url(#${id("holo")})` : rarity.frameColor;
+  const rarityLabel = oneOfOne ? "◆ ONE OF ONE" : `${rarity.symbol} ${rarity.label}`;
+  const rarityLabelColor = oneOfOne ? "#F5C518" : accent;
+  // Footer left gets whatever the right-hand rarity label leaves (8px mono, 1px tracking).
+  const footerLeft = fitText(`gitwrapped · ${artLabel}`, 340 - rarityLabel.length * (8 * EM.mono + 1) - 12 - 18, 8, "mono", 7);
+  const { cx, cy, r } = L.avatar;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" fill="none">
   <defs>
-    <!-- Full-art background gradient -->
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${theme.borderColor}"/>
-      <stop offset="40%" stop-color="${theme.accentColor}"/>
-      <stop offset="100%" stop-color="${theme.borderColor}"/>
+    ${motionStyle}
+    ${animated ? `<linearGradient id="${id("sweepGrad")}" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="0.6" stop-color="${accent}" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>` : ""}
+    ${oneOfOne ? `<linearGradient id="${id("holo")}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${W}" y2="${H}">
+      <stop offset="0" stop-color="#6E4F0E"/>
+      <stop offset="0.38" stop-color="#C9971C"/>
+      <stop offset="0.48" stop-color="#FFF4C2"/>
+      <stop offset="0.58" stop-color="#C9971C"/>
+      <stop offset="1" stop-color="#6E4F0E"/>
+      <!-- The bright band travels around the frame: a glint, not a colour cycle. -->
+      <animateTransform attributeName="gradientTransform" type="rotate" from="0 ${W / 2} ${H / 2}" to="360 ${W / 2} ${H / 2}" dur="6s" repeatCount="indefinite"/>
+    </linearGradient>` : ""}
+    <linearGradient id="${id("theme")}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${theme.borderColor}"/>
+      <stop offset="1" stop-color="${theme.accentColor}"/>
     </linearGradient>
-
-    <!-- Evolution badge gradient -->
-    <linearGradient id="evoBadge" x1="0" y1="0" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${evoBadgeGradient.split(", ")[0]}"/>
-      <stop offset="100%" stop-color="${evoBadgeGradient.split(", ")[1]}"/>
+    <linearGradient id="${id("scrim")}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#05080F" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#05080F" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#05080F" stop-opacity="0.85"/>
     </linearGradient>
-
-    <!-- Ability badge gradient -->
-    <linearGradient id="abilityBadge" x1="0" y1="0" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${theme.accentColor}"/>
-      <stop offset="100%" stop-color="${theme.borderColor}"/>
+    <linearGradient id="${id("foil")}" x1="0" y1="0" x2="1" y2="0.7">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="${(0.9 * foil).toFixed(3)}"/>
+      <stop offset="0.28" stop-color="${accent}" stop-opacity="${foil.toFixed(3)}"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.72" stop-color="#FF9FF0" stop-opacity="${(0.8 * foil).toFixed(3)}"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="${(0.6 * foil).toFixed(3)}"/>
     </linearGradient>
-
-    <!-- Energy dot gradients -->
-    <radialGradient id="energyMain" cx="35%" cy="35%">
-      <stop offset="0%" stop-color="${theme.accentColor}"/>
-      <stop offset="100%" stop-color="${theme.borderColor}"/>
-    </radialGradient>
-    <radialGradient id="energyWeak" cx="35%" cy="35%">
-      <stop offset="0%" stop-color="${weaknessTheme.accentColor}"/>
-      <stop offset="100%" stop-color="${weaknessTheme.borderColor}"/>
-    </radialGradient>
-    <radialGradient id="energyResist" cx="35%" cy="35%">
-      <stop offset="0%" stop-color="${resistanceTheme.accentColor}"/>
-      <stop offset="100%" stop-color="${resistanceTheme.borderColor}"/>
-    </radialGradient>
-
-    <!-- Avatar clip -->
-    <clipPath id="octClip">
-      <polygon points="175,60 212,73 225,110 225,150 212,187 175,200 138,187 125,150 125,110 138,73"/>
-    </clipPath>
-
-    <!-- Vignette for avatar -->
-    <radialGradient id="avatarFade" cx="50%" cy="50%" r="50%">
-      <stop offset="56%" stop-color="white" stop-opacity="0"/>
-      <stop offset="100%" stop-color="black" stop-opacity="0.45"/>
-    </radialGradient>
-
-    <!-- Blur filter for drop shadows -->
-    <filter id="blur"><feGaussianBlur stdDeviation="20"/></filter>
-
-    <!-- Gradient border frame -->
-    <linearGradient id="borderGradient" x1="0%" y1="0%" x2="100%" y2="100%" gradientTransform="rotate(145)">
-      <stop offset="0%" stop-color="${theme.borderColor}"/>
-      <stop offset="100%" stop-color="${theme.accentColor}"/>
-    </linearGradient>
-    <clipPath id="cardClip">
-      <rect width="350" height="490" rx="16"/>
-    </clipPath>
-    <clipPath id="abilityClip">
-      <rect x="12" y="228" width="326" height="68" rx="8"/>
-    </clipPath>
-    <clipPath id="attacksClip">
-      <rect x="12" y="300" width="326" height="100" rx="8"/>
-    </clipPath>
-    <!-- Metallic V gradient for header -->
-    <linearGradient id="silverName" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#cccccc"/>
-    </linearGradient>
+    <filter id="${id("frost")}" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="7"/></filter>
+    <filter id="${id("glow")}" x="-5%" y="-80%" width="110%" height="260%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="b"/>
+      <feFlood flood-color="${accent}" flood-opacity="0.95"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="${id("sparkle")}" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="b"/>
+      <feFlood flood-color="${accent}" flood-opacity="0.9"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="${id("shadow")}" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.7"/>
+    </filter>
+    <filter id="${id("lift")}" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+    <clipPath id="${id("card")}"><rect width="${W}" height="${H}" rx="${L.frame.radius}"/></clipPath>
+    <clipPath id="${id("avatar")}"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath>
+    ${panelClips}
   </defs>
 
-  <!-- ═══ OUTER GRADIENT BORDER FRAME ═══ -->
-  <rect width="358" height="498" rx="20" fill="url(#borderGradient)"/>
+  <g clip-path="url(#${id("card")})">
+  <rect width="${W}" height="${H}" fill="#070914"/>
+  ${art}
+  <rect y="${L.scrim.y}" width="${W}" height="${H - L.scrim.y}" fill="url(#${id("scrim")})"/>
+  <rect width="${W}" height="${H}" fill="url(#${id("foil")})" style="mix-blend-mode:overlay"/>
+  ${sweep}
+  ${sparkleShapes}
 
-  <!-- ═══ CARD CONTENT (clipped + offset by 4px border) ═══ -->
-  <g transform="translate(4,4)" clip-path="url(#cardClip)">
+  <!-- 52-week contribution horizon -->
+  <polyline${cls("pulse")} points="${horizon}" stroke="${accent}" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
+  <polyline points="${horizon}" stroke="#EAFBFF" stroke-opacity="0.95" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" filter="url(#${id("glow")})"/>
 
-  <!-- ═══ FULL-ART BACKGROUND ═══ -->
-  <rect width="350" height="490" rx="16" fill="url(#bgGradient)"/>
-  ${cardArtDataUri ? `<image href="${cardArtDataUri}" x="0" y="0" width="350" height="490" preserveAspectRatio="xMidYMid slice" opacity="0.62"/>` : ""}
-  <!-- Lighter theme wash — lets illustration show through -->
-  <rect width="350" height="490" rx="16" fill="url(#bgGradient)" opacity="0.50"/>
+  <!-- Avatar: large circle over the art -->
+  <circle cx="${cx}" cy="${cy}" r="${r + 3}" fill="rgba(10,15,29,0.55)" filter="url(#${id("lift")})"/>
+  ${images.avatar
+    ? `<image href="${images.avatar}" x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" clip-path="url(#${id("avatar")})" preserveAspectRatio="xMidYMid slice"/>`
+    : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${theme.borderColor}"/><text x="${cx}" y="${cy + 11}" text-anchor="middle" font-family="${DISPLAY}" font-size="30" fill="#FFFFFF">${escapeXml(data.username.charAt(0).toUpperCase())}</text>`}
+  <circle cx="${cx}" cy="${cy}" r="${r + 1.2}" stroke="${accent}" stroke-opacity="0.85" stroke-width="2.4"/>
 
-  <!-- ═══ INNER BORDER (subtle inset) ═══ -->
-  <rect width="350" height="490" rx="16" fill="none" stroke="rgba(220,220,220,0.35)" stroke-width="1.5"/>
+  <!-- Header -->
+  <rect x="${L.header.x}" y="${L.header.y}" width="${L.header.width}" height="${L.header.height}" rx="${L.header.radius}" fill="rgba(10,15,29,0.92)" stroke="rgba(255,255,255,0.15)"/>
+  <rect x="${L.stagePill.x}" y="${L.stagePill.y}" width="${L.stagePill.width}" height="${L.stagePill.height}" rx="${L.stagePill.height / 2}" fill="${pill.bg}"/>
+  <text x="${L.stagePill.x + L.stagePill.width / 2}" y="${L.stagePill.y + 18.5}" text-anchor="middle" font-family="${DISPLAY}" font-size="9.5" letter-spacing="0.5" fill="${pill.text}">${escapeXml(data.evolutionStage)}</text>
+  <text x="${cx}" y="${L.header.y + 29.5}" text-anchor="middle" font-family="${DISPLAY}" font-size="${username.size}" fill="#FFFFFF">${username.text}</text>
+  <text x="340" y="${L.header.y + 33}" text-anchor="end" font-family="${DISPLAY}" font-size="24" fill="#FFFFFF">${data.hp}</text>
+  <text x="${340 - String(data.hp).length * 16.5 - 4}" y="${L.header.y + 33}" text-anchor="end" font-family="${DISPLAY}" font-size="8" fill="${TEXT.hpLabel}">HP</text>
 
-  <!-- ═══ HEADER BAR — lightened ═══ -->
-  <rect width="350" height="48" rx="16" fill="rgba(0,0,0,0.60)"/>
-  <rect width="350" height="48" rx="16" fill="rgba(0,0,0,0.38)"/>
+  <!-- Frosted panels -->
+  ${glass}
 
-  <!-- Evolution badge -->
-  <rect x="16" y="10" width="${Math.max(data.evolutionStage.length * 9 + 20, 80)}" height="26" rx="13" fill="url(#evoBadge)" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
-  <text x="${16 + Math.max(data.evolutionStage.length * 9 + 20, 80) / 2}" y="28" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="800" fill="#1a1a1a" letter-spacing="0.8">${escapeXml(data.evolutionStage)}</text>
+  <!-- Ability -->
+  <text x="24" y="313" font-family="${MONO}" font-size="7.5" letter-spacing="2" fill="${accent}">ABILITY</text>
+  <text x="84" y="314" font-family="${DISPLAY}" font-size="${abilityName.size}" fill="#FFFFFF">${abilityName.text}</text>
+  <text x="24" y="332" font-family="${MONO}" font-size="${abilityDesc.size}" font-style="italic" fill="${TEXT.abilityDesc}">${abilityDesc.text}</text>
+  <text x="24" y="347" font-family="${MONO}" font-size="8.5" letter-spacing="0.5" fill="${TEXT.abilityStats}">${data.contributions.toLocaleString("en-US")} contribs · ${data.activeWeeks}/${data.totalWeeks} wks active</text>
 
-  <!-- Username with metallic gradient -->
-  <text x="${28 + Math.max(data.evolutionStage.length * 9 + 20, 80)}" y="30" font-family="'Mona Sans', -apple-system, sans-serif" font-size="19" font-weight="900" fill="url(#silverName)" letter-spacing="-0.4" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">${escapeXml(usernameDisplay)}</text>
+  <!-- Attacks -->
+  ${attackRows[0]}
+  <rect x="24" y="${L.attacks.dividerY}" width="310" height="1" fill="rgba(255,255,255,0.09)"/>
+  ${attackRows[1]}
 
-  <!-- HP -->
-  <text x="260" y="26" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.90)" letter-spacing="1.2">HP</text>
-  <text x="280" y="34" font-family="'Mona Sans', -apple-system, sans-serif" font-size="30" font-weight="900" fill="white" letter-spacing="-0.5">${data.hp}</text>
+  <!-- Weakness / resist / retreat -->
+  ${column(0, "WEAKNESS", data.weakness.modifier, TEXT.statsDot)}
+  <rect x="${(L.stats.x + colW).toFixed(1)}" y="459" width="1" height="16" fill="rgba(255,255,255,0.09)"/>
+  ${column(1, "RESIST", data.resistance.modifier, TEXT.statsDot)}
+  <rect x="${(L.stats.x + colW * 2).toFixed(1)}" y="459" width="1" height="16" fill="rgba(255,255,255,0.09)"/>
+  ${retreat}
 
-  <!-- Type emoji -->
-  <text x="320" y="33" font-size="20">${theme.emoji}</text>
-
-  <!-- ═══ AVATAR — lighter shell ═══ -->
-  <polygon points="175,60 212,73 225,110 225,150 212,187 175,200 138,187 125,150 125,110 138,73" fill="rgba(10,12,18,0.42)" stroke="rgba(255,255,255,0.38)" stroke-width="2.5"/>
-  <polygon points="175,64 209,76 221,110 221,150 209,184 175,196 141,184 129,150 129,110 141,76" fill="rgba(17,24,39,0.50)"/>
-  ${avatarDataUri ? `<image href="${avatarDataUri}" x="125" y="60" width="100" height="140" clip-path="url(#octClip)" preserveAspectRatio="xMidYMid slice"/>` : `
-  <!-- Initials fallback -->
-  <circle cx="175" cy="130" r="35" fill="${theme.borderColor}" opacity="0.8"/>
-  <text x="175" y="140" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="32" font-weight="900" fill="white" opacity="0.9">${escapeXml(data.username.charAt(0).toUpperCase())}</text>
-  `}
-  <rect x="125" y="60" width="100" height="140" fill="url(#avatarFade)" clip-path="url(#octClip)"/>
-
-  <!-- ═══ INFO BAR ═══ -->
-  <text x="175" y="220" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="white" letter-spacing="0.3" stroke="rgba(0,0,0,0.6)" stroke-width="0.6" paint-order="stroke">@${escapeXml(data.username)}${data.location ? ` · ${escapeXml(data.location.length > 15 ? data.location.slice(0, 13) + ".." : data.location)}` : ""} · Since ${sinceYear}</text>
-
-  <!-- ═══ ABILITY + ACTIVITY (combined panel — height 68px) ═══ -->
-  <rect x="12" y="228" width="326" height="68" rx="8" fill="rgba(0,0,0,0.28)" stroke="${theme.accentColor}60" stroke-width="1.5"/>
-  <!-- Accent left border -->
-  <rect x="12" y="228" width="3" height="68" rx="1.5" fill="${theme.accentColor}80"/>
-  <g clip-path="url(#abilityClip)">
-    <rect x="19" y="234" width="44" height="14" rx="3" fill="url(#abilityBadge)"/>
-    <text x="41" y="245" text-anchor="middle" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="900" fill="white" letter-spacing="0.5">ABILITY</text>
-    <text x="70" y="245" font-family="'Mona Sans', -apple-system, sans-serif" font-size="13" font-weight="760" fill="white">${escapeXml(data.ability.name.length > 26 ? data.ability.name.slice(0, 24) + "…" : data.ability.name)}</text>
-    <!-- Description split across 2 lines so nothing is cut -->
-    <text x="19" y="261" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.90)" font-style="italic">${escapeXml(svgDescLine1)}</text>
-    ${svgDescLine2 ? `<text x="19" y="275" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.90)" font-style="italic">${escapeXml(svgDescLine2)}</text>` : ""}
-    <!-- Real activity behind the numbers -->
-    <text x="19" y="289" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="500" fill="rgba(255,255,255,0.55)" letter-spacing="0.3">${data.contributions.toLocaleString("en-US")} contribs · ${data.activeWeeks}/${data.totalWeeks} wks active</text>
+  <!-- Footer -->
+  <text x="18" y="${L.footerY}" font-family="${MONO}" font-size="${footerLeft.size}" fill="${TEXT.footer}" filter="url(#${id("shadow")})">${footerLeft.text}</text>
+  <text x="340" y="${L.footerY}" text-anchor="end" font-family="${MONO}" font-size="8" letter-spacing="1" fill="${rarityLabelColor}" filter="url(#${id("shadow")})">${rarityLabel}</text>
   </g>
 
-  <!-- ═══ ATTACKS PANEL (shifted down 8px, height trimmed to 100px) ═══ -->
-  <rect x="12" y="300" width="326" height="100" rx="8" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
-
-  <g clip-path="url(#attacksClip)">
-  <!-- ═══ ATTACK 1 ═══ -->
-  <g>
-    ${Array.from({ length: attack1EnergyIcons }).map((_, i) =>
-      `<circle cx="${24 + i * 20}" cy="314" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
-    ).join("\n    ")}
-    <text x="${20 + attack1EnergyIcons * 20}" y="318" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack1.name)}</text>
-    <text x="326" y="320" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack1.damage}</text>
-    <text x="${20 + attack1EnergyIcons * 20}" y="333" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.45)" stroke-width="0.5" paint-order="stroke">${escapeXml(cleanText(data.attack1.description.length > 42 ? data.attack1.description.slice(0, 39) + "..." : data.attack1.description))}</text>
-  </g>
-
-  <!-- Divider -->
-  <line x1="20" y1="346" x2="330" y2="346" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
-
-  <!-- ═══ ATTACK 2 ═══ -->
-  <g>
-    ${Array.from({ length: attack2EnergyIcons }).map((_, i) =>
-      `<circle cx="${24 + i * 20}" cy="362" r="9" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
-    ).join("\n    ")}
-    <text x="${20 + attack2EnergyIcons * 20}" y="366" font-family="'Mona Sans', -apple-system, sans-serif" font-size="15" font-weight="850" fill="white" letter-spacing="-0.2" stroke="rgba(0,0,0,0.7)" stroke-width="0.8" paint-order="stroke">${escapeXml(data.attack2.name)}</text>
-    <text x="326" y="368" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="24" font-weight="900" fill="white" stroke="rgba(0,0,0,0.75)" stroke-width="0.9" paint-order="stroke">${data.attack2.damage}</text>
-    <text x="${20 + attack2EnergyIcons * 20}" y="381" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.45)" stroke-width="0.5" paint-order="stroke">${escapeXml(cleanText(data.attack2.description.length > 42 ? data.attack2.description.slice(0, 39) + "..." : data.attack2.description))}</text>
-  </g>
-  </g>
-
-  <!-- ═══ BOTTOM STATS BAR — lightened ═══ -->
-  <rect y="402" width="350" height="88" rx="16" fill="rgba(0,0,0,0.62)"/>
-  <line x1="116" y1="416" x2="116" y2="450" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-  <line x1="234" y1="416" x2="234" y2="450" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-
-  <!-- Weakness -->
-  <text x="58" y="420" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="rgba(255,255,255,0.60)" letter-spacing="0.5">WEAKNESS</text>
-  <circle cx="46" cy="436" r="8" fill="url(#energyWeak)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-  <text x="58" y="440" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="700" fill="white">${escapeXml(data.weakness.modifier)}</text>
-
-  <!-- Resistance -->
-  <text x="175" y="420" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="rgba(255,255,255,0.60)" letter-spacing="0.5">RESIST</text>
-  <circle cx="163" cy="436" r="8" fill="url(#energyResist)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-  <text x="175" y="440" font-family="'Mona Sans', -apple-system, sans-serif" font-size="11" font-weight="700" fill="white">${escapeXml(data.resistance.modifier)}</text>
-
-  <!-- Retreat -->
-  <text x="292" y="420" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="rgba(255,255,255,0.60)" letter-spacing="0.5">RETREAT</text>
-  <g>
-    ${Array.from({ length: Math.min(data.retreatCost, 4) }).map((_, i) =>
-      `<circle cx="${272 + i * 18}" cy="436" r="8" fill="url(#energyMain)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`
-    ).join("\n    ")}
-  </g>
-
-  <!-- Footer branding -->
-  <line x1="20" y1="458" x2="330" y2="458" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
-  <text x="20" y="476" font-family="'JetBrains Mono', monospace" font-size="11" fill="rgba(255,255,255,0.45)" letter-spacing="0.5">gitwrapped · ${data.programmingLanguageCount} lang · ${escapeXml(data.topLanguage ?? "")}</text>
-  <text x="330" y="476" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="11" fill="rgba(255,255,255,0.45)" letter-spacing="0.3">#${data.cardNumber} ${raritySymbol}</text>
-  </g>
+  <!-- Rarity frame -->
+  <rect x="${t / 2}" y="${t / 2}" width="${W - t}" height="${H - t}" rx="${L.frame.radius - t / 2}" stroke="${frameStroke}" stroke-opacity="0.9" stroke-width="${t}"/>
 </svg>`;
 }
 
 /* ─────────────────────────────────────────────
    Error card SVG
    ───────────────────────────────────────────── */
+
+export type CardErrorKind = "not-found" | "invalid" | "rate-limited" | "upstream" | "config";
 
 const ERROR_COPY: Record<CardErrorKind, [string, string]> = {
   "not-found": ["User Not Found", "Check the username and try again"],
@@ -311,8 +443,6 @@ const ERROR_COPY: Record<CardErrorKind, [string, string]> = {
   upstream: ["GitHub Didn't Answer", "Temporary problem reaching GitHub — try again soon"],
   config: ["Not Configured", "The server has no GitHub token"],
 };
-
-export type CardErrorKind = "not-found" | "invalid" | "rate-limited" | "upstream" | "config";
 
 export function renderErrorSVG(kind: CardErrorKind): string {
   const [title, detail] = ERROR_COPY[kind];

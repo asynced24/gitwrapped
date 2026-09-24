@@ -4,6 +4,7 @@ import { analyzeActivity } from "./activity";
 import { analyzeLanguages, describeDiversity } from "./languages";
 import { describeExperience, describeFocus } from "./narrative";
 import { analyzePractices } from "./practices";
+import { detectPassion } from "@/lib/passions";
 import {
     accountAge,
     analyzeLanguageEras,
@@ -109,5 +110,6 @@ export function analyzeSnapshot(snapshot: RawSnapshot): UserStats {
             totalWeeks: activity.totalWeeks,
         }),
         developmentProfile: describeFocus(languages.programming, languages.notebookRepoCount > 0),
+        passion: detectPassion(repos),
     };
 }

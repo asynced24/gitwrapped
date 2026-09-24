@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { Artwork } from "@/lib/art/manifest";
 import { analyzeSnapshot } from "@/lib/analysis";
 import { FIXTURE_USERS, loadFixture } from "@/lib/analysis/test-helpers";
 import {
@@ -7,6 +8,7 @@ import {
     computeHeavyDamage,
     computeHP,
     computeLightDamage,
+    computeRarity,
     computeRetreatCost,
     logScale,
     pickAbility,
@@ -87,11 +89,23 @@ describe("buildCardData on real accounts", () => {
                     ability: c.ability.name,
                     retreat: c.retreatCost,
                     stage: c.evolutionStage,
+                    rarity: c.rarity,
+                    art: c.art.id,
                     type: c.topLanguage,
                 },
             ])
         );
         expect(summary).toMatchSnapshot();
+    });
+});
+
+describe("computeRarity", () => {
+    it("follows the stage unless the account is legendary", () => {
+        expect(computeRarity("BASIC", 0, 0)).toBe("common");
+        expect(computeRarity("STAGE 1", 500, 40)).toBe("uncommon");
+        expect(computeRarity("STAGE 2", 9_999, 364)).toBe("rare");
+        expect(computeRarity("STAGE 1", 10_000, 0)).toBe("legendary");
+        expect(computeRarity("BASIC", 0, 365)).toBe("legendary");
     });
 });
 
@@ -107,5 +121,32 @@ describe("pickAbility", () => {
             practices: { analyzedRepos: 0, signals: [] },
         };
         expect(pickAbility(plain).name).toBe("Rising Coder");
+    });
+});
+
+describe("passion paintings", () => {
+    const fitness: Artwork = { id: "ts-js-passion-fitness-trial", family: "ts-js", rarity: "common", variant: "Golden Stage", file: "/art/x.webp", passion: "fitness" };
+    const cole: Artwork = { id: "python-custom-trial", family: "python", rarity: "legendary", variant: "Rooftop Verse", file: "/art/y.webp", passion: "rap", owner: "shrikanthv15" };
+    const card = (user: "asynced24" | "shrikanthv15", artworks: Artwork[]) => buildCardData(analyzeSnapshot(loadFixture(user)), artworks);
+
+    it("changes nothing until a passion painting exists for the family", () => {
+        const c = card("asynced24", []);
+        expect(c.rarity).toBe("uncommon");
+        expect(c.art.passion).toBeNull();
+    });
+
+    it("swaps the background and lifts the card one tier, with no edition text", () => {
+        const c = card("asynced24", [fitness]);
+        expect(c.art).toMatchObject({ id: fitness.id, passion: "fitness" });
+        expect(c.rarity).toBe("rare");
+        expect(c.explanations.find(e => e.stat === "Rarity")!.because).toContain("your-prime-fitness-tracker");
+        expect(c.explanations.map(e => e.stat)).not.toContain("Edition");
+    });
+
+    it("gives a one-of-one to its owner only, without changing their earned rarity", () => {
+        const shrikanth = card("shrikanthv15", [cole]);
+        expect(shrikanth.art).toMatchObject({ custom: true, variant: "Rooftop Verse" });
+        expect(shrikanth.rarity).toBe("rare");
+        expect(card("asynced24", [cole]).art.custom).toBe(false);
     });
 });

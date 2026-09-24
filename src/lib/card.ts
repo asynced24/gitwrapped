@@ -1,4 +1,10 @@
 import type { UserStats } from "@/types/github";
+import { familyForLanguage, nextRarity, type Rarity } from "@/lib/art/families";
+import { pickArtwork, type CardArt } from "@/lib/art/pick";
+import { ARTWORKS, type Artwork } from "@/lib/art/manifest";
+import { PASSIONS, type Passion } from "@/lib/passions";
+
+export type { Rarity } from "@/lib/art/families";
 
 /* ─────────────────────────────────────────────
    Types
@@ -53,8 +59,14 @@ export interface PokemonCardData {
     contributions: number;
     activeWeeks: number;
     totalWeeks: number;
+    /** Contributions per calendar week, oldest first: drives the horizon line. */
+    weeklyActivity: number[];
     cardNumber: string;
-    rarity: "common" | "uncommon" | "rare";
+    rarity: Rarity;
+    /** Which painting this card shows and which pool it came from. */
+    art: CardArt;
+    /** Passion edition this card earned, with the repo that earned it. */
+    passion: Pick<Passion, "key" | "edition" | "emoji" | "color" | "repo"> | null;
     explanations: CardStatExplanation[];
 }
 
@@ -321,27 +333,6 @@ export function getLanguageTheme(language: string): LanguageCardTheme {
     return LANGUAGE_CARD_THEMES[language] ?? DEFAULT_THEME;
 }
 
-export function getCardArtPath(language: string): string {
-    if (language === "Python" || language === "Scala") {
-        return "/cards/python.jpg";
-    }
-    if (language === "TypeScript" || language === "JavaScript") {
-        return "/cards/typescript.jpg";
-    }
-    if (language === "Java" || language === "Kotlin" || language === "C#") {
-        return "/cards/java.jpg";
-    }
-    if (language === "Rust" || language === "Go" || language === "C" || language === "C++") {
-        return "/cards/rust+go+c.jpg";
-    }
-    if (language === "R" || language === "Haskell") {
-        return "/cards/aimljupyer.jpg";
-    }
-    if (language === "Shell" || language === "PHP" || language === "Lua") {
-        return "/cards/devops.jpg";
-    }
-    return "/cards/multicoder.jpg";
-}
 
 /* ─────────────────────────────────────────────
    Type Matchup System
@@ -443,6 +434,15 @@ export function computeRetreatCost(maintainedRepos: number): number {
     return Math.min(4, Math.ceil(maintainedRepos / 2));
 }
 
+/** Legendary: an account that stands out even among Stage 2 cards. */
+export const LEGENDARY_TOP_REPO_STARS = 10_000;
+export const LEGENDARY_STREAK_DAYS = 365;
+
+export function computeRarity(stage: EvolutionStage, topRepoStars: number, longestStreak: number): Rarity {
+    if (topRepoStars >= LEGENDARY_TOP_REPO_STARS || longestStreak >= LEGENDARY_STREAK_DAYS) return "legendary";
+    return stage === "STAGE 2" ? "rare" : stage === "STAGE 1" ? "uncommon" : "common";
+}
+
 export function computeStage(input: { ageYears: number; weekShare: number; stars: number; contributions: number }): EvolutionStage {
     if (input.ageYears < 2 || (input.contributions < 50 && input.stars < 10)) return "BASIC";
     if (input.ageYears >= 5 && (input.weekShare >= 0.5 || input.stars >= 100)) return "STAGE 2";
@@ -471,12 +471,12 @@ export function pickAbility(stats: UserStats): Ability {
     const candidates: AbilityCandidate[] = [
         {
             name: "Streak Runner",
-            description: `${a.longestStreak}-day contribution streak — can't be put to sleep`,
+            description: `${a.longestStreak}-day streak — can't be put to sleep`,
             strength: a.longestStreak / 30,
         },
         {
             name: "Iron Routine",
-            description: `Active ${a.activeWeeks} of the last ${a.totalWeeks} weeks — immune to status effects`,
+            description: `Active ${a.activeWeeks}/${a.totalWeeks} weeks — immune to status effects`,
             strength: weekShare / 0.9,
         },
         {
@@ -491,12 +491,12 @@ export function pickAbility(stats: UserStats): Ability {
         },
         {
             name: "Code Reviewer",
-            description: `${plural(a.reviews, "review")} this year — sees through opponent's hand`,
+            description: `${plural(a.reviews, "review")} this year — sees the opponent's hand`,
             strength: a.reviews / 100,
         },
         {
             name: "Pull Request Machine",
-            description: `${plural(a.pullRequests, "pull request")} this year — attach an extra energy`,
+            description: `${plural(a.pullRequests, "PR")} this year — attach an extra energy`,
             strength: a.pullRequests / 100,
         },
         {
@@ -511,7 +511,7 @@ export function pickAbility(stats: UserStats): Ability {
         },
         {
             name: "Test Guardian",
-            description: `Tests in ${practiceShare("tests")}% of repos — prevents all damage from bugs`,
+            description: `Tests in ${practiceShare("tests")}% of repos — blocks all bug damage`,
             strength: enoughRepos ? practiceShare("tests") / 50 : 0,
         },
     ];
@@ -520,7 +520,7 @@ export function pickAbility(stats: UserStats): Ability {
     if (best.strength >= 0.5) return { name: best.name, description: best.description };
 
     return stats.accountAgeYears >= 1
-        ? { name: "Rising Coder", description: `${stats.accountAgeYears} years in and still leveling up — draws an extra card` }
+        ? { name: "Rising Coder", description: `${stats.accountAgeYears} years in, still leveling up — draws a card` }
         : { name: "Fresh Spawn", description: "New to the ecosystem — draws an extra card each turn" };
 }
 
@@ -537,7 +537,8 @@ function computeCardNumber(username: string): string {
    Build card data from UserStats (pure)
    ───────────────────────────────────────────── */
 
-export function buildCardData(stats: UserStats): PokemonCardData {
+/** `artworks` defaults to the live manifest; tests pass their own. */
+export function buildCardData(stats: UserStats, artworks: readonly Artwork[] = ARTWORKS): PokemonCardData {
     const a = stats.activity;
     const ageYears = stats.accountAgeYears;
     const weekShare = a.totalWeeks > 0 ? a.activeWeeks / a.totalWeeks : 0;
@@ -552,6 +553,16 @@ export function buildCardData(stats: UserStats): PokemonCardData {
     const retreatCost = computeRetreatCost(stats.maintainedRepoCount);
     const evolutionStage = computeStage({ ageYears, weekShare, stars: stats.totalStars, contributions: a.total });
     const ability = pickAbility(stats);
+    const earnedRarity = computeRarity(evolutionStage, topStars, a.longestStreak);
+    const art = pickArtwork(stats.user.login, familyForLanguage(stats.topLanguage), earnedRarity, artworks, stats.passion?.key ?? null);
+    // A passion painting is scarcer than the regular pools (only people who
+    // built a repo about it get one), so it lifts the card one tier.
+    const passionBoost = !art.custom && art.passion !== null;
+    const rarity = passionBoost ? nextRarity(earnedRarity) : earnedRarity;
+    // A one-of-one painting carries its own passion; otherwise the detected one.
+    const passion: Passion | null = art.custom && art.passion
+        ? { ...PASSIONS[art.passion], repo: null, score: 0 }
+        : stats.passion;
 
     const attack1: Attack = {
         name: theme.attacks.light.name,
@@ -597,6 +608,28 @@ export function buildCardData(stats: UserStats): PokemonCardData {
             because: `${ageYears} years on GitHub, active ${Math.round(weekShare * 100)}% of weeks, ${formatCount(stats.totalStars)} star${stats.totalStars === 1 ? "" : "s"}`,
         },
         { stat: "Type", value: theme.type, because: `${topLanguage} is ${stats.topLanguagePercentage}% of your code by bytes` },
+        {
+            stat: "Rarity",
+            value: rarity[0].toUpperCase() + rarity.slice(1),
+            because: passionBoost && stats.passion
+                ? `${earnedRarity[0].toUpperCase() + earnedRarity.slice(1)} from your stats, +1 tier for the ${stats.passion.key.replace("-", " ")} painting your repo ${stats.passion.repo} earned`
+                : earnedRarity === "legendary"
+                ? (topStars >= LEGENDARY_TOP_REPO_STARS
+                    ? `A repo with ${formatCount(topStars)} stars (legendary at ${formatCount(LEGENDARY_TOP_REPO_STARS)})`
+                    : `A ${a.longestStreak}-day streak (legendary at ${LEGENDARY_STREAK_DAYS})`)
+                : `Follows the stage: Basic is common, Stage 1 uncommon, Stage 2 rare`,
+        },
+        {
+            stat: "Art",
+            value: art.species,
+            because: art.custom
+                ? `${art.variant}, a one-of-one painting made only for @${stats.user.login}`
+                : art.passion && stats.passion
+                ? `${art.variant}, a ${art.passion.replace("-", " ")} painting, because your repo ${stats.passion.repo} is about it`
+                : art.poolSize > 0
+                ? `${art.variant}, 1 of ${art.poolSize} ${art.rarity} ${art.species} paintings, picked from your username`
+                : `The original ${art.species} painting; more ${art.rarity} variants are coming`,
+        },
     ];
 
     const bio = stats.user.bio
@@ -624,8 +657,13 @@ export function buildCardData(stats: UserStats): PokemonCardData {
         contributions: a.total,
         activeWeeks: a.activeWeeks,
         totalWeeks: a.totalWeeks,
+        weeklyActivity: a.weeks.map(week => week.reduce((sum, day) => sum + day.count, 0)),
         cardNumber: computeCardNumber(stats.user.login),
-        rarity: evolutionStage === "STAGE 2" ? "rare" : evolutionStage === "STAGE 1" ? "uncommon" : "common",
+        rarity,
+        art,
+        passion: passion
+            ? { key: passion.key, edition: passion.edition, emoji: passion.emoji, color: passion.color, repo: passion.repo }
+            : null,
         explanations,
     };
 }

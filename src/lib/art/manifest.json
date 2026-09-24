@@ -1,0 +1,192 @@
+[
+    {
+        "id": "ts-js-common-static-nap",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Static Nap",
+        "file": "/art/ts-js/common/static-nap.webp"
+    },
+    {
+        "id": "ts-js-common-first-spark",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "First Spark",
+        "file": "/art/ts-js/common/first-spark.webp"
+    },
+    {
+        "id": "ts-js-common-puddle-pounce",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Puddle Pounce",
+        "file": "/art/ts-js/common/puddle-pounce.webp"
+    },
+    {
+        "id": "ts-js-common-moon-groom",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Moon Groom",
+        "file": "/art/ts-js/common/moon-groom.webp"
+    },
+    {
+        "id": "python-common-coil-rest",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Coil Rest",
+        "file": "/art/python/common/coil-rest.webp"
+    },
+    {
+        "id": "python-common-data-sip",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Data Sip",
+        "file": "/art/python/common/data-sip.webp"
+    },
+    {
+        "id": "python-common-night-slither",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Night Slither",
+        "file": "/art/python/common/night-slither.webp"
+    },
+    {
+        "id": "jvm-common-morning-brew",
+        "family": "jvm",
+        "rarity": "common",
+        "variant": "Morning Brew",
+        "file": "/art/jvm/common/morning-brew.webp"
+    },
+    {
+        "id": "jvm-common-circuit-sprout",
+        "family": "jvm",
+        "rarity": "common",
+        "variant": "Circuit Sprout",
+        "file": "/art/jvm/common/circuit-sprout.webp"
+    },
+    {
+        "id": "ts-js-uncommon-storm-leap",
+        "family": "ts-js",
+        "rarity": "uncommon",
+        "variant": "Storm Leap",
+        "file": "/art/ts-js/uncommon/storm-leap.webp"
+    },
+    {
+        "id": "systems-rare-ember-canyon",
+        "family": "systems",
+        "rarity": "rare",
+        "variant": "Ember Canyon",
+        "file": "/art/systems/rare/ember-canyon.webp"
+    },
+    {
+        "id": "polyglot-rare-rune-vigil",
+        "family": "polyglot",
+        "rarity": "rare",
+        "variant": "Rune Vigil",
+        "file": "/art/polyglot/rare/rune-vigil.webp"
+    },
+    {
+        "id": "ts-js-passion-fitness-golden-stage",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Golden Stage",
+        "file": "/art/ts-js/passion/fitness/golden-stage.webp",
+        "passion": "fitness"
+    },
+    {
+        "id": "ts-js-passion-rap-block-party",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Block Party",
+        "file": "/art/ts-js/passion/rap/block-party.webp",
+        "passion": "rap"
+    },
+    {
+        "id": "ts-js-passion-racing-rain-circuit",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Rain Circuit",
+        "file": "/art/ts-js/passion/racing/rain-circuit.webp",
+        "passion": "racing"
+    },
+    {
+        "id": "ts-js-passion-american-football-tunnel-burst",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Tunnel Burst",
+        "file": "/art/ts-js/passion/american-football/tunnel-burst.webp",
+        "passion": "american-football"
+    },
+    {
+        "id": "ts-js-passion-soccer-bicycle-kick",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Bicycle Kick",
+        "file": "/art/ts-js/passion/soccer/bicycle-kick.webp",
+        "passion": "soccer"
+    },
+    {
+        "id": "ts-js-passion-combat-ring-jab",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Ring Jab",
+        "file": "/art/ts-js/passion/combat/ring-jab.webp",
+        "passion": "combat"
+    },
+    {
+        "id": "python-passion-rap-rooftop-verse",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Rooftop Verse",
+        "file": "/art/python/passion/rap/rooftop-verse.webp",
+        "passion": "rap"
+    },
+    {
+        "id": "python-passion-gaming-arcade-night",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Arcade Night",
+        "file": "/art/python/passion/gaming/arcade-night.webp",
+        "passion": "gaming"
+    },
+    {
+        "id": "python-passion-soccer-cable-net",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Cable Net",
+        "file": "/art/python/passion/soccer/cable-net.webp",
+        "passion": "soccer"
+    },
+    {
+        "id": "python-passion-combat-cage-coil",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Cage Coil",
+        "file": "/art/python/passion/combat/cage-coil.webp",
+        "passion": "combat"
+    },
+    {
+        "id": "python-passion-fitness-barbell-coil",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Barbell Coil",
+        "file": "/art/python/passion/fitness/barbell-coil.webp",
+        "passion": "fitness"
+    },
+    {
+        "id": "ts-js-custom-asynced24-the-steps",
+        "family": "ts-js",
+        "rarity": "legendary",
+        "variant": "The Steps",
+        "file": "/art/ts-js/custom/asynced24/the-steps.webp",
+        "passion": "combat",
+        "owner": "asynced24"
+    },
+    {
+        "id": "python-custom-shrikanthv15-mic-and-the-owl",
+        "family": "python",
+        "rarity": "legendary",
+        "variant": "Mic And The Owl",
+        "file": "/art/python/custom/shrikanthv15/mic-and-the-owl.webp",
+        "passion": "rap",
+        "owner": "shrikanthv15"
+    }
+]
