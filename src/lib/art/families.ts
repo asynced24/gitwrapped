@@ -6,6 +6,11 @@
 export type Rarity = "common" | "uncommon" | "rare" | "legendary";
 export const RARITIES: Rarity[] = ["common", "uncommon", "rare", "legendary"];
 
+/** One tier up, capped at legendary. */
+export function nextRarity(rarity: Rarity): Rarity {
+    return RARITIES[Math.min(RARITIES.indexOf(rarity) + 1, RARITIES.length - 1)];
+}
+
 export type ArtFamily = "ts-js" | "python" | "jvm" | "systems" | "data" | "devops" | "polyglot";
 
 interface FamilyInfo {

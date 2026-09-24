@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { ARTWORKS } from "@/lib/art/manifest";
 import { analyzeSnapshot } from "@/lib/analysis";
 import { FIXTURE_USERS, loadFixture } from "@/lib/analysis/test-helpers";
 import {
@@ -120,5 +121,39 @@ describe("pickAbility", () => {
             practices: { analyzedRepos: 0, signals: [] },
         };
         expect(pickAbility(plain).name).toBe("Rising Coder");
+    });
+});
+
+describe("passion paintings", () => {
+    const added: number[] = [];
+    afterEach(() => {
+        for (const i of added.reverse()) ARTWORKS.splice(i, 1);
+        added.length = 0;
+    });
+    function addArt(art: (typeof ARTWORKS)[number]) {
+        added.push(ARTWORKS.push(art) - 1);
+    }
+
+    it("changes nothing until a passion painting exists for the family", () => {
+        const card = buildCardData(analyzeSnapshot(loadFixture("asynced24")));
+        expect(card.rarity).toBe("uncommon");
+        expect(card.art.passion).toBeNull();
+    });
+
+    it("swaps the background and lifts the card one tier, with no edition text", () => {
+        addArt({ id: "ts-js-passion-fitness-trial", family: "ts-js", rarity: "common", variant: "Golden Stage", file: "/art/x.webp", passion: "fitness" });
+        const card = buildCardData(analyzeSnapshot(loadFixture("asynced24")));
+        expect(card.art).toMatchObject({ id: "ts-js-passion-fitness-trial", passion: "fitness" });
+        expect(card.rarity).toBe("rare");
+        expect(card.explanations.find(e => e.stat === "Rarity")!.because).toContain("your-prime-fitness-tracker");
+        expect(card.explanations.map(e => e.stat)).not.toContain("Edition");
+    });
+
+    it("gives a one-of-one to its owner only, without changing their earned rarity", () => {
+        addArt({ id: "python-custom-trial", family: "python", rarity: "legendary", variant: "Rooftop Verse", file: "/art/y.webp", passion: "rap", owner: "shrikanthv15" });
+        const shrikanth = buildCardData(analyzeSnapshot(loadFixture("shrikanthv15")));
+        expect(shrikanth.art).toMatchObject({ custom: true, variant: "Rooftop Verse" });
+        expect(shrikanth.rarity).toBe("rare");
+        expect(buildCardData(analyzeSnapshot(loadFixture("asynced24"))).art.custom).toBe(false);
     });
 });

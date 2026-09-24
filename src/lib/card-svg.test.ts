@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { analyzeSnapshot } from "@/lib/analysis";
 import { FIXTURE_USERS, loadFixture } from "@/lib/analysis/test-helpers";
 import { buildCardData } from "./card";
-import { LAYOUT, RARITY_STYLE, horizonPoints, renderCardSVG, renderErrorSVG, sparkles } from "./card-svg";
+import { LAYOUT, RARITY_STYLE, fitText, horizonPoints, renderCardSVG, renderErrorSVG, sparkles } from "./card-svg";
 
 const NO_IMAGES = { cardArt: null, avatar: null };
 
@@ -53,6 +53,46 @@ describe("rarity styling", () => {
             expect(s.y + s.size).toBeLessThan(LAYOUT.ability.y);
             expect(Math.hypot(s.x - cx, s.y - cy)).toBeGreaterThan(r + s.size);
         }
+    });
+});
+
+describe("fitText", () => {
+    it("keeps the size when the text fits", () => {
+        expect(fitText("Polyglot", 250, 14.5, "display", 11)).toEqual({ text: "Polyglot", size: 14.5 });
+    });
+
+    it("shrinks before it truncates, and escapes", () => {
+        const long = "Active 31/53 weeks — immune to all status effects & more";
+        const fitted = fitText(long, 310, 9.5, "mono", 8);
+        expect(fitted.size).toBeLessThan(9.5);
+        expect(fitted.size).toBeGreaterThanOrEqual(8);
+        expect(fitted.text).toContain("&amp;");
+        expect(fitted.text).not.toContain("…");
+    });
+
+    it("truncates only below the minimum size", () => {
+        const fitted = fitText("x".repeat(200), 100, 9, "mono", 8);
+        expect(fitted.size).toBe(8);
+        expect(fitted.text.endsWith("…")).toBe(true);
+    });
+});
+
+describe("real cards", () => {
+    it.each(FIXTURE_USERS)("%s: no text is cut off", username => {
+        const svg = renderCardSVG(buildCardData(analyzeSnapshot(loadFixture(username))), NO_IMAGES);
+        expect(svg).not.toContain("…");
+    });
+
+    it("animates only legendary and one-of-one cards, and respects reduced motion", () => {
+        const data = buildCardData(analyzeSnapshot(loadFixture("asynced24")));
+        expect(renderCardSVG({ ...data, rarity: "rare" }, NO_IMAGES)).not.toContain("@keyframes");
+        const legendary = renderCardSVG({ ...data, rarity: "legendary" }, NO_IMAGES);
+        expect(legendary).toContain("@keyframes");
+        expect(legendary).toContain("prefers-reduced-motion");
+        expect(legendary).not.toContain("animateTransform");
+        const oneOfOne = renderCardSVG({ ...data, art: { ...data.art, custom: true } }, NO_IMAGES);
+        expect(oneOfOne).toContain("animateTransform");
+        expect(oneOfOne).toContain("ONE OF ONE");
     });
 });
 

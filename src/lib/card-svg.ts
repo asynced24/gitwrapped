@@ -76,7 +76,7 @@ export const LAYOUT = {
   ability: { x: 12, y: 296, width: 334, height: 64, radius: 10 },
   attacks: { x: 12, y: 366, width: 334, height: 80, radius: 10, rows: [372, 410], dividerY: 406 },
   stats: { x: 12, y: 452, width: 334, height: 30, radius: 7 },
-  footerY: 494,
+  footerY: 492,
 } as const;
 
 /** Sparkle anchors in paint order; a card draws the first N for its rarity. */
@@ -141,6 +141,21 @@ function cleanText(str: string): string {
 
 function truncate(str: string, max: number): string {
   return str.length > max ? str.slice(0, max - 1) + "…" : str;
+}
+
+/** Average glyph width as a fraction of font size (conservative, for fitting). */
+const EM = { mono: 0.6, display: 0.7 } as const;
+
+/**
+ * Shrink text to fit its box, down to a readable minimum; only then
+ * truncate. Returns escaped text plus the size to render it at.
+ */
+export function fitText(text: string, maxWidth: number, size: number, font: keyof typeof EM, minSize: number): { text: string; size: number } {
+  const em = EM[font];
+  if (text.length * size * em <= maxWidth) return { text: escapeXml(text), size };
+  const fitted = maxWidth / (text.length * em);
+  if (fitted >= minSize) return { text: escapeXml(text), size: Math.floor(fitted * 10) / 10 };
+  return { text: escapeXml(truncate(text, Math.floor(maxWidth / (minSize * em)))), size: minSize };
 }
 
 /**
@@ -230,19 +245,44 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
 
   const horizon = horizonPoints(data.weeklyActivity, L.horizon.x0, L.horizon.x1, L.horizon.baseline, L.horizon.amplitude);
 
+  // Motion is the top-tier perk: legendary cards shimmer, one-of-ones also
+  // get a rotating holographic frame. Everything else stays static.
+  const oneOfOne = data.art.custom;
+  const animated = oneOfOne || data.rarity === "legendary";
+  const cls = (name: string) => (animated ? ` class="${id(name)}"` : "");
+
   const sparkleShapes = sparkles(data.rarity)
-    .map(s => `<path d="${sparklePath(s)}" fill="#FFFFFF" opacity="${(0.55 + 0.3 * foil).toFixed(2)}" filter="url(#${id("sparkle")})"/>`)
+    .map((s, i) => `<path d="${sparklePath(s)}" fill="#FFFFFF" opacity="${(0.55 + 0.3 * foil).toFixed(2)}" filter="url(#${id("sparkle")})"${cls("twinkle")}${animated ? ` style="animation-delay:${(i * 0.37).toFixed(2)}s"` : ""}/>`)
     .join("");
+
+  const motionStyle = animated
+    ? `<style>
+    @keyframes ${id("sweep")} { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
+    @keyframes ${id("twinkle")} { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
+    @keyframes ${id("pulse")} { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
+    .${id("sweep")} { animation: ${id("sweep")} 5.5s ease-in-out infinite; }
+    .${id("twinkle")} { animation: ${id("twinkle")} 2.4s ease-in-out infinite; }
+    .${id("pulse")} { animation: ${id("pulse")} 3s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) { .${id("sweep")}, .${id("twinkle")}, .${id("pulse")} { animation: none; } }
+  </style>`
+    : "";
+  const sweep = animated
+    ? `<g transform="skewX(-18)" style="mix-blend-mode:screen"><rect${cls("sweep")} x="-40" y="-20" width="90" height="${H + 40}" fill="url(#${id("sweepGrad")})"/></g>`
+    : "";
 
   const attackRows = [data.attack1, data.attack2].map((attack, i) => {
     const rowY = L.attacks.rows[i];
     const dots = Math.min(Math.max(attack.energyCost, 0), 4);
     const nameX = 24 + dots * 14 + 6;
+    // Name and subtitle stop before the damage number (right-aligned at 334).
+    const room = 334 - 52 - 6 - nameX;
+    const name = fitText(attack.name, room, 12.5, "display", 10);
+    const sub = fitText(cleanText(attack.description), room, 8, "mono", 7);
     const dotShapes = Array.from({ length: dots }, (_, d) =>
       `<circle cx="${24 + d * 14 + 5.5}" cy="${rowY + 7.5}" r="5.5" fill="${accent}" stroke="rgba(255,255,255,0.35)"/>`).join("");
     return `${dotShapes}
-  <text x="${nameX}" y="${rowY + 12}" font-family="${DISPLAY}" font-size="12.5" fill="#FFFFFF">${escapeXml(truncate(attack.name, 24))}</text>
-  <text x="${nameX}" y="${rowY + 25}" font-family="${MONO}" font-size="8" fill="${TEXT.attackSub}">${escapeXml(truncate(cleanText(attack.description), 48))}</text>
+  <text x="${nameX}" y="${rowY + 12}" font-family="${DISPLAY}" font-size="${name.size}" fill="#FFFFFF">${name.text}</text>
+  <text x="${nameX}" y="${rowY + 25}" font-family="${MONO}" font-size="${sub.size}" fill="${TEXT.attackSub}">${sub.text}</text>
   <text x="334" y="${rowY + 21}" text-anchor="end" font-family="${DISPLAY}" font-size="21" fill="#FFFFFF" filter="url(#${id("shadow")})">${attack.damage}</text>`;
   });
 
@@ -253,27 +293,45 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
     `<text x="${(L.stats.x + colW * i + colW / 2).toFixed(1)}" y="${statsBaseline}" text-anchor="middle" font-family="${MONO}"><tspan font-size="7" letter-spacing="1" fill="${TEXT.statsLabel}">${label}</tspan><tspan font-size="9.5" fill="${dotColor}" dx="6">●</tspan><tspan font-size="9.5" fill="${TEXT.statsValue}" dx="4">${escapeXml(value)}</tspan></text>`;
   const retreat = `<text x="${(L.stats.x + colW * 2 + colW / 2).toFixed(1)}" y="${statsBaseline}" text-anchor="middle" font-family="${MONO}"><tspan font-size="7" letter-spacing="1" fill="${TEXT.statsLabel}">RETREAT</tspan><tspan font-size="9.5" fill="${accent}" dx="6" letter-spacing="1">${"●".repeat(Math.min(data.retreatCost, 4)) || "–"}</tspan></text>`;
 
+  // Footer, Kimi style: quiet small print naming the painting.
   const artLabel = data.art.custom
-    ? `${data.art.variant} · 1 of 1`
-    : data.art.poolSize > 1
+      ? `${data.art.variant} · 1 of 1`
+      : data.art.poolSize > 1
     ? `${data.art.species} · ${data.art.variant} · 1 of ${data.art.poolSize}`
     : data.art.variant
       ? `${data.art.species} · ${data.art.variant}`
       : `${data.art.species} · since ${data.memberSince}`;
 
-  // Passion edition pill, centred under the avatar.
-  const editionLabel = data.passion ? `${data.passion.edition.toUpperCase()}` : "";
-  const editionWidth = 28 + editionLabel.length * 5.6;
-  const editionBadge = data.passion
-    ? `<rect x="${(L.avatar.cx - editionWidth / 2).toFixed(1)}" y="${L.avatar.cy + L.avatar.r + 10}" width="${editionWidth.toFixed(1)}" height="18" rx="9" fill="rgba(10,15,29,0.85)" stroke="${data.passion.color}" stroke-width="1.2"/>
-  <text x="${L.avatar.cx}" y="${L.avatar.cy + L.avatar.r + 22.5}" text-anchor="middle" font-family="${MONO}" font-size="8" letter-spacing="1" fill="#FFFFFF"><tspan font-size="9">${data.passion.emoji}</tspan><tspan dx="4" fill="${data.passion.color}">${escapeXml(editionLabel)}</tspan></text>`
-    : "";
+  const username = fitText(data.username, 170, 15.5, "display", 11);
+  const abilityName = fitText(data.ability.name, 250, 14.5, "display", 11);
+  const abilityDesc = fitText(cleanText(data.ability.description), 310, 9.5, "mono", 8);
 
-  const t = rarity.frameWidth;
+  const t = oneOfOne ? 3.5 : rarity.frameWidth;
+  const frameStroke = oneOfOne ? `url(#${id("holo")})` : rarity.frameColor;
+  const rarityLabel = oneOfOne ? "◆ ONE OF ONE" : `${rarity.symbol} ${rarity.label}`;
+  const rarityLabelColor = oneOfOne ? "#F5C518" : accent;
+  // Footer left gets whatever the right-hand rarity label leaves (8px mono, 1px tracking).
+  const footerLeft = fitText(`gitwrapped · ${artLabel}`, 340 - rarityLabel.length * (8 * EM.mono + 1) - 12 - 18, 8, "mono", 7);
   const { cx, cy, r } = L.avatar;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" fill="none">
   <defs>
+    ${motionStyle}
+    ${animated ? `<linearGradient id="${id("sweepGrad")}" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="0.6" stop-color="${accent}" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>` : ""}
+    ${oneOfOne ? `<linearGradient id="${id("holo")}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${W}" y2="${H}">
+      <stop offset="0" stop-color="#6E4F0E"/>
+      <stop offset="0.38" stop-color="#C9971C"/>
+      <stop offset="0.48" stop-color="#FFF4C2"/>
+      <stop offset="0.58" stop-color="#C9971C"/>
+      <stop offset="1" stop-color="#6E4F0E"/>
+      <!-- The bright band travels around the frame: a glint, not a colour cycle. -->
+      <animateTransform attributeName="gradientTransform" type="rotate" from="0 ${W / 2} ${H / 2}" to="360 ${W / 2} ${H / 2}" dur="6s" repeatCount="indefinite"/>
+    </linearGradient>` : ""}
     <linearGradient id="${id("theme")}" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="${theme.borderColor}"/>
       <stop offset="1" stop-color="${theme.accentColor}"/>
@@ -319,10 +377,11 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
   ${art}
   <rect y="${L.scrim.y}" width="${W}" height="${H - L.scrim.y}" fill="url(#${id("scrim")})"/>
   <rect width="${W}" height="${H}" fill="url(#${id("foil")})" style="mix-blend-mode:overlay"/>
+  ${sweep}
   ${sparkleShapes}
 
   <!-- 52-week contribution horizon -->
-  <polyline points="${horizon}" stroke="${accent}" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
+  <polyline${cls("pulse")} points="${horizon}" stroke="${accent}" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
   <polyline points="${horizon}" stroke="#EAFBFF" stroke-opacity="0.95" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" filter="url(#${id("glow")})"/>
 
   <!-- Avatar: large circle over the art -->
@@ -331,13 +390,12 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
     ? `<image href="${images.avatar}" x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" clip-path="url(#${id("avatar")})" preserveAspectRatio="xMidYMid slice"/>`
     : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${theme.borderColor}"/><text x="${cx}" y="${cy + 11}" text-anchor="middle" font-family="${DISPLAY}" font-size="30" fill="#FFFFFF">${escapeXml(data.username.charAt(0).toUpperCase())}</text>`}
   <circle cx="${cx}" cy="${cy}" r="${r + 1.2}" stroke="${accent}" stroke-opacity="0.85" stroke-width="2.4"/>
-  ${editionBadge}
 
   <!-- Header -->
   <rect x="${L.header.x}" y="${L.header.y}" width="${L.header.width}" height="${L.header.height}" rx="${L.header.radius}" fill="rgba(10,15,29,0.92)" stroke="rgba(255,255,255,0.15)"/>
   <rect x="${L.stagePill.x}" y="${L.stagePill.y}" width="${L.stagePill.width}" height="${L.stagePill.height}" rx="${L.stagePill.height / 2}" fill="${pill.bg}"/>
   <text x="${L.stagePill.x + L.stagePill.width / 2}" y="${L.stagePill.y + 18.5}" text-anchor="middle" font-family="${DISPLAY}" font-size="9.5" letter-spacing="0.5" fill="${pill.text}">${escapeXml(data.evolutionStage)}</text>
-  <text x="${cx}" y="${L.header.y + 29.5}" text-anchor="middle" font-family="${DISPLAY}" font-size="15.5" fill="#FFFFFF">${escapeXml(truncate(data.username, 14))}</text>
+  <text x="${cx}" y="${L.header.y + 29.5}" text-anchor="middle" font-family="${DISPLAY}" font-size="${username.size}" fill="#FFFFFF">${username.text}</text>
   <text x="340" y="${L.header.y + 33}" text-anchor="end" font-family="${DISPLAY}" font-size="24" fill="#FFFFFF">${data.hp}</text>
   <text x="${340 - String(data.hp).length * 16.5 - 4}" y="${L.header.y + 33}" text-anchor="end" font-family="${DISPLAY}" font-size="8" fill="${TEXT.hpLabel}">HP</text>
 
@@ -346,8 +404,8 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
 
   <!-- Ability -->
   <text x="24" y="313" font-family="${MONO}" font-size="7.5" letter-spacing="2" fill="${accent}">ABILITY</text>
-  <text x="84" y="314" font-family="${DISPLAY}" font-size="14.5" fill="#FFFFFF">${escapeXml(truncate(data.ability.name, 24))}</text>
-  <text x="24" y="332" font-family="${MONO}" font-size="9.5" font-style="italic" fill="${TEXT.abilityDesc}">${escapeXml(truncate(cleanText(data.ability.description), 54))}</text>
+  <text x="84" y="314" font-family="${DISPLAY}" font-size="${abilityName.size}" fill="#FFFFFF">${abilityName.text}</text>
+  <text x="24" y="332" font-family="${MONO}" font-size="${abilityDesc.size}" font-style="italic" fill="${TEXT.abilityDesc}">${abilityDesc.text}</text>
   <text x="24" y="347" font-family="${MONO}" font-size="8.5" letter-spacing="0.5" fill="${TEXT.abilityStats}">${data.contributions.toLocaleString("en-US")} contribs · ${data.activeWeeks}/${data.totalWeeks} wks active</text>
 
   <!-- Attacks -->
@@ -363,12 +421,12 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
   ${retreat}
 
   <!-- Footer -->
-  <text x="18" y="${L.footerY}" font-family="${MONO}" font-size="8" fill="${TEXT.footer}" filter="url(#${id("shadow")})">gitwrapped · ${escapeXml(truncate(artLabel, 42))}</text>
-  <text x="340" y="${L.footerY}" text-anchor="end" font-family="${MONO}" font-size="8" letter-spacing="1" fill="${accent}" filter="url(#${id("shadow")})">${rarity.symbol} ${rarity.label}</text>
+  <text x="18" y="${L.footerY}" font-family="${MONO}" font-size="${footerLeft.size}" fill="${TEXT.footer}" filter="url(#${id("shadow")})">${footerLeft.text}</text>
+  <text x="340" y="${L.footerY}" text-anchor="end" font-family="${MONO}" font-size="8" letter-spacing="1" fill="${rarityLabelColor}" filter="url(#${id("shadow")})">${rarityLabel}</text>
   </g>
 
   <!-- Rarity frame -->
-  <rect x="${t / 2}" y="${t / 2}" width="${W - t}" height="${H - t}" rx="${L.frame.radius - t / 2}" stroke="${rarity.frameColor}" stroke-opacity="0.9" stroke-width="${t}"/>
+  <rect x="${t / 2}" y="${t / 2}" width="${W - t}" height="${H - t}" rx="${L.frame.radius - t / 2}" stroke="${frameStroke}" stroke-opacity="0.9" stroke-width="${t}"/>
 </svg>`;
 }
 

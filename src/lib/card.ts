@@ -1,5 +1,5 @@
 import type { UserStats } from "@/types/github";
-import { familyForLanguage, type Rarity } from "@/lib/art/families";
+import { familyForLanguage, nextRarity, type Rarity } from "@/lib/art/families";
 import { pickArtwork, type CardArt } from "@/lib/art/pick";
 import { PASSIONS, type Passion } from "@/lib/passions";
 
@@ -470,12 +470,12 @@ export function pickAbility(stats: UserStats): Ability {
     const candidates: AbilityCandidate[] = [
         {
             name: "Streak Runner",
-            description: `${a.longestStreak}-day contribution streak — can't be put to sleep`,
+            description: `${a.longestStreak}-day streak — can't be put to sleep`,
             strength: a.longestStreak / 30,
         },
         {
             name: "Iron Routine",
-            description: `Active ${a.activeWeeks} of the last ${a.totalWeeks} weeks — immune to status effects`,
+            description: `Active ${a.activeWeeks}/${a.totalWeeks} weeks — immune to status effects`,
             strength: weekShare / 0.9,
         },
         {
@@ -490,12 +490,12 @@ export function pickAbility(stats: UserStats): Ability {
         },
         {
             name: "Code Reviewer",
-            description: `${plural(a.reviews, "review")} this year — sees through opponent's hand`,
+            description: `${plural(a.reviews, "review")} this year — sees the opponent's hand`,
             strength: a.reviews / 100,
         },
         {
             name: "Pull Request Machine",
-            description: `${plural(a.pullRequests, "pull request")} this year — attach an extra energy`,
+            description: `${plural(a.pullRequests, "PR")} this year — attach an extra energy`,
             strength: a.pullRequests / 100,
         },
         {
@@ -510,7 +510,7 @@ export function pickAbility(stats: UserStats): Ability {
         },
         {
             name: "Test Guardian",
-            description: `Tests in ${practiceShare("tests")}% of repos — prevents all damage from bugs`,
+            description: `Tests in ${practiceShare("tests")}% of repos — blocks all bug damage`,
             strength: enoughRepos ? practiceShare("tests") / 50 : 0,
         },
     ];
@@ -519,7 +519,7 @@ export function pickAbility(stats: UserStats): Ability {
     if (best.strength >= 0.5) return { name: best.name, description: best.description };
 
     return stats.accountAgeYears >= 1
-        ? { name: "Rising Coder", description: `${stats.accountAgeYears} years in and still leveling up — draws an extra card` }
+        ? { name: "Rising Coder", description: `${stats.accountAgeYears} years in, still leveling up — draws a card` }
         : { name: "Fresh Spawn", description: "New to the ecosystem — draws an extra card each turn" };
 }
 
@@ -551,9 +551,13 @@ export function buildCardData(stats: UserStats): PokemonCardData {
     const retreatCost = computeRetreatCost(stats.maintainedRepoCount);
     const evolutionStage = computeStage({ ageYears, weekShare, stars: stats.totalStars, contributions: a.total });
     const ability = pickAbility(stats);
-    const rarity = computeRarity(evolutionStage, topStars, a.longestStreak);
-    const art = pickArtwork(stats.user.login, familyForLanguage(stats.topLanguage), rarity, undefined, stats.passion?.key ?? null);
-    // A one-of-one painting carries its own edition; otherwise the detected one.
+    const earnedRarity = computeRarity(evolutionStage, topStars, a.longestStreak);
+    const art = pickArtwork(stats.user.login, familyForLanguage(stats.topLanguage), earnedRarity, undefined, stats.passion?.key ?? null);
+    // A passion painting is scarcer than the regular pools (only people who
+    // built a repo about it get one), so it lifts the card one tier.
+    const passionBoost = !art.custom && art.passion !== null;
+    const rarity = passionBoost ? nextRarity(earnedRarity) : earnedRarity;
+    // A one-of-one painting carries its own passion; otherwise the detected one.
     const passion: Passion | null = art.custom && art.passion
         ? { ...PASSIONS[art.passion], repo: null, score: 0 }
         : stats.passion;
@@ -605,29 +609,24 @@ export function buildCardData(stats: UserStats): PokemonCardData {
         {
             stat: "Rarity",
             value: rarity[0].toUpperCase() + rarity.slice(1),
-            because: rarity === "legendary"
+            because: passionBoost && stats.passion
+                ? `${earnedRarity[0].toUpperCase() + earnedRarity.slice(1)} from your stats, +1 tier for the ${stats.passion.key.replace("-", " ")} painting your repo ${stats.passion.repo} earned`
+                : earnedRarity === "legendary"
                 ? (topStars >= LEGENDARY_TOP_REPO_STARS
                     ? `A repo with ${formatCount(topStars)} stars (legendary at ${formatCount(LEGENDARY_TOP_REPO_STARS)})`
                     : `A ${a.longestStreak}-day streak (legendary at ${LEGENDARY_STREAK_DAYS})`)
                 : `Follows the stage: Basic is common, Stage 1 uncommon, Stage 2 rare`,
         },
-        ...(passion
-            ? [{
-                stat: "Edition",
-                value: passion.edition,
-                because: passion.repo
-                    ? `Your repo ${passion.repo} is about ${passion.key.replace("-", " ")}`
-                    : `A one-of-one edition painted for @${stats.user.login}`,
-            }]
-            : []),
         {
             stat: "Art",
             value: art.species,
             because: art.custom
                 ? `${art.variant}, a one-of-one painting made only for @${stats.user.login}`
+                : art.passion && stats.passion
+                ? `${art.variant}, a ${art.passion.replace("-", " ")} painting, because your repo ${stats.passion.repo} is about it`
                 : art.poolSize > 0
-                ? `${art.variant}, 1 of ${art.poolSize} ${rarity} ${art.species} paintings, picked from your username`
-                : `The original ${art.species} painting; more ${rarity} variants are coming`,
+                ? `${art.variant}, 1 of ${art.poolSize} ${art.rarity} ${art.species} paintings, picked from your username`
+                : `The original ${art.species} painting; more ${art.rarity} variants are coming`,
         },
     ];
 

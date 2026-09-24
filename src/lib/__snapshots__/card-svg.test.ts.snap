@@ -3,6 +3,9 @@
 exports[`renderCardSVG > renders asynced24's card unchanged 1`] = `
 "<svg xmlns="http://www.w3.org/2000/svg" width="358" height="498" viewBox="0 0 358 498" fill="none">
   <defs>
+    
+    
+    
     <linearGradient id="gw-theme" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#3178C6"/>
       <stop offset="1" stop-color="#58A6FF"/>
@@ -48,6 +51,7 @@ exports[`renderCardSVG > renders asynced24's card unchanged 1`] = `
   <rect id="gw-art" width="358" height="498" fill="url(#gw-theme)"/>
   <rect y="255" width="358" height="243" fill="url(#gw-scrim)"/>
   <rect width="358" height="498" fill="url(#gw-foil)" style="mix-blend-mode:overlay"/>
+  
   <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)"/>
 
   <!-- 52-week contribution horizon -->
@@ -58,8 +62,6 @@ exports[`renderCardSVG > renders asynced24's card unchanged 1`] = `
   <circle cx="179" cy="132" r="43" fill="rgba(10,15,29,0.55)" filter="url(#gw-lift)"/>
   <circle cx="179" cy="132" r="40" fill="#3178C6"/><text x="179" y="143" text-anchor="middle" font-family="'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif" font-size="30" fill="#FFFFFF">A</text>
   <circle cx="179" cy="132" r="41.2" stroke="#56D6FF" stroke-opacity="0.85" stroke-width="2.4"/>
-  <rect x="114.6" y="182" width="128.8" height="18" rx="9" fill="rgba(10,15,29,0.85)" stroke="#FF6B4A" stroke-width="1.2"/>
-  <text x="179" y="194.5" text-anchor="middle" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#FFFFFF"><tspan font-size="9">🏋️</tspan><tspan dx="4" fill="#FF6B4A">IRON STAGE EDITION</tspan></text>
 
   <!-- Header -->
   <rect x="10" y="10" width="338" height="48" rx="11.5" fill="rgba(10,15,29,0.92)" stroke="rgba(255,255,255,0.15)"/>
@@ -105,8 +107,8 @@ exports[`renderCardSVG > renders asynced24's card unchanged 1`] = `
   <text x="290.3" y="471.5" text-anchor="middle" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace"><tspan font-size="7" letter-spacing="1" fill="#7E90AB">RETREAT</tspan><tspan font-size="9.5" fill="#56D6FF" dx="6" letter-spacing="1">●●●</tspan></text>
 
   <!-- Footer -->
-  <text x="18" y="494" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · Voltlynx · Storm Leap</text>
-  <text x="340" y="494" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#56D6FF" filter="url(#gw-shadow)">◆ UNCOMMON</text>
+  <text x="18" y="492" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · Voltlynx · Storm Leap</text>
+  <text x="340" y="492" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#56D6FF" filter="url(#gw-shadow)">◆ UNCOMMON</text>
   </g>
 
   <!-- Rarity frame -->
@@ -117,6 +119,22 @@ exports[`renderCardSVG > renders asynced24's card unchanged 1`] = `
 exports[`renderCardSVG > renders gaearon's card unchanged 1`] = `
 "<svg xmlns="http://www.w3.org/2000/svg" width="358" height="498" viewBox="0 0 358 498" fill="none">
   <defs>
+    <style>
+    @keyframes gw-sweep { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
+    @keyframes gw-twinkle { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
+    @keyframes gw-pulse { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
+    .gw-sweep { animation: gw-sweep 5.5s ease-in-out infinite; }
+    .gw-twinkle { animation: gw-twinkle 2.4s ease-in-out infinite; }
+    .gw-pulse { animation: gw-pulse 3s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse { animation: none; } }
+  </style>
+    <linearGradient id="gw-sweepGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="0.6" stop-color="#B78CFF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    
     <linearGradient id="gw-theme" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#6B7280"/>
       <stop offset="1" stop-color="#9CA3AF"/>
@@ -162,17 +180,17 @@ exports[`renderCardSVG > renders gaearon's card unchanged 1`] = `
   <rect id="gw-art" width="358" height="498" fill="url(#gw-theme)"/>
   <rect y="255" width="358" height="243" fill="url(#gw-scrim)"/>
   <rect width="358" height="498" fill="url(#gw-foil)" style="mix-blend-mode:overlay"/>
-  <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M90,205 Q91.1,208.9 95,210 Q91.1,211.1 90,215 Q88.9,211.1 85,210 Q88.9,208.9 90,205Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M320,182.5 Q321.65,188.35 327.5,190 Q321.65,191.65 320,197.5 Q318.35,191.65 312.5,190 Q318.35,188.35 320,182.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M250,110 Q252.2,117.8 260,120 Q252.2,122.2 250,130 Q247.8,122.2 240,120 Q247.8,117.8 250,110Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M140,65 Q141.1,68.9 145,70 Q141.1,71.1 140,75 Q138.9,71.1 135,70 Q138.9,68.9 140,65Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M270,232.5 Q271.65,238.35 277.5,240 Q271.65,241.65 270,247.5 Q268.35,241.65 262.5,240 Q268.35,238.35 270,232.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/>
+  <g transform="skewX(-18)" style="mix-blend-mode:screen"><rect class="gw-sweep" x="-40" y="-20" width="90" height="538" fill="url(#gw-sweepGrad)"/></g>
+  <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.00s"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.37s"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.74s"/><path d="M90,205 Q91.1,208.9 95,210 Q91.1,211.1 90,215 Q88.9,211.1 85,210 Q88.9,208.9 90,205Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:1.11s"/><path d="M320,182.5 Q321.65,188.35 327.5,190 Q321.65,191.65 320,197.5 Q318.35,191.65 312.5,190 Q318.35,188.35 320,182.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:1.48s"/><path d="M250,110 Q252.2,117.8 260,120 Q252.2,122.2 250,130 Q247.8,122.2 240,120 Q247.8,117.8 250,110Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:1.85s"/><path d="M140,65 Q141.1,68.9 145,70 Q141.1,71.1 140,75 Q138.9,71.1 135,70 Q138.9,68.9 140,65Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:2.22s"/><path d="M270,232.5 Q271.65,238.35 277.5,240 Q271.65,241.65 270,247.5 Q268.35,241.65 262.5,240 Q268.35,238.35 270,232.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:2.59s"/>
 
   <!-- 52-week contribution horizon -->
-  <polyline points="8.0,265.5 14.6,246.5 21.2,255.8 27.7,277.0 34.3,269.8 40.9,277.0 47.5,263.2 54.0,273.2 60.6,277.0 67.2,277.0 73.8,267.6 80.3,269.3 86.9,258.0 93.5,266.1 100.1,277.0 106.7,271.6 113.2,257.2 119.8,258.8 126.4,262.9 133.0,270.9 139.5,270.9 146.1,268.9 152.7,270.4 159.3,273.2 165.8,258.8 172.4,277.0 179.0,272.3 185.6,277.0 192.2,277.0 198.7,272.3 205.3,277.0 211.9,277.0 218.5,277.0 225.0,277.0 231.6,277.0 238.2,277.0 244.8,277.0 251.3,277.0 257.9,268.0 264.5,268.4 271.1,262.9 277.7,262.1 284.2,259.8 290.8,257.8 297.4,260.9 304.0,264.0 310.5,270.9 317.1,243.0 323.7,252.6 330.3,259.2 336.8,277.0 343.4,268.0 350.0,277.0" stroke="#B78CFF" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
+  <polyline class="gw-pulse" points="8.0,265.5 14.6,246.5 21.2,255.8 27.7,277.0 34.3,269.8 40.9,277.0 47.5,263.2 54.0,273.2 60.6,277.0 67.2,277.0 73.8,267.6 80.3,269.3 86.9,258.0 93.5,266.1 100.1,277.0 106.7,271.6 113.2,257.2 119.8,258.8 126.4,262.9 133.0,270.9 139.5,270.9 146.1,268.9 152.7,270.4 159.3,273.2 165.8,258.8 172.4,277.0 179.0,272.3 185.6,277.0 192.2,277.0 198.7,272.3 205.3,277.0 211.9,277.0 218.5,277.0 225.0,277.0 231.6,277.0 238.2,277.0 244.8,277.0 251.3,277.0 257.9,268.0 264.5,268.4 271.1,262.9 277.7,262.1 284.2,259.8 290.8,257.8 297.4,260.9 304.0,264.0 310.5,270.9 317.1,243.0 323.7,252.6 330.3,259.2 336.8,277.0 343.4,268.0 350.0,277.0" stroke="#B78CFF" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
   <polyline points="8.0,265.5 14.6,246.5 21.2,255.8 27.7,277.0 34.3,269.8 40.9,277.0 47.5,263.2 54.0,273.2 60.6,277.0 67.2,277.0 73.8,267.6 80.3,269.3 86.9,258.0 93.5,266.1 100.1,277.0 106.7,271.6 113.2,257.2 119.8,258.8 126.4,262.9 133.0,270.9 139.5,270.9 146.1,268.9 152.7,270.4 159.3,273.2 165.8,258.8 172.4,277.0 179.0,272.3 185.6,277.0 192.2,277.0 198.7,272.3 205.3,277.0 211.9,277.0 218.5,277.0 225.0,277.0 231.6,277.0 238.2,277.0 244.8,277.0 251.3,277.0 257.9,268.0 264.5,268.4 271.1,262.9 277.7,262.1 284.2,259.8 290.8,257.8 297.4,260.9 304.0,264.0 310.5,270.9 317.1,243.0 323.7,252.6 330.3,259.2 336.8,277.0 343.4,268.0 350.0,277.0" stroke="#EAFBFF" stroke-opacity="0.95" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" filter="url(#gw-glow)"/>
 
   <!-- Avatar: large circle over the art -->
   <circle cx="179" cy="132" r="43" fill="rgba(10,15,29,0.55)" filter="url(#gw-lift)"/>
   <circle cx="179" cy="132" r="40" fill="#6B7280"/><text x="179" y="143" text-anchor="middle" font-family="'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif" font-size="30" fill="#FFFFFF">G</text>
   <circle cx="179" cy="132" r="41.2" stroke="#B78CFF" stroke-opacity="0.85" stroke-width="2.4"/>
-  
 
   <!-- Header -->
   <rect x="10" y="10" width="338" height="48" rx="11.5" fill="rgba(10,15,29,0.92)" stroke="rgba(255,255,255,0.15)"/>
@@ -218,8 +236,8 @@ exports[`renderCardSVG > renders gaearon's card unchanged 1`] = `
   <text x="290.3" y="471.5" text-anchor="middle" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace"><tspan font-size="7" letter-spacing="1" fill="#7E90AB">RETREAT</tspan><tspan font-size="9.5" fill="#B78CFF" dx="6" letter-spacing="1">●●</tspan></text>
 
   <!-- Footer -->
-  <text x="18" y="494" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · Axiom Owl · Rune Vigil</text>
-  <text x="340" y="494" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#B78CFF" filter="url(#gw-shadow)">◆ LEGENDARY</text>
+  <text x="18" y="492" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · Axiom Owl · Rune Vigil</text>
+  <text x="340" y="492" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#B78CFF" filter="url(#gw-shadow)">◆ LEGENDARY</text>
   </g>
 
   <!-- Rarity frame -->
@@ -230,6 +248,9 @@ exports[`renderCardSVG > renders gaearon's card unchanged 1`] = `
 exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
 "<svg xmlns="http://www.w3.org/2000/svg" width="358" height="498" viewBox="0 0 358 498" fill="none">
   <defs>
+    
+    
+    
     <linearGradient id="gw-theme" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#E25822"/>
       <stop offset="1" stop-color="#FF6B35"/>
@@ -275,6 +296,7 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
   <rect id="gw-art" width="358" height="498" fill="url(#gw-theme)"/>
   <rect y="255" width="358" height="243" fill="url(#gw-scrim)"/>
   <rect width="358" height="498" fill="url(#gw-foil)" style="mix-blend-mode:overlay"/>
+  
   <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)"/><path d="M90,205 Q91.1,208.9 95,210 Q91.1,211.1 90,215 Q88.9,211.1 85,210 Q88.9,208.9 90,205Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)"/><path d="M320,182.5 Q321.65,188.35 327.5,190 Q321.65,191.65 320,197.5 Q318.35,191.65 312.5,190 Q318.35,188.35 320,182.5Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)"/>
 
   <!-- 52-week contribution horizon -->
@@ -285,8 +307,6 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
   <circle cx="179" cy="132" r="43" fill="rgba(10,15,29,0.55)" filter="url(#gw-lift)"/>
   <circle cx="179" cy="132" r="40" fill="#E25822"/><text x="179" y="143" text-anchor="middle" font-family="'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif" font-size="30" fill="#FFFFFF">S</text>
   <circle cx="179" cy="132" r="41.2" stroke="#7CFFB2" stroke-opacity="0.85" stroke-width="2.4"/>
-  <rect x="125.8" y="182" width="106.4" height="18" rx="9" fill="rgba(10,15,29,0.85)" stroke="#8B5CFF" stroke-width="1.2"/>
-  <text x="179" y="194.5" text-anchor="middle" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#FFFFFF"><tspan font-size="9">🎮</tspan><tspan dx="4" fill="#8B5CFF">ARCADE EDITION</tspan></text>
 
   <!-- Header -->
   <rect x="10" y="10" width="338" height="48" rx="11.5" fill="rgba(10,15,29,0.92)" stroke="rgba(255,255,255,0.15)"/>
@@ -310,7 +330,7 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
   <!-- Ability -->
   <text x="24" y="313" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="7.5" letter-spacing="2" fill="#7CFFB2">ABILITY</text>
   <text x="84" y="314" font-family="'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif" font-size="14.5" fill="#FFFFFF">Iron Routine</text>
-  <text x="24" y="332" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="9.5" font-style="italic" fill="#D5DEEC">Active 31 of the last 53 weeks - immune to status eff…</text>
+  <text x="24" y="332" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="9.5" font-style="italic" fill="#D5DEEC">Active 31/53 weeks - immune to status effects</text>
   <text x="24" y="347" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8.5" letter-spacing="0.5" fill="#8CA0BC">326 contribs · 31/53 wks active</text>
 
   <!-- Attacks -->
@@ -332,8 +352,8 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
   <text x="290.3" y="471.5" text-anchor="middle" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace"><tspan font-size="7" letter-spacing="1" fill="#7E90AB">RETREAT</tspan><tspan font-size="9.5" fill="#7CFFB2" dx="6" letter-spacing="1">●●</tspan></text>
 
   <!-- Footer -->
-  <text x="18" y="494" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · Wirelet · Night Slither · 1 of 3</text>
-  <text x="340" y="494" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#7CFFB2" filter="url(#gw-shadow)">◆ RARE</text>
+  <text x="18" y="492" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · Wirelet · Night Slither · 1 of 3</text>
+  <text x="340" y="492" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#7CFFB2" filter="url(#gw-shadow)">◆ RARE</text>
   </g>
 
   <!-- Rarity frame -->
@@ -344,6 +364,22 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
 exports[`renderCardSVG > renders torvalds's card unchanged 1`] = `
 "<svg xmlns="http://www.w3.org/2000/svg" width="358" height="498" viewBox="0 0 358 498" fill="none">
   <defs>
+    <style>
+    @keyframes gw-sweep { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
+    @keyframes gw-twinkle { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
+    @keyframes gw-pulse { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
+    .gw-sweep { animation: gw-sweep 5.5s ease-in-out infinite; }
+    .gw-twinkle { animation: gw-twinkle 2.4s ease-in-out infinite; }
+    .gw-pulse { animation: gw-pulse 3s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse { animation: none; } }
+  </style>
+    <linearGradient id="gw-sweepGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="0.6" stop-color="#FFB347" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    
     <linearGradient id="gw-theme" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#555555"/>
       <stop offset="1" stop-color="#777777"/>
@@ -389,17 +425,17 @@ exports[`renderCardSVG > renders torvalds's card unchanged 1`] = `
   <rect id="gw-art" width="358" height="498" fill="url(#gw-theme)"/>
   <rect y="255" width="358" height="243" fill="url(#gw-scrim)"/>
   <rect width="358" height="498" fill="url(#gw-foil)" style="mix-blend-mode:overlay"/>
-  <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M90,205 Q91.1,208.9 95,210 Q91.1,211.1 90,215 Q88.9,211.1 85,210 Q88.9,208.9 90,205Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M320,182.5 Q321.65,188.35 327.5,190 Q321.65,191.65 320,197.5 Q318.35,191.65 312.5,190 Q318.35,188.35 320,182.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M250,110 Q252.2,117.8 260,120 Q252.2,122.2 250,130 Q247.8,122.2 240,120 Q247.8,117.8 250,110Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M140,65 Q141.1,68.9 145,70 Q141.1,71.1 140,75 Q138.9,71.1 135,70 Q138.9,68.9 140,65Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/><path d="M270,232.5 Q271.65,238.35 277.5,240 Q271.65,241.65 270,247.5 Q268.35,241.65 262.5,240 Q268.35,238.35 270,232.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)"/>
+  <g transform="skewX(-18)" style="mix-blend-mode:screen"><rect class="gw-sweep" x="-40" y="-20" width="90" height="538" fill="url(#gw-sweepGrad)"/></g>
+  <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.00s"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.37s"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.74s"/><path d="M90,205 Q91.1,208.9 95,210 Q91.1,211.1 90,215 Q88.9,211.1 85,210 Q88.9,208.9 90,205Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:1.11s"/><path d="M320,182.5 Q321.65,188.35 327.5,190 Q321.65,191.65 320,197.5 Q318.35,191.65 312.5,190 Q318.35,188.35 320,182.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:1.48s"/><path d="M250,110 Q252.2,117.8 260,120 Q252.2,122.2 250,130 Q247.8,122.2 240,120 Q247.8,117.8 250,110Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:1.85s"/><path d="M140,65 Q141.1,68.9 145,70 Q141.1,71.1 140,75 Q138.9,71.1 135,70 Q138.9,68.9 140,65Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:2.22s"/><path d="M270,232.5 Q271.65,238.35 277.5,240 Q271.65,241.65 270,247.5 Q268.35,241.65 262.5,240 Q268.35,238.35 270,232.5Z" fill="#FFFFFF" opacity="0.63" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:2.59s"/>
 
   <!-- 52-week contribution horizon -->
-  <polyline points="8.0,260.8 14.6,244.4 21.2,256.3 27.7,262.1 34.3,262.7 40.9,262.3 47.5,262.9 54.0,261.6 60.6,262.3 67.2,261.6 73.8,243.8 80.3,259.6 86.9,261.8 93.5,263.2 100.1,260.7 106.7,259.5 113.2,258.6 119.8,254.1 126.4,263.2 133.0,262.3 139.5,246.0 146.1,256.0 152.7,261.8 159.3,259.1 165.8,262.7 172.4,260.8 179.0,260.0 185.6,261.2 192.2,261.9 198.7,245.2 205.3,255.2 211.9,263.4 218.5,260.5 225.0,260.1 231.6,257.9 238.2,259.8 244.8,256.4 251.3,257.7 257.9,246.7 264.5,254.1 271.1,265.4 277.7,263.8 284.2,261.4 290.8,259.0 297.4,246.7 304.0,243.0 310.5,252.5 317.1,245.1 323.7,256.5 330.3,253.5 336.8,258.6 343.4,253.4 350.0,264.2" stroke="#FFB347" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
+  <polyline class="gw-pulse" points="8.0,260.8 14.6,244.4 21.2,256.3 27.7,262.1 34.3,262.7 40.9,262.3 47.5,262.9 54.0,261.6 60.6,262.3 67.2,261.6 73.8,243.8 80.3,259.6 86.9,261.8 93.5,263.2 100.1,260.7 106.7,259.5 113.2,258.6 119.8,254.1 126.4,263.2 133.0,262.3 139.5,246.0 146.1,256.0 152.7,261.8 159.3,259.1 165.8,262.7 172.4,260.8 179.0,260.0 185.6,261.2 192.2,261.9 198.7,245.2 205.3,255.2 211.9,263.4 218.5,260.5 225.0,260.1 231.6,257.9 238.2,259.8 244.8,256.4 251.3,257.7 257.9,246.7 264.5,254.1 271.1,265.4 277.7,263.8 284.2,261.4 290.8,259.0 297.4,246.7 304.0,243.0 310.5,252.5 317.1,245.1 323.7,256.5 330.3,253.5 336.8,258.6 343.4,253.4 350.0,264.2" stroke="#FFB347" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
   <polyline points="8.0,260.8 14.6,244.4 21.2,256.3 27.7,262.1 34.3,262.7 40.9,262.3 47.5,262.9 54.0,261.6 60.6,262.3 67.2,261.6 73.8,243.8 80.3,259.6 86.9,261.8 93.5,263.2 100.1,260.7 106.7,259.5 113.2,258.6 119.8,254.1 126.4,263.2 133.0,262.3 139.5,246.0 146.1,256.0 152.7,261.8 159.3,259.1 165.8,262.7 172.4,260.8 179.0,260.0 185.6,261.2 192.2,261.9 198.7,245.2 205.3,255.2 211.9,263.4 218.5,260.5 225.0,260.1 231.6,257.9 238.2,259.8 244.8,256.4 251.3,257.7 257.9,246.7 264.5,254.1 271.1,265.4 277.7,263.8 284.2,261.4 290.8,259.0 297.4,246.7 304.0,243.0 310.5,252.5 317.1,245.1 323.7,256.5 330.3,253.5 336.8,258.6 343.4,253.4 350.0,264.2" stroke="#EAFBFF" stroke-opacity="0.95" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" filter="url(#gw-glow)"/>
 
   <!-- Avatar: large circle over the art -->
   <circle cx="179" cy="132" r="43" fill="rgba(10,15,29,0.55)" filter="url(#gw-lift)"/>
   <circle cx="179" cy="132" r="40" fill="#555555"/><text x="179" y="143" text-anchor="middle" font-family="'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif" font-size="30" fill="#FFFFFF">T</text>
   <circle cx="179" cy="132" r="41.2" stroke="#FFB347" stroke-opacity="0.85" stroke-width="2.4"/>
-  
 
   <!-- Header -->
   <rect x="10" y="10" width="338" height="48" rx="11.5" fill="rgba(10,15,29,0.92)" stroke="rgba(255,255,255,0.15)"/>
@@ -445,8 +481,8 @@ exports[`renderCardSVG > renders torvalds's card unchanged 1`] = `
   <text x="290.3" y="471.5" text-anchor="middle" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace"><tspan font-size="7" letter-spacing="1" fill="#7E90AB">RETREAT</tspan><tspan font-size="9.5" fill="#FFB347" dx="6" letter-spacing="1">●●●</tspan></text>
 
   <!-- Footer -->
-  <text x="18" y="494" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · Bedrock Tortoise · Ember Canyon</text>
-  <text x="340" y="494" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#FFB347" filter="url(#gw-shadow)">◆ LEGENDARY</text>
+  <text x="18" y="492" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · Bedrock Tortoise · Ember Canyon</text>
+  <text x="340" y="492" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#FFB347" filter="url(#gw-shadow)">◆ LEGENDARY</text>
   </g>
 
   <!-- Rarity frame -->

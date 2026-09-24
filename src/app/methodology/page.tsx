@@ -164,6 +164,20 @@ export default function MethodologyPage() {
                     and adding a painting to a pool of N only moves the roughly 1 in N+1 people who now score it
                     highest. Cards already in READMEs stay as they are.
                 </p>
+                <p>
+                    <strong>Passion paintings.</strong> If one of your own repos is clearly about fitness, combat sports,
+                    soccer, American football, racing, gaming or rap (a GitHub topic or the repo name counts; a single
+                    mention in a description doesn&apos;t), your creature can appear in a painting of that world. Those
+                    paintings are scarcer than the regular pools, so the card goes up one rarity tier, and the card
+                    view names the repo that earned it. Words are matched whole, so <code>race-condition</code> is not
+                    racing.
+                </p>
+                <p>
+                    <strong>One of one.</strong> A few paintings are made for a single account. Legendary and
+                    one-of-one cards are also the only animated ones (a foil sweep and twinkling sparkles; one-of-ones
+                    add a travelling gold glint on the frame). Motion switches off if your device asks for reduced
+                    motion.
+                </p>
                 <table>
                     <tbody>
                         {ART_FAMILIES.map(family => (
