@@ -36,7 +36,7 @@ describe("renderCardSVG", () => {
 
 describe("rarity styling", () => {
     it("frames and sparkles more as rarity rises", () => {
-        const data = buildCardData(analyzeSnapshot(loadFixture("asynced24")));
+        const data = buildCardData(analyzeSnapshot(loadFixture("asynced24")), []);
         const sparkleCount = (svg: string) => (svg.match(/<path d="M[^"]*Z" fill="#FFFFFF"/g) ?? []).length;
         const common = renderCardSVG({ ...data, rarity: "common" }, NO_IMAGES);
         const legendary = renderCardSVG({ ...data, rarity: "legendary" }, NO_IMAGES);
@@ -84,7 +84,7 @@ describe("real cards", () => {
     });
 
     it("animates only legendary and one-of-one cards, and respects reduced motion", () => {
-        const data = buildCardData(analyzeSnapshot(loadFixture("asynced24")));
+        const data = buildCardData(analyzeSnapshot(loadFixture("asynced24")), []);
         expect(renderCardSVG({ ...data, rarity: "rare" }, NO_IMAGES)).not.toContain("@keyframes");
         const legendary = renderCardSVG({ ...data, rarity: "legendary" }, NO_IMAGES);
         expect(legendary).toContain("@keyframes");

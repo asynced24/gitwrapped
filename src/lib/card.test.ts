@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { ARTWORKS } from "@/lib/art/manifest";
+import { describe, expect, it } from "vitest";
+import type { Artwork } from "@/lib/art/manifest";
 import { analyzeSnapshot } from "@/lib/analysis";
 import { FIXTURE_USERS, loadFixture } from "@/lib/analysis/test-helpers";
 import {
@@ -125,35 +125,28 @@ describe("pickAbility", () => {
 });
 
 describe("passion paintings", () => {
-    const added: number[] = [];
-    afterEach(() => {
-        for (const i of added.reverse()) ARTWORKS.splice(i, 1);
-        added.length = 0;
-    });
-    function addArt(art: (typeof ARTWORKS)[number]) {
-        added.push(ARTWORKS.push(art) - 1);
-    }
+    const fitness: Artwork = { id: "ts-js-passion-fitness-trial", family: "ts-js", rarity: "common", variant: "Golden Stage", file: "/art/x.webp", passion: "fitness" };
+    const cole: Artwork = { id: "python-custom-trial", family: "python", rarity: "legendary", variant: "Rooftop Verse", file: "/art/y.webp", passion: "rap", owner: "shrikanthv15" };
+    const card = (user: "asynced24" | "shrikanthv15", artworks: Artwork[]) => buildCardData(analyzeSnapshot(loadFixture(user)), artworks);
 
     it("changes nothing until a passion painting exists for the family", () => {
-        const card = buildCardData(analyzeSnapshot(loadFixture("asynced24")));
-        expect(card.rarity).toBe("uncommon");
-        expect(card.art.passion).toBeNull();
+        const c = card("asynced24", []);
+        expect(c.rarity).toBe("uncommon");
+        expect(c.art.passion).toBeNull();
     });
 
     it("swaps the background and lifts the card one tier, with no edition text", () => {
-        addArt({ id: "ts-js-passion-fitness-trial", family: "ts-js", rarity: "common", variant: "Golden Stage", file: "/art/x.webp", passion: "fitness" });
-        const card = buildCardData(analyzeSnapshot(loadFixture("asynced24")));
-        expect(card.art).toMatchObject({ id: "ts-js-passion-fitness-trial", passion: "fitness" });
-        expect(card.rarity).toBe("rare");
-        expect(card.explanations.find(e => e.stat === "Rarity")!.because).toContain("your-prime-fitness-tracker");
-        expect(card.explanations.map(e => e.stat)).not.toContain("Edition");
+        const c = card("asynced24", [fitness]);
+        expect(c.art).toMatchObject({ id: fitness.id, passion: "fitness" });
+        expect(c.rarity).toBe("rare");
+        expect(c.explanations.find(e => e.stat === "Rarity")!.because).toContain("your-prime-fitness-tracker");
+        expect(c.explanations.map(e => e.stat)).not.toContain("Edition");
     });
 
     it("gives a one-of-one to its owner only, without changing their earned rarity", () => {
-        addArt({ id: "python-custom-trial", family: "python", rarity: "legendary", variant: "Rooftop Verse", file: "/art/y.webp", passion: "rap", owner: "shrikanthv15" });
-        const shrikanth = buildCardData(analyzeSnapshot(loadFixture("shrikanthv15")));
+        const shrikanth = card("shrikanthv15", [cole]);
         expect(shrikanth.art).toMatchObject({ custom: true, variant: "Rooftop Verse" });
         expect(shrikanth.rarity).toBe("rare");
-        expect(buildCardData(analyzeSnapshot(loadFixture("asynced24"))).art.custom).toBe(false);
+        expect(card("asynced24", [cole]).art.custom).toBe(false);
     });
 });

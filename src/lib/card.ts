@@ -1,6 +1,7 @@
 import type { UserStats } from "@/types/github";
 import { familyForLanguage, nextRarity, type Rarity } from "@/lib/art/families";
 import { pickArtwork, type CardArt } from "@/lib/art/pick";
+import { ARTWORKS, type Artwork } from "@/lib/art/manifest";
 import { PASSIONS, type Passion } from "@/lib/passions";
 
 export type { Rarity } from "@/lib/art/families";
@@ -536,7 +537,8 @@ function computeCardNumber(username: string): string {
    Build card data from UserStats (pure)
    ───────────────────────────────────────────── */
 
-export function buildCardData(stats: UserStats): PokemonCardData {
+/** `artworks` defaults to the live manifest; tests pass their own. */
+export function buildCardData(stats: UserStats, artworks: readonly Artwork[] = ARTWORKS): PokemonCardData {
     const a = stats.activity;
     const ageYears = stats.accountAgeYears;
     const weekShare = a.totalWeeks > 0 ? a.activeWeeks / a.totalWeeks : 0;
@@ -552,7 +554,7 @@ export function buildCardData(stats: UserStats): PokemonCardData {
     const evolutionStage = computeStage({ ageYears, weekShare, stars: stats.totalStars, contributions: a.total });
     const ability = pickAbility(stats);
     const earnedRarity = computeRarity(evolutionStage, topStars, a.longestStreak);
-    const art = pickArtwork(stats.user.login, familyForLanguage(stats.topLanguage), earnedRarity, undefined, stats.passion?.key ?? null);
+    const art = pickArtwork(stats.user.login, familyForLanguage(stats.topLanguage), earnedRarity, artworks, stats.passion?.key ?? null);
     // A passion painting is scarcer than the regular pools (only people who
     // built a repo about it get one), so it lifts the card one tier.
     const passionBoost = !art.custom && art.passion !== null;

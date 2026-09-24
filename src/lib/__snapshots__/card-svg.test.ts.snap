@@ -3,9 +3,30 @@
 exports[`renderCardSVG > renders asynced24's card unchanged 1`] = `
 "<svg xmlns="http://www.w3.org/2000/svg" width="358" height="498" viewBox="0 0 358 498" fill="none">
   <defs>
-    
-    
-    
+    <style>
+    @keyframes gw-sweep { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
+    @keyframes gw-twinkle { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
+    @keyframes gw-pulse { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
+    .gw-sweep { animation: gw-sweep 5.5s ease-in-out infinite; }
+    .gw-twinkle { animation: gw-twinkle 2.4s ease-in-out infinite; }
+    .gw-pulse { animation: gw-pulse 3s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse { animation: none; } }
+  </style>
+    <linearGradient id="gw-sweepGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="0.6" stop-color="#56D6FF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="gw-holo" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="358" y2="498">
+      <stop offset="0" stop-color="#6E4F0E"/>
+      <stop offset="0.38" stop-color="#C9971C"/>
+      <stop offset="0.48" stop-color="#FFF4C2"/>
+      <stop offset="0.58" stop-color="#C9971C"/>
+      <stop offset="1" stop-color="#6E4F0E"/>
+      <!-- The bright band travels around the frame: a glint, not a colour cycle. -->
+      <animateTransform attributeName="gradientTransform" type="rotate" from="0 179 249" to="360 179 249" dur="6s" repeatCount="indefinite"/>
+    </linearGradient>
     <linearGradient id="gw-theme" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#3178C6"/>
       <stop offset="1" stop-color="#58A6FF"/>
@@ -51,11 +72,11 @@ exports[`renderCardSVG > renders asynced24's card unchanged 1`] = `
   <rect id="gw-art" width="358" height="498" fill="url(#gw-theme)"/>
   <rect y="255" width="358" height="243" fill="url(#gw-scrim)"/>
   <rect width="358" height="498" fill="url(#gw-foil)" style="mix-blend-mode:overlay"/>
-  
-  <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)"/>
+  <g transform="skewX(-18)" style="mix-blend-mode:screen"><rect class="gw-sweep" x="-40" y="-20" width="90" height="538" fill="url(#gw-sweepGrad)"/></g>
+  <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.00s"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.37s"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.74s"/>
 
   <!-- 52-week contribution horizon -->
-  <polyline points="8.0,277.0 14.6,277.0 21.2,273.3 27.7,271.8 34.3,277.0 40.9,277.0 47.5,277.0 54.0,277.0 60.6,277.0 67.2,277.0 73.8,277.0 80.3,277.0 86.9,277.0 93.5,277.0 100.1,266.2 106.7,277.0 113.2,272.5 119.8,277.0 126.4,266.5 133.0,262.9 139.5,263.6 146.1,262.4 152.7,277.0 159.3,270.1 165.8,273.3 172.4,277.0 179.0,273.3 185.6,277.0 192.2,277.0 198.7,277.0 205.3,277.0 211.9,277.0 218.5,270.1 225.0,271.1 231.6,257.5 238.2,247.9 244.8,260.8 251.3,261.0 257.9,267.9 264.5,268.3 271.1,267.2 277.7,277.0 284.2,267.5 290.8,271.1 297.4,265.3 304.0,260.8 310.5,254.3 317.1,261.9 323.7,255.4 330.3,257.2 336.8,251.4 343.4,246.1 350.0,243.0" stroke="#56D6FF" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
+  <polyline class="gw-pulse" points="8.0,277.0 14.6,277.0 21.2,273.3 27.7,271.8 34.3,277.0 40.9,277.0 47.5,277.0 54.0,277.0 60.6,277.0 67.2,277.0 73.8,277.0 80.3,277.0 86.9,277.0 93.5,277.0 100.1,266.2 106.7,277.0 113.2,272.5 119.8,277.0 126.4,266.5 133.0,262.9 139.5,263.6 146.1,262.4 152.7,277.0 159.3,270.1 165.8,273.3 172.4,277.0 179.0,273.3 185.6,277.0 192.2,277.0 198.7,277.0 205.3,277.0 211.9,277.0 218.5,270.1 225.0,271.1 231.6,257.5 238.2,247.9 244.8,260.8 251.3,261.0 257.9,267.9 264.5,268.3 271.1,267.2 277.7,277.0 284.2,267.5 290.8,271.1 297.4,265.3 304.0,260.8 310.5,254.3 317.1,261.9 323.7,255.4 330.3,257.2 336.8,251.4 343.4,246.1 350.0,243.0" stroke="#56D6FF" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
   <polyline points="8.0,277.0 14.6,277.0 21.2,273.3 27.7,271.8 34.3,277.0 40.9,277.0 47.5,277.0 54.0,277.0 60.6,277.0 67.2,277.0 73.8,277.0 80.3,277.0 86.9,277.0 93.5,277.0 100.1,266.2 106.7,277.0 113.2,272.5 119.8,277.0 126.4,266.5 133.0,262.9 139.5,263.6 146.1,262.4 152.7,277.0 159.3,270.1 165.8,273.3 172.4,277.0 179.0,273.3 185.6,277.0 192.2,277.0 198.7,277.0 205.3,277.0 211.9,277.0 218.5,270.1 225.0,271.1 231.6,257.5 238.2,247.9 244.8,260.8 251.3,261.0 257.9,267.9 264.5,268.3 271.1,267.2 277.7,277.0 284.2,267.5 290.8,271.1 297.4,265.3 304.0,260.8 310.5,254.3 317.1,261.9 323.7,255.4 330.3,257.2 336.8,251.4 343.4,246.1 350.0,243.0" stroke="#EAFBFF" stroke-opacity="0.95" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" filter="url(#gw-glow)"/>
 
   <!-- Avatar: large circle over the art -->
@@ -107,12 +128,12 @@ exports[`renderCardSVG > renders asynced24's card unchanged 1`] = `
   <text x="290.3" y="471.5" text-anchor="middle" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace"><tspan font-size="7" letter-spacing="1" fill="#7E90AB">RETREAT</tspan><tspan font-size="9.5" fill="#56D6FF" dx="6" letter-spacing="1">●●●</tspan></text>
 
   <!-- Footer -->
-  <text x="18" y="492" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · Voltlynx · Storm Leap</text>
-  <text x="340" y="492" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#56D6FF" filter="url(#gw-shadow)">◆ UNCOMMON</text>
+  <text x="18" y="492" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · The Steps · 1 of 1</text>
+  <text x="340" y="492" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#F5C518" filter="url(#gw-shadow)">◆ ONE OF ONE</text>
   </g>
 
   <!-- Rarity frame -->
-  <rect x="0.75" y="0.75" width="356.5" height="496.5" rx="19.25" stroke="#8FB6D9" stroke-opacity="0.9" stroke-width="1.5"/>
+  <rect x="1.75" y="1.75" width="354.5" height="494.5" rx="18.25" stroke="url(#gw-holo)" stroke-opacity="0.9" stroke-width="3.5"/>
 </svg>"
 `;
 
@@ -248,9 +269,30 @@ exports[`renderCardSVG > renders gaearon's card unchanged 1`] = `
 exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
 "<svg xmlns="http://www.w3.org/2000/svg" width="358" height="498" viewBox="0 0 358 498" fill="none">
   <defs>
-    
-    
-    
+    <style>
+    @keyframes gw-sweep { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
+    @keyframes gw-twinkle { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
+    @keyframes gw-pulse { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
+    .gw-sweep { animation: gw-sweep 5.5s ease-in-out infinite; }
+    .gw-twinkle { animation: gw-twinkle 2.4s ease-in-out infinite; }
+    .gw-pulse { animation: gw-pulse 3s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse { animation: none; } }
+  </style>
+    <linearGradient id="gw-sweepGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="0.6" stop-color="#4FE3A8" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="gw-holo" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="358" y2="498">
+      <stop offset="0" stop-color="#6E4F0E"/>
+      <stop offset="0.38" stop-color="#C9971C"/>
+      <stop offset="0.48" stop-color="#FFF4C2"/>
+      <stop offset="0.58" stop-color="#C9971C"/>
+      <stop offset="1" stop-color="#6E4F0E"/>
+      <!-- The bright band travels around the frame: a glint, not a colour cycle. -->
+      <animateTransform attributeName="gradientTransform" type="rotate" from="0 179 249" to="360 179 249" dur="6s" repeatCount="indefinite"/>
+    </linearGradient>
     <linearGradient id="gw-theme" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#E25822"/>
       <stop offset="1" stop-color="#FF6B35"/>
@@ -262,7 +304,7 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
     </linearGradient>
     <linearGradient id="gw-foil" x1="0" y1="0" x2="1" y2="0.7">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.153"/>
-      <stop offset="0.28" stop-color="#7CFFB2" stop-opacity="0.170"/>
+      <stop offset="0.28" stop-color="#4FE3A8" stop-opacity="0.170"/>
       <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
       <stop offset="0.72" stop-color="#FF9FF0" stop-opacity="0.136"/>
       <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.102"/>
@@ -270,13 +312,13 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
     <filter id="gw-frost" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="7"/></filter>
     <filter id="gw-glow" x="-5%" y="-80%" width="110%" height="260%">
       <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="b"/>
-      <feFlood flood-color="#7CFFB2" flood-opacity="0.95"/>
+      <feFlood flood-color="#4FE3A8" flood-opacity="0.95"/>
       <feComposite in2="b" operator="in" result="g"/>
       <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <filter id="gw-sparkle" x="-100%" y="-100%" width="300%" height="300%">
       <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="b"/>
-      <feFlood flood-color="#7CFFB2" flood-opacity="0.9"/>
+      <feFlood flood-color="#4FE3A8" flood-opacity="0.9"/>
       <feComposite in2="b" operator="in" result="g"/>
       <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
@@ -296,17 +338,17 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
   <rect id="gw-art" width="358" height="498" fill="url(#gw-theme)"/>
   <rect y="255" width="358" height="243" fill="url(#gw-scrim)"/>
   <rect width="358" height="498" fill="url(#gw-foil)" style="mix-blend-mode:overlay"/>
-  
-  <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)"/><path d="M90,205 Q91.1,208.9 95,210 Q91.1,211.1 90,215 Q88.9,211.1 85,210 Q88.9,208.9 90,205Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)"/><path d="M320,182.5 Q321.65,188.35 327.5,190 Q321.65,191.65 320,197.5 Q318.35,191.65 312.5,190 Q318.35,188.35 320,182.5Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)"/>
+  <g transform="skewX(-18)" style="mix-blend-mode:screen"><rect class="gw-sweep" x="-40" y="-20" width="90" height="538" fill="url(#gw-sweepGrad)"/></g>
+  <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.00s"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.37s"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.74s"/><path d="M90,205 Q91.1,208.9 95,210 Q91.1,211.1 90,215 Q88.9,211.1 85,210 Q88.9,208.9 90,205Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:1.11s"/><path d="M320,182.5 Q321.65,188.35 327.5,190 Q321.65,191.65 320,197.5 Q318.35,191.65 312.5,190 Q318.35,188.35 320,182.5Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:1.48s"/>
 
   <!-- 52-week contribution horizon -->
-  <polyline points="8.0,277.0 14.6,269.1 21.2,277.0 27.7,277.0 34.3,277.0 40.9,277.0 47.5,277.0 54.0,270.6 60.6,267.9 67.2,277.0 73.8,277.0 80.3,262.6 86.9,277.0 93.5,267.9 100.1,270.6 106.7,265.0 113.2,269.1 119.8,256.7 126.4,254.7 133.0,243.0 139.5,246.2 146.1,254.3 152.7,261.3 159.3,267.9 165.8,266.8 172.4,270.6 179.0,261.9 185.6,258.3 192.2,269.1 198.7,277.0 205.3,261.9 211.9,266.8 218.5,277.0 225.0,269.1 231.6,258.8 238.2,265.9 244.8,277.0 251.3,263.4 257.9,277.0 264.5,277.0 271.1,277.0 277.7,272.5 284.2,277.0 290.8,272.5 297.4,263.4 304.0,277.0 310.5,277.0 317.1,277.0 323.7,277.0 330.3,277.0 336.8,272.5 343.4,277.0 350.0,267.9" stroke="#7CFFB2" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
+  <polyline class="gw-pulse" points="8.0,277.0 14.6,269.1 21.2,277.0 27.7,277.0 34.3,277.0 40.9,277.0 47.5,277.0 54.0,270.6 60.6,267.9 67.2,277.0 73.8,277.0 80.3,262.6 86.9,277.0 93.5,267.9 100.1,270.6 106.7,265.0 113.2,269.1 119.8,256.7 126.4,254.7 133.0,243.0 139.5,246.2 146.1,254.3 152.7,261.3 159.3,267.9 165.8,266.8 172.4,270.6 179.0,261.9 185.6,258.3 192.2,269.1 198.7,277.0 205.3,261.9 211.9,266.8 218.5,277.0 225.0,269.1 231.6,258.8 238.2,265.9 244.8,277.0 251.3,263.4 257.9,277.0 264.5,277.0 271.1,277.0 277.7,272.5 284.2,277.0 290.8,272.5 297.4,263.4 304.0,277.0 310.5,277.0 317.1,277.0 323.7,277.0 330.3,277.0 336.8,272.5 343.4,277.0 350.0,267.9" stroke="#4FE3A8" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
   <polyline points="8.0,277.0 14.6,269.1 21.2,277.0 27.7,277.0 34.3,277.0 40.9,277.0 47.5,277.0 54.0,270.6 60.6,267.9 67.2,277.0 73.8,277.0 80.3,262.6 86.9,277.0 93.5,267.9 100.1,270.6 106.7,265.0 113.2,269.1 119.8,256.7 126.4,254.7 133.0,243.0 139.5,246.2 146.1,254.3 152.7,261.3 159.3,267.9 165.8,266.8 172.4,270.6 179.0,261.9 185.6,258.3 192.2,269.1 198.7,277.0 205.3,261.9 211.9,266.8 218.5,277.0 225.0,269.1 231.6,258.8 238.2,265.9 244.8,277.0 251.3,263.4 257.9,277.0 264.5,277.0 271.1,277.0 277.7,272.5 284.2,277.0 290.8,272.5 297.4,263.4 304.0,277.0 310.5,277.0 317.1,277.0 323.7,277.0 330.3,277.0 336.8,272.5 343.4,277.0 350.0,267.9" stroke="#EAFBFF" stroke-opacity="0.95" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" filter="url(#gw-glow)"/>
 
   <!-- Avatar: large circle over the art -->
   <circle cx="179" cy="132" r="43" fill="rgba(10,15,29,0.55)" filter="url(#gw-lift)"/>
   <circle cx="179" cy="132" r="40" fill="#E25822"/><text x="179" y="143" text-anchor="middle" font-family="'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif" font-size="30" fill="#FFFFFF">S</text>
-  <circle cx="179" cy="132" r="41.2" stroke="#7CFFB2" stroke-opacity="0.85" stroke-width="2.4"/>
+  <circle cx="179" cy="132" r="41.2" stroke="#4FE3A8" stroke-opacity="0.85" stroke-width="2.4"/>
 
   <!-- Header -->
   <rect x="10" y="10" width="338" height="48" rx="11.5" fill="rgba(10,15,29,0.92)" stroke="rgba(255,255,255,0.15)"/>
@@ -328,18 +370,18 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
   <line x1="19" y1="452.5" x2="339" y2="452.5" stroke="rgba(255,255,255,0.18)"/>
 
   <!-- Ability -->
-  <text x="24" y="313" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="7.5" letter-spacing="2" fill="#7CFFB2">ABILITY</text>
+  <text x="24" y="313" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="7.5" letter-spacing="2" fill="#4FE3A8">ABILITY</text>
   <text x="84" y="314" font-family="'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif" font-size="14.5" fill="#FFFFFF">Iron Routine</text>
   <text x="24" y="332" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="9.5" font-style="italic" fill="#D5DEEC">Active 31/53 weeks - immune to status effects</text>
   <text x="24" y="347" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8.5" letter-spacing="0.5" fill="#8CA0BC">326 contribs · 31/53 wks active</text>
 
   <!-- Attacks -->
-  <circle cx="29.5" cy="379.5" r="5.5" fill="#7CFFB2" stroke="rgba(255,255,255,0.35)"/><circle cx="43.5" cy="379.5" r="5.5" fill="#7CFFB2" stroke="rgba(255,255,255,0.35)"/>
+  <circle cx="29.5" cy="379.5" r="5.5" fill="#4FE3A8" stroke="rgba(255,255,255,0.35)"/><circle cx="43.5" cy="379.5" r="5.5" fill="#4FE3A8" stroke="rgba(255,255,255,0.35)"/>
   <text x="58" y="384" font-family="'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif" font-size="12.5" fill="#FFFFFF">Flame Script</text>
   <text x="58" y="397" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#93A5C0">326 contributions in the last year</text>
   <text x="334" y="393" text-anchor="end" font-family="'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif" font-size="21" fill="#FFFFFF" filter="url(#gw-shadow)">90</text>
   <rect x="24" y="406" width="310" height="1" fill="rgba(255,255,255,0.09)"/>
-  <circle cx="29.5" cy="417.5" r="5.5" fill="#7CFFB2" stroke="rgba(255,255,255,0.35)"/><circle cx="43.5" cy="417.5" r="5.5" fill="#7CFFB2" stroke="rgba(255,255,255,0.35)"/>
+  <circle cx="29.5" cy="417.5" r="5.5" fill="#4FE3A8" stroke="rgba(255,255,255,0.35)"/><circle cx="43.5" cy="417.5" r="5.5" fill="#4FE3A8" stroke="rgba(255,255,255,0.35)"/>
   <text x="58" y="422" font-family="'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif" font-size="12.5" fill="#FFFFFF">Inferno Deploy</text>
   <text x="58" y="435" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#93A5C0">Powered by MAD1-Project - ★ 1</text>
   <text x="334" y="431" text-anchor="end" font-family="'Archivo Black', 'Arial Black', 'Segoe UI Black', sans-serif" font-size="21" fill="#FFFFFF" filter="url(#gw-shadow)">30</text>
@@ -349,15 +391,15 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
   <rect x="123.3" y="459" width="1" height="16" fill="rgba(255,255,255,0.09)"/>
   <text x="179.0" y="471.5" text-anchor="middle" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace"><tspan font-size="7" letter-spacing="1" fill="#7E90AB">RESIST</tspan><tspan font-size="9.5" fill="#9AA7B8" dx="6">●</tspan><tspan font-size="9.5" fill="#C7D2E2" dx="4">-30</tspan></text>
   <rect x="234.7" y="459" width="1" height="16" fill="rgba(255,255,255,0.09)"/>
-  <text x="290.3" y="471.5" text-anchor="middle" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace"><tspan font-size="7" letter-spacing="1" fill="#7E90AB">RETREAT</tspan><tspan font-size="9.5" fill="#7CFFB2" dx="6" letter-spacing="1">●●</tspan></text>
+  <text x="290.3" y="471.5" text-anchor="middle" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace"><tspan font-size="7" letter-spacing="1" fill="#7E90AB">RETREAT</tspan><tspan font-size="9.5" fill="#4FE3A8" dx="6" letter-spacing="1">●●</tspan></text>
 
   <!-- Footer -->
-  <text x="18" y="492" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · Wirelet · Night Slither · 1 of 3</text>
-  <text x="340" y="492" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#7CFFB2" filter="url(#gw-shadow)">◆ RARE</text>
+  <text x="18" y="492" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" fill="#A9B8CE" filter="url(#gw-shadow)">gitwrapped · Mic And The Owl · 1 of 1</text>
+  <text x="340" y="492" text-anchor="end" font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="8" letter-spacing="1" fill="#F5C518" filter="url(#gw-shadow)">◆ ONE OF ONE</text>
   </g>
 
   <!-- Rarity frame -->
-  <rect x="1" y="1" width="356" height="496" rx="19" stroke="#C9B8F0" stroke-opacity="0.9" stroke-width="2"/>
+  <rect x="1.75" y="1.75" width="354.5" height="494.5" rx="18.25" stroke="url(#gw-holo)" stroke-opacity="0.9" stroke-width="3.5"/>
 </svg>"
 `;
 

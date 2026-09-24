@@ -82,5 +82,111 @@
         "rarity": "rare",
         "variant": "Rune Vigil",
         "file": "/art/polyglot/rare/rune-vigil.webp"
+    },
+    {
+        "id": "ts-js-passion-fitness-golden-stage",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Golden Stage",
+        "file": "/art/ts-js/passion/fitness/golden-stage.webp",
+        "passion": "fitness"
+    },
+    {
+        "id": "ts-js-passion-rap-block-party",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Block Party",
+        "file": "/art/ts-js/passion/rap/block-party.webp",
+        "passion": "rap"
+    },
+    {
+        "id": "ts-js-passion-racing-rain-circuit",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Rain Circuit",
+        "file": "/art/ts-js/passion/racing/rain-circuit.webp",
+        "passion": "racing"
+    },
+    {
+        "id": "ts-js-passion-american-football-tunnel-burst",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Tunnel Burst",
+        "file": "/art/ts-js/passion/american-football/tunnel-burst.webp",
+        "passion": "american-football"
+    },
+    {
+        "id": "ts-js-passion-soccer-bicycle-kick",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Bicycle Kick",
+        "file": "/art/ts-js/passion/soccer/bicycle-kick.webp",
+        "passion": "soccer"
+    },
+    {
+        "id": "ts-js-passion-combat-ring-jab",
+        "family": "ts-js",
+        "rarity": "common",
+        "variant": "Ring Jab",
+        "file": "/art/ts-js/passion/combat/ring-jab.webp",
+        "passion": "combat"
+    },
+    {
+        "id": "python-passion-rap-rooftop-verse",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Rooftop Verse",
+        "file": "/art/python/passion/rap/rooftop-verse.webp",
+        "passion": "rap"
+    },
+    {
+        "id": "python-passion-gaming-arcade-night",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Arcade Night",
+        "file": "/art/python/passion/gaming/arcade-night.webp",
+        "passion": "gaming"
+    },
+    {
+        "id": "python-passion-soccer-cable-net",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Cable Net",
+        "file": "/art/python/passion/soccer/cable-net.webp",
+        "passion": "soccer"
+    },
+    {
+        "id": "python-passion-combat-cage-coil",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Cage Coil",
+        "file": "/art/python/passion/combat/cage-coil.webp",
+        "passion": "combat"
+    },
+    {
+        "id": "python-passion-fitness-barbell-coil",
+        "family": "python",
+        "rarity": "common",
+        "variant": "Barbell Coil",
+        "file": "/art/python/passion/fitness/barbell-coil.webp",
+        "passion": "fitness"
+    },
+    {
+        "id": "ts-js-custom-asynced24-the-steps",
+        "family": "ts-js",
+        "rarity": "legendary",
+        "variant": "The Steps",
+        "file": "/art/ts-js/custom/asynced24/the-steps.webp",
+        "passion": "combat",
+        "owner": "asynced24"
+    },
+    {
+        "id": "python-custom-shrikanthv15-mic-and-the-owl",
+        "family": "python",
+        "rarity": "legendary",
+        "variant": "Mic And The Owl",
+        "file": "/art/python/custom/shrikanthv15/mic-and-the-owl.webp",
+        "passion": "rap",
+        "owner": "shrikanthv15"
     }
 ]
