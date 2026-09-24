@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowRight, Github, User } from "lucide-react";
 import { TechCursor } from "@/components/TechCursor";
 
@@ -74,16 +75,19 @@ export default function Home() {
 
           <p className="landing-examples">
             Try:{" "}
-            <a href="/dashboard/torvalds">torvalds</a>,{" "}
-            <a href="/dashboard/gaearon">gaearon</a>,{" "}
-            <a href="/dashboard/sindresorhus">sindresorhus</a>
+            <Link href="/dashboard/torvalds">torvalds</Link>,{" "}
+            <Link href="/dashboard/gaearon">gaearon</Link>,{" "}
+            <Link href="/dashboard/sindresorhus">sindresorhus</Link>
           </p>
 
-          <a href="/generate" className="landing-card-cta">
+          <Link href="/generate" className="landing-card-cta">
             <span className="landing-card-cta__badge">NEW</span>
             <span className="landing-card-cta__title">Generate your Dev Pokémon Card</span>
             <span className="landing-card-cta__meta">Interactive preview + README-ready SVG →</span>
-          </a>
+          </Link>
+          <Link href="/methodology" className="landing-examples" style={{ display: "block", marginTop: 16 }}>
+            How every number is calculated →
+          </Link>
         </div>
       </div>
     </>

@@ -1,6 +1,4 @@
-import { UserStats } from "@/types/github";
-import { fetchUserStats } from "./github";
-import { fetchContributionsLastYear } from "./contributions";
+import type { UserStats } from "@/types/github";
 
 /* ─────────────────────────────────────────────
    Types
@@ -25,6 +23,13 @@ export interface TypeMatchup {
 
 export type EvolutionStage = "BASIC" | "STAGE 1" | "STAGE 2";
 
+/** One line of "why this number": shown under the card on the dashboard. */
+export interface CardStatExplanation {
+    stat: string;
+    value: string;
+    because: string;
+}
+
 export interface PokemonCardData {
     username: string;
     name: string;
@@ -34,6 +39,8 @@ export interface PokemonCardData {
     hp: number;
     topLanguage: string;
     accountAgeYears: number;
+    /** Year the GitHub account was created. */
+    memberSince: number;
     evolutionStage: EvolutionStage;
     programmingLanguageCount: number;
     ability: Ability;
@@ -42,10 +49,13 @@ export interface PokemonCardData {
     weakness: TypeMatchup;
     resistance: TypeMatchup;
     retreatCost: number;
-    xp: number;
-    codeVelocity: number;
+    /** Contributions in the last 12 months (footer). */
+    contributions: number;
+    activeWeeks: number;
+    totalWeeks: number;
     cardNumber: string;
     rarity: "common" | "uncommon" | "rare";
+    explanations: CardStatExplanation[];
 }
 
 /* ─────────────────────────────────────────────
@@ -384,479 +394,238 @@ export function getResistance(type: string): TypeMatchup {
 }
 
 /* ─────────────────────────────────────────────
-   HP & Stats Calculation
+   Scoring
+   Every number on the card is one real metric on a log scale, so a
+   10k-star account and a 250k-star account still look different. HP and
+   damage are rounded to 10 like a printed card.
    ───────────────────────────────────────────── */
 
-function computeHP(
-    contributionConsistency: number,
-    totalStars: number,
-    ageYears: number,
-    recentContributions: number
-): number {
-    // Real contribution volume (commits/PRs/issues/reviews, last 12 months,
-    // incl. opted-in private contributions), capped so a handful of very
-    // high-volume accounts don't dwarf every other term.
-    const contributionBoost = Math.min(recentContributions * 0.15, 130);
-    // Base HP + consistency + stars + age + contribution boost
-    const raw = 100 + contributionConsistency * 80 + totalStars * 2 + ageYears * 10 + contributionBoost;
-    // Clamp between 100 and 340 for realistic Pokemon V HP
-    return Math.min(Math.max(Math.round(raw), 100), 340);
+const round10 = (n: number) => Math.round(n / 10) * 10;
+const clamp = (n: number, min: number, max: number) => Math.min(Math.max(n, min), max);
+const formatCount = (n: number) =>
+    n >= 10_000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k` : String(n);
+const plural = (n: number, word: string) => `${n.toLocaleString("en-US")} ${word}${n === 1 ? "" : "s"}`;
+
+/** 0 at 0, 1 at `full`, logarithmic in between, capped at 1. */
+export function logScale(value: number, full: number): number {
+    if (value <= 0) return 0;
+    return Math.min(1, Math.log10(1 + value) / Math.log10(1 + full));
 }
 
-function calculateRetreatCost(languageCount: number, avgRepoSize: number): number {
-    // Large codebases or many languages = harder to retreat
-    if (avgRepoSize > 0) {
-        return Math.min(Math.ceil(avgRepoSize / 500), 4);
-    }
-    return Math.min(Math.ceil(languageCount / 3), 4);
+export const HP_RANGE = { min: 40, max: 340 } as const;
+
+/**
+ * HP = staying power: how steadily you show up, and for how long.
+ * 40 base, +200 × share of the last year's weeks with any contribution,
+ * +100 × account age (linear, full at 10 years).
+ */
+export function computeHP(input: { activeWeeks: number; totalWeeks: number; ageYears: number }): number {
+    const weekShare = input.totalWeeks > 0 ? input.activeWeeks / input.totalWeeks : 0;
+    const raw = HP_RANGE.min + 200 * weekShare + 100 * Math.min(1, input.ageYears / 10);
+    return clamp(round10(raw), HP_RANGE.min, HP_RANGE.max);
 }
 
-/* ─────────────────────────────────────────────
-   Ability Generator
-   ───────────────────────────────────────────── */
+/**
+ * Light attack = output: every contribution in the last 12 months, private
+ * ones included. 10–120, log scale, full at 3,000.
+ */
+export function computeLightDamage(contributions: number): number {
+    return round10(10 + 110 * logScale(contributions, 3000));
+}
 
-export function generateAbility(
-    languageCount: number,
-    repoCount: number,
-    totalStars: number,
-    consistency: number,
-    accountAgeYears: number
-): Ability {
-    // Priority-based ability selection
-    if (languageCount >= 6) {
-        return {
-            name: "Polyglot",
-            description: `Fluent in ${languageCount} languages — attacks deal 10 extra damage`,
-        };
-    }
-    if (repoCount >= 30) {
-        return {
-            name: "Open Source Advocate",
-            description: `Maintains ${repoCount} public repos — heals 20 HP each turn`,
-        };
-    }
-    if (totalStars >= 50) {
-        return {
-            name: "Star Collector",
-            description: `${totalStars} stars across repos — immune to weakness`,
-        };
-    }
-    if (consistency >= 0.7) {
-        return {
+/** Heavy attack = stars on the best repo. 20–200, full at 20,000 stars. */
+export function computeHeavyDamage(topRepoStars: number): number {
+    return round10(20 + 180 * logScale(topRepoStars, 20_000));
+}
+
+/** Retreat cost = live projects you'd be walking away from: 1 per 2, max 4. */
+export function computeRetreatCost(maintainedRepos: number): number {
+    return Math.min(4, Math.ceil(maintainedRepos / 2));
+}
+
+export function computeStage(input: { ageYears: number; weekShare: number; stars: number; contributions: number }): EvolutionStage {
+    if (input.ageYears < 2 || (input.contributions < 50 && input.stars < 10)) return "BASIC";
+    if (input.ageYears >= 5 && (input.weekShare >= 0.5 || input.stars >= 100)) return "STAGE 2";
+    return "STAGE 1";
+}
+
+interface AbilityCandidate {
+    name: string;
+    description: string;
+    /** 1.0 = at the "notable" bar; the highest wins. */
+    strength: number;
+}
+
+/**
+ * The ability is the user's most exceptional trait. Each candidate is
+ * scored against its own "notable" bar (e.g. a 30-day streak, 200 stars),
+ * so the winner is whatever stands out most for this person — not whatever
+ * happened to be checked first.
+ */
+export function pickAbility(stats: UserStats): Ability {
+    const a = stats.activity;
+    const weekShare = a.totalWeeks > 0 ? a.activeWeeks / a.totalWeeks : 0;
+    const practiceShare = (key: string) => stats.practices.signals.find(s => s.key === key)?.share ?? 0;
+    const enoughRepos = stats.practices.analyzedRepos >= 5;
+
+    const candidates: AbilityCandidate[] = [
+        {
             name: "Streak Runner",
-            description: `High coding consistency — can't be put to sleep`,
-        };
-    }
-    if (accountAgeYears >= 8) {
-        return {
+            description: `${a.longestStreak}-day contribution streak — can't be put to sleep`,
+            strength: a.longestStreak / 30,
+        },
+        {
+            name: "Iron Routine",
+            description: `Active ${a.activeWeeks} of the last ${a.totalWeeks} weeks — immune to status effects`,
+            strength: weekShare / 0.9,
+        },
+        {
+            name: "Star Collector",
+            description: `${formatCount(stats.totalStars)} star${stats.totalStars === 1 ? "" : "s"} across own repos — immune to weakness`,
+            strength: stats.totalStars / 200,
+        },
+        {
+            name: "Polyglot",
+            description: `Writes ${stats.languageCount} languages — attacks deal 10 extra damage`,
+            strength: stats.languageCount / 6,
+        },
+        {
+            name: "Code Reviewer",
+            description: `${plural(a.reviews, "review")} this year — sees through opponent's hand`,
+            strength: a.reviews / 100,
+        },
+        {
+            name: "Pull Request Machine",
+            description: `${plural(a.pullRequests, "pull request")} this year — attach an extra energy`,
+            strength: a.pullRequests / 100,
+        },
+        {
             name: "Ancient Protocol",
-            description: `${accountAgeYears} years of commits — attacks bypass resistance`,
-        };
-    }
-    if (accountAgeYears >= 4) {
-        return {
-            name: "Veteran Coder",
-            description: `${accountAgeYears} years on GitHub — takes 20 less damage from attacks`,
-        };
-    }
-    if (repoCount >= 10 && totalStars < 20) {
-        return {
-            name: "Lone Wolf",
-            description: `Prefers solo projects — retreat cost reduced by 1`,
-        };
-    }
-    if (accountAgeYears >= 2) {
-        return {
-            name: "Apprentice Dev",
-            description: `Building experience for ${accountAgeYears} years — draws an extra card`,
-        };
-    }
-    return {
-        name: "Fresh Spawn",
-        description: `New to the ecosystem — draws an extra card each turn`,
-    };
+            description: `${stats.accountAgeYears} years on GitHub — attacks bypass resistance`,
+            strength: stats.accountAgeYears / 12,
+        },
+        {
+            name: "Pipeline Builder",
+            description: `CI in ${practiceShare("ci")}% of repos — heals 20 HP each turn`,
+            strength: enoughRepos ? practiceShare("ci") / 60 : 0,
+        },
+        {
+            name: "Test Guardian",
+            description: `Tests in ${practiceShare("tests")}% of repos — prevents all damage from bugs`,
+            strength: enoughRepos ? practiceShare("tests") / 50 : 0,
+        },
+    ];
+
+    const best = candidates.reduce((top, c) => (c.strength > top.strength ? c : top));
+    if (best.strength >= 0.5) return { name: best.name, description: best.description };
+
+    return stats.accountAgeYears >= 1
+        ? { name: "Rising Coder", description: `${stats.accountAgeYears} years in and still leveling up — draws an extra card` }
+        : { name: "Fresh Spawn", description: "New to the ecosystem — draws an extra card each turn" };
 }
 
-/* ─────────────────────────────────────────────
-   Evolution Stage
-   ───────────────────────────────────────────── */
-
-function getEvolutionStage(ageYears: number, repoCount: number, totalStars: number): EvolutionStage {
-    // STAGE 2 requires age AND activity
-    if (ageYears >= 5 && (repoCount >= 20 || totalStars >= 50)) {
-        return "STAGE 2";
-    }
-    if (ageYears >= 2) {
-        return "STAGE 1";
-    }
-    return "BASIC";
-}
-
-/* ─────────────────────────────────────────────
-   Attack Damage Calculation
-   ───────────────────────────────────────────── */
-
-function computeXP(ageYears: number, repoCount: number, totalStars: number, languageCount: number): number {
-    // Composite experience score: age + repos + stars + language diversity
-    const raw = ageYears * 15 + repoCount * 5 + totalStars * 2 + languageCount * 10;
-    return Math.min(Math.max(Math.round(raw), 10), 9999);
-}
-
-function computeCodeVelocity(totalRepos: number, recentActiveRepos: number): number {
-    // % of codebase actively maintained (pushed in last 6 months)
-    if (totalRepos === 0) return 0;
-    return Math.min(Math.round((recentActiveRepos / totalRepos) * 100), 100);
-}
-
-function calculateAttack1Damage(avgMonthlyActivity: number): number {
-    // Light attack based on consistency
-    return Math.min(Math.max(Math.round(avgMonthlyActivity * 3), 10), 60);
-}
-
-function calculateAttack2Damage(topRepoStars: number, totalStars: number): number {
-    // Heavy attack based on impact
-    return Math.min(Math.max(Math.round(topRepoStars * 10 + totalStars), 40), 200);
-}
-
-/* ─────────────────────────────────────────────
-   Build card data from full UserStats
-   ───────────────────────────────────────────── */
-
-const MARKUP_LANGUAGES = new Set(["HTML", "CSS", "Markdown", "SCSS", "Less", "Jupyter Notebook"]);
-
-/** Deterministic 4-digit card number from username, always the same for the same user */
+/** Deterministic 4-digit card number from username, always the same for the same user. */
 function computeCardNumber(username: string): string {
     let hash = 0;
     for (let i = 0; i < username.length; i++) {
         hash = ((hash << 5) - hash + username.charCodeAt(i)) | 0;
     }
-    const num = (Math.abs(hash) % 9999) + 1;
-    return String(num).padStart(4, "0");
+    return String((Math.abs(hash) % 9999) + 1).padStart(4, "0");
 }
 
+/* ─────────────────────────────────────────────
+   Build card data from UserStats (pure)
+   ───────────────────────────────────────────── */
+
 export function buildCardData(stats: UserStats): PokemonCardData {
+    const a = stats.activity;
     const ageYears = stats.accountAgeYears;
-    const programmingLangs = stats.languageStats.filter(
-        (l) => !l.isMarkup && !MARKUP_LANGUAGES.has(l.language)
-    );
-    const topLanguage =
-        stats.topLanguage ??
-        (programmingLangs.length > 0 ? programmingLangs[0].language : "Polyglot");
+    const weekShare = a.totalWeeks > 0 ? a.activeWeeks / a.totalWeeks : 0;
+    const topLanguage = stats.topLanguage ?? "Polyglot";
     const theme = getLanguageTheme(topLanguage);
+    const topRepo = stats.mostStarredRepo;
+    const topStars = topRepo?.stargazers_count ?? 0;
 
-    // Filter programming languages
-    const languageCount = programmingLangs.length;
-
-    // Calculate evolution stage
-    const evolutionStage = getEvolutionStage(ageYears, stats.ownRepoCount, stats.totalStars);
-
-    // Calculate HP
-    const consistency = stats.contributionConsistency
-        ? stats.contributionConsistency.activeMonths / Math.max(stats.contributionConsistency.totalMonths, 1)
-        : 0;
-    const hp = computeHP(consistency, stats.totalStars, ageYears, stats.recentContributions);
-
-    // Generate ability
-    const ability = generateAbility(
-        languageCount,
-        stats.ownRepoCount,
-        stats.totalStars,
-        consistency,
-        ageYears
-    );
-
-    // Calculate average monthly activity
-    const avgMonthlyActivity = stats.monthlyActivity
-        ? stats.monthlyActivity.reduce((sum, m) => sum + m.reposPushed, 0) / Math.max(stats.monthlyActivity.length, 1)
-        : 0;
-
-    // Calculate top repo stars
-    const topRepoStars =
-        stats.topRepositories.length > 0
-            ? Math.max(...stats.topRepositories.map((r) => r.stargazers_count))
-            : 0;
-
-    // Generate attacks
-    const attack1Damage = calculateAttack1Damage(avgMonthlyActivity);
-    const attack2Damage = calculateAttack2Damage(topRepoStars, stats.totalStars);
+    const hp = computeHP({ activeWeeks: a.activeWeeks, totalWeeks: a.totalWeeks, ageYears });
+    const lightDamage = computeLightDamage(a.total);
+    const heavyDamage = computeHeavyDamage(topStars);
+    const retreatCost = computeRetreatCost(stats.maintainedRepoCount);
+    const evolutionStage = computeStage({ ageYears, weekShare, stars: stats.totalStars, contributions: a.total });
+    const ability = pickAbility(stats);
 
     const attack1: Attack = {
         name: theme.attacks.light.name,
-        description: theme.attacks.light.description,
-        damage: attack1Damage,
-        energyCost: attack1Damage < 30 ? 1 : 2,
+        description: `${plural(a.total, "contribution")} in the last year`,
+        damage: lightDamage,
+        energyCost: lightDamage < 50 ? 1 : 2,
     };
 
     const attack2: Attack = {
         name: theme.attacks.heavy.name,
-        description: theme.attacks.heavy.description,
-        damage: attack2Damage,
-        energyCost: attack2Damage < 80 ? 2 : 3,
+        description: topRepo && topStars > 0
+            ? `Powered by ${topRepo.name} — ★ ${formatCount(topStars)}`
+            : "No starred repos yet",
+        damage: heavyDamage,
+        energyCost: heavyDamage < 100 ? 2 : 3,
     };
 
-    // Type matchups
-    const weakness = getWeakness(theme.type);
-    const resistance = getResistance(theme.type);
+    const explanations: CardStatExplanation[] = [
+        {
+            stat: "HP",
+            value: String(hp),
+            because: `Active ${a.activeWeeks} of the last ${a.totalWeeks} weeks, ${ageYears} years on GitHub`,
+        },
+        {
+            stat: attack1.name,
+            value: String(lightDamage),
+            because: `${plural(a.total, "contribution")} in 12 months (${plural(a.commits, "commit")}, ${plural(a.pullRequests, "PR")}, ${plural(a.reviews, "review")}${a.restricted > 0 ? `, ${a.restricted.toLocaleString("en-US")} private` : ""})`,
+        },
+        {
+            stat: attack2.name,
+            value: String(heavyDamage),
+            because: topRepo && topStars > 0 ? `${topRepo.name} has ${plural(topStars, "star")}` : "No repo has stars yet",
+        },
+        { stat: "Ability", value: ability.name, because: ability.description.split(" — ")[0] },
+        {
+            stat: "Retreat",
+            value: String(retreatCost),
+            because: `${plural(stats.maintainedRepoCount, "repo")} pushed in the last 180 days`,
+        },
+        {
+            stat: "Stage",
+            value: evolutionStage,
+            because: `${ageYears} years on GitHub, active ${Math.round(weekShare * 100)}% of weeks, ${formatCount(stats.totalStars)} star${stats.totalStars === 1 ? "" : "s"}`,
+        },
+        { stat: "Type", value: theme.type, because: `${topLanguage} is ${stats.topLanguagePercentage}% of your code by bytes` },
+    ];
 
-    // Calculate retreat cost
-    const avgRepoSize =
-        stats.repositories.length > 0
-            ? stats.repositories.reduce((sum, r) => sum + (r.size ?? 0), 0) / stats.repositories.length
-            : 0;
-    const retreatCost = calculateRetreatCost(languageCount, avgRepoSize);
+    const bio = stats.user.bio
+        ? stats.user.bio.length > 100 ? stats.user.bio.slice(0, 97) + "..." : stats.user.bio
+        : "A developer on GitHub.";
 
     return {
         username: stats.user.login,
         name: stats.user.name ?? stats.user.login,
         avatarUrl: stats.user.avatar_url,
-        bio:
-            stats.user.bio
-                ? stats.user.bio.length > 100
-                    ? stats.user.bio.slice(0, 97) + "..."
-                    : stats.user.bio
-                : "A developer on GitHub.",
+        bio,
         location: stats.user.location ?? "",
         hp,
         topLanguage,
         accountAgeYears: ageYears,
+        memberSince: new Date(stats.user.created_at).getUTCFullYear(),
         evolutionStage,
-        programmingLanguageCount: languageCount,
+        programmingLanguageCount: stats.languageCount,
         ability,
         attack1,
         attack2,
-        weakness,
-        resistance,
+        weakness: getWeakness(theme.type),
+        resistance: getResistance(theme.type),
         retreatCost,
-        xp: computeXP(ageYears, stats.ownRepoCount, stats.totalStars, languageCount),
-        codeVelocity: computeCodeVelocity(stats.topRepositories.length, stats.topRepositories.length > 0 ? stats.topRepositories.filter(r => {
-            const pushed = new Date(r.pushed_at ?? r.created_at);
-            const monthsAgo = (Date.now() - pushed.getTime()) / (30 * 24 * 60 * 60 * 1000);
-            return monthsAgo <= 6;
-        }).length : 0),
+        contributions: a.total,
+        activeWeeks: a.activeWeeks,
+        totalWeeks: a.totalWeeks,
         cardNumber: computeCardNumber(stats.user.login),
         rarity: evolutionStage === "STAGE 2" ? "rare" : evolutionStage === "STAGE 1" ? "uncommon" : "common",
+        explanations,
     };
-}
-
-/* ─────────────────────────────────────────────
-   Edge-compatible GitHub API layer for card route
-   ───────────────────────────────────────────── */
-
-const GITHUB_API = "https://api.github.com";
-
-interface GitHubUser {
-    login: string;
-    name: string | null;
-    avatar_url: string;
-    bio: string | null;
-    location: string | null;
-    created_at: string;
-    public_repos: number;
-}
-
-interface Repository {
-    name: string;
-    fork: boolean;
-    stargazers_count: number;
-    forks_count: number;
-    language: string | null;
-    pushed_at: string;
-    created_at: string;
-    size: number;
-}
-
-async function fetchGitHubEdge<T>(endpoint: string): Promise<T> {
-    const headers: Record<string, string> = {
-        Accept: "application/vnd.github.v3+json",
-    };
-
-    if (process.env.GITHUB_TOKEN) {
-        headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-
-    try {
-        const res = await fetch(`${GITHUB_API}${endpoint}`, {
-            headers,
-            signal: controller.signal,
-        });
-
-        if (!res.ok) {
-            throw new Error(`GitHub API error: ${res.status}`);
-        }
-
-        return res.json();
-    } finally {
-        clearTimeout(timeoutId);
-    }
-}
-
-async function fetchUserEdge(username: string): Promise<GitHubUser> {
-    return fetchGitHubEdge<GitHubUser>(`/users/${username}`);
-}
-
-async function fetchRepositoriesEdge(username: string): Promise<Repository[]> {
-    // Only fetch first page (100 repos) for card — enough for stats
-    return fetchGitHubEdge<Repository[]>(
-        `/users/${username}/repos?per_page=100&sort=updated`
-    );
-}
-
-async function fetchRepoLanguagesEdge(
-    owner: string,
-    repo: string
-): Promise<Record<string, number>> {
-    try {
-        return await fetchGitHubEdge<Record<string, number>>(
-            `/repos/${owner}/${repo}/languages`
-        );
-    } catch {
-        return {};
-    }
-}
-
-/**
- * Lightweight card stats fetch — Edge-compatible, minimal API calls
- * ~12 total API calls vs 50+ from fetchUserStats
- */
-export async function fetchCardStatsEdge(username: string): Promise<PokemonCardData> {
-    const [user, repositories, recentContributions] = await Promise.all([
-        fetchUserEdge(username),
-        fetchRepositoriesEdge(username),
-        fetchContributionsLastYear(username),
-    ]);
-
-    const ownRepos = repositories.filter(r => !r.fork);
-    const topRepos = ownRepos
-        .sort((a, b) => new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime())
-        .slice(0, 10);
-
-    // Fetch language data for top 10 repos only
-    const languagePromises = topRepos.map(repo =>
-        fetchRepoLanguagesEdge(username, repo.name)
-    );
-    const languageData = await Promise.all(languagePromises);
-
-    // Calculate language stats
-    const aggregated: Record<string, number> = {};
-    for (const repoLangs of languageData) {
-        for (const [lang, bytes] of Object.entries(repoLangs)) {
-            if (lang !== "Jupyter Notebook") {
-                aggregated[lang] = (aggregated[lang] || 0) + bytes;
-            }
-        }
-    }
-
-    const total = Object.values(aggregated).reduce((a, b) => a + b, 0);
-    const programmingLangs = Object.entries(aggregated)
-        .filter(([lang]) => !MARKUP_LANGUAGES.has(lang))
-        .sort((a, b) => b[1] - a[1]);
-
-    const topLanguage = programmingLangs.length > 0 ? programmingLangs[0][0] : "Polyglot";
-    const languageCount = programmingLangs.length;
-
-    // Calculate stats
-    const totalStars = repositories.reduce((sum, r) => sum + r.stargazers_count, 0);
-    const createdDate = new Date(user.created_at);
-    const ageYears = Math.floor((Date.now() - createdDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-
-    // Calculate contribution consistency (simplified)
-    const pushDates = repositories.map(r => new Date(r.pushed_at)).sort((a, b) => a.getTime() - b.getTime());
-    const activeMonthSet = new Set<string>();
-    for (const d of pushDates) {
-        activeMonthSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-    }
-    const firstDate = pushDates[0] || new Date();
-    const lastDate = pushDates[pushDates.length - 1] || new Date();
-    const totalMonths = Math.max(1,
-        (lastDate.getFullYear() - firstDate.getFullYear()) * 12 +
-        (lastDate.getMonth() - firstDate.getMonth()) + 1
-    );
-    const consistency = activeMonthSet.size / totalMonths;
-
-    // Calculate evolution stage
-    const evolutionStage = getEvolutionStage(ageYears, ownRepos.length, totalStars);
-
-    // Calculate HP
-    const hp = computeHP(consistency, totalStars, ageYears, recentContributions);
-
-    // Generate ability
-    const ability = generateAbility(languageCount, ownRepos.length, totalStars, consistency, ageYears);
-
-    // Calculate attacks
-    const avgMonthlyActivity = repositories.length > 0 ? repositories.length / Math.max(totalMonths, 1) : 0;
-    const topRepoStars = topRepos.length > 0 ? Math.max(...topRepos.map(r => r.stargazers_count)) : 0;
-    const attack1Damage = calculateAttack1Damage(avgMonthlyActivity);
-    const attack2Damage = calculateAttack2Damage(topRepoStars, totalStars);
-
-    const theme = getLanguageTheme(topLanguage);
-    const attack1: Attack = {
-        name: theme.attacks.light.name,
-        description: theme.attacks.light.description,
-        damage: attack1Damage,
-        energyCost: attack1Damage < 30 ? 1 : 2,
-    };
-
-    const attack2: Attack = {
-        name: theme.attacks.heavy.name,
-        description: theme.attacks.heavy.description,
-        damage: attack2Damage,
-        energyCost: attack2Damage < 80 ? 2 : 3,
-    };
-
-    // Type matchups
-    const weakness = getWeakness(theme.type);
-    const resistance = getResistance(theme.type);
-
-    // Calculate retreat cost
-    const avgRepoSize = repositories.length > 0
-        ? repositories.reduce((sum, r) => sum + (r.size ?? 0), 0) / repositories.length
-        : 0;
-    const retreatCost = calculateRetreatCost(languageCount, avgRepoSize);
-
-    // Code velocity
-    const recentActiveRepos = topRepos.filter(r => {
-        const pushed = new Date(r.pushed_at);
-        const monthsAgo = (Date.now() - pushed.getTime()) / (30 * 24 * 60 * 60 * 1000);
-        return monthsAgo <= 6;
-    }).length;
-
-    return {
-        username: user.login,
-        name: user.name ?? user.login,
-        avatarUrl: user.avatar_url,
-        bio: user.bio
-            ? user.bio.length > 100
-                ? user.bio.slice(0, 97) + "..."
-                : user.bio
-            : "A developer on GitHub.",
-        location: user.location ?? "",
-        hp,
-        topLanguage,
-        accountAgeYears: ageYears,
-        evolutionStage,
-        programmingLanguageCount: languageCount,
-        ability,
-        attack1,
-        attack2,
-        weakness,
-        resistance,
-        retreatCost,
-        xp: computeXP(ageYears, ownRepos.length, totalStars, languageCount),
-        codeVelocity: computeCodeVelocity(topRepos.length, recentActiveRepos),
-        cardNumber: computeCardNumber(user.login),
-        rarity: evolutionStage === "STAGE 2" ? "rare" : evolutionStage === "STAGE 1" ? "uncommon" : "common",
-    };
-}
-
-/* ─────────────────────────────────────────────
-   Lightweight fetch for card API route
-   (skips heavy code-health / devops analysis)
-   ───────────────────────────────────────────── */
-
-export async function fetchCardData(username: string): Promise<PokemonCardData> {
-    const stats = await fetchUserStats(username);
-    return buildCardData(stats);
 }

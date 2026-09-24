@@ -1,0 +1,42 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildCardData on real accounts > matches the recorded cards 1`] = `
+{
+  "asynced24": {
+    "ability": "Polyglot",
+    "heavy": "Thunder Compile 30",
+    "hp": 190,
+    "light": "Type Strike 110",
+    "retreat": 3,
+    "stage": "STAGE 1",
+    "type": "TypeScript",
+  },
+  "gaearon": {
+    "ability": "Star Collector",
+    "heavy": "Stack Overflow 190",
+    "hp": 270,
+    "light": "Code Strike 110",
+    "retreat": 2,
+    "stage": "STAGE 2",
+    "type": "Lean",
+  },
+  "shrikanthv15": {
+    "ability": "Iron Routine",
+    "heavy": "Inferno Deploy 30",
+    "hp": 230,
+    "light": "Flame Script 90",
+    "retreat": 2,
+    "stage": "STAGE 2",
+    "type": "Python",
+  },
+  "torvalds": {
+    "ability": "Star Collector",
+    "heavy": "System Call 200",
+    "hp": 340,
+    "light": "Memory Alloc 120",
+    "retreat": 3,
+    "stage": "STAGE 2",
+    "type": "C",
+  },
+}
+`;

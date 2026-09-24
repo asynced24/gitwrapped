@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserStats } from "@/types/github";
-import { ChevronLeft, ChevronRight, X, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useViewMode } from "@/context/ViewModeContext";
 
 interface WrappedStoryProps {
@@ -133,8 +133,8 @@ function buildSlides(stats: UserStats): Slide[] {
         slides.push({ id: "archaeology", type: "archaeology" });
     }
 
-    // Only show DevOps if any signals found
-    if (stats.devOpsMaturity.signals.some(s => s.found)) {
+    // Only show practices if any were found
+    if (stats.practices.signals.some(s => s.repoCount > 0 && s.key !== "readme")) {
         slides.push({ id: "devops", type: "devops" });
     }
 
@@ -186,7 +186,7 @@ function renderSlide(slide: Slide, stats: UserStats) {
                     >
                         {stats.accountAgeYears} years on GitHub •{" "}
                         {stats.ownRepoCount} repositories •{" "}
-                        {stats.languageStats.filter(l => !l.isMarkup).length} languages
+                        {stats.languageCount} languages
                     </motion.p>
                 </div>
             );
@@ -220,7 +220,7 @@ function renderSlide(slide: Slide, stats: UserStats) {
                         </div>
                         {stats.totalStars >= 10 && (
                             <div className="slide-stat">
-                                <span className="slide-stat-value">{stats.totalStars.toLocaleString()}</span>
+                                <span className="slide-stat-value">{stats.totalStars.toLocaleString("en-US")}</span>
                                 <span className="slide-stat-label">stars</span>
                             </div>
                         )}
@@ -233,27 +233,27 @@ function renderSlide(slide: Slide, stats: UserStats) {
                 <div className="slide-content slide-activity">
                     <p className="slide-eyebrow">Activity & Growth</p>
                     <h2 className="slide-headline">
-                        {stats.contributionConsistency.pattern === "consistent"
-                            ? "Consistent builder"
-                            : stats.contributionConsistency.pattern === "burst"
-                                ? "Burst creator"
-                                : "Evolving coder"}
+                        {stats.activity.pattern === "steady"
+                            ? "Steady builder"
+                            : stats.activity.pattern === "regular"
+                                ? "Regular shipper"
+                                : stats.activity.pattern === "bursty"
+                                    ? "Burst creator"
+                                    : "Quiet year"}
                     </h2>
                     <div className="slide-stats-row">
                         <div className="slide-stat">
-                            <span className="slide-stat-value">{stats.contributionConsistency.activeMonths}</span>
-                            <span className="slide-stat-label">active months</span>
+                            <span className="slide-stat-value">{stats.activity.total.toLocaleString("en-US")}</span>
+                            <span className="slide-stat-label">contributions</span>
                         </div>
                         <div className="slide-stat">
-                            <span className="slide-stat-value">{stats.mostActiveYear || "-"}</span>
-                            <span className="slide-stat-label">peak year</span>
+                            <span className="slide-stat-value">{stats.activity.activeWeeks}/{stats.activity.totalWeeks}</span>
+                            <span className="slide-stat-label">active weeks</span>
                         </div>
-                        {stats.recentlyActive && (
-                            <div className="slide-stat">
-                                <span className="slide-stat-value">✓</span>
-                                <span className="slide-stat-label">active now</span>
-                            </div>
-                        )}
+                        <div className="slide-stat">
+                            <span className="slide-stat-value">{stats.activity.longestStreak}d</span>
+                            <span className="slide-stat-label">longest streak</span>
+                        </div>
                     </div>
                 </div>
             );
@@ -321,15 +321,15 @@ function renderSlide(slide: Slide, stats: UserStats) {
             );
 
         case "devops":
-            const foundSignals = stats.devOpsMaturity.signals.filter(s => s.found);
+            const foundSignals = stats.practices.signals.filter(s => s.repoCount > 0 && s.key !== "readme");
             return (
                 <div className="slide-content slide-devops">
-                    <p className="slide-eyebrow">DevOps</p>
-                    <h2 className="slide-headline">Your infrastructure toolkit</h2>
+                    <p className="slide-eyebrow">Engineering practices</p>
+                    <h2 className="slide-headline">How you ship</h2>
                     <div className="slide-signal-grid">
                         {foundSignals.map((signal, i) => (
                             <motion.div
-                                key={signal.type}
+                                key={signal.key}
                                 className="slide-signal"
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -338,7 +338,7 @@ function renderSlide(slide: Slide, stats: UserStats) {
                                 <span className="slide-signal-icon">{signal.icon}</span>
                                 <span className="slide-signal-label">{signal.label}</span>
                                 <span className="slide-signal-count">
-                                    {signal.repoCount} {signal.repoCount === 1 ? "repo" : "repos"}
+                                    {signal.repoCount} of {stats.practices.analyzedRepos} repos
                                 </span>
                             </motion.div>
                         ))}

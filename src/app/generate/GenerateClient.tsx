@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { domToPng } from "modern-screenshot";
 import { PokemonCard } from "@/components/PokemonCard";
 import { TechCursor } from "@/components/TechCursor";
 import { PokemonCardData } from "@/lib/card";
+import { SITE_URL } from "@/lib/site";
 import { Copy, Check, Download, ExternalLink, Zap, ArrowLeft } from "lucide-react";
 
 export default function GenerateClient() {
@@ -16,7 +18,7 @@ export default function GenerateClient() {
     const [isCapturing, setIsCapturing] = useState(false);
     const cardExportRef = useRef<HTMLDivElement>(null);
 
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://gitwrapped.aryansync.com";
+    const origin = SITE_URL;
 
     const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,11 +31,22 @@ export default function GenerateClient() {
 
         try {
             const res = await fetch(`/api/card/${trimmed}?format=json`);
-            if (!res.ok) throw new Error("User not found");
+            if (!res.ok) {
+                setError(
+                    res.status === 404
+                        ? "Could not find that GitHub user. Check the username and try again."
+                        : res.status === 429
+                            ? "GitHub rate limit reached. Try again in a couple of minutes."
+                            : res.status === 400
+                                ? "That is not a valid GitHub username."
+                                : "GitHub did not respond. Try again in a moment."
+                );
+                return;
+            }
             const data = await res.json();
             setCardData(data);
         } catch {
-            setError("Could not find that GitHub user. Check the username and try again.");
+            setError("Network error. Check your connection and try again.");
         } finally {
             setLoading(false);
         }
@@ -118,10 +131,10 @@ export default function GenerateClient() {
         <div className="generate-page">
             <TechCursor />
             <nav className="generate-nav">
-                <a href="/" className="generate-nav__back">
+                <Link href="/" className="generate-nav__back">
                     <ArrowLeft size={16} />
                     <span>GitWrapped</span>
-                </a>
+                </Link>
             </nav>
 
             <div className="generate-hero">

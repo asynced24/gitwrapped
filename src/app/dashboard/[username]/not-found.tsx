@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Sparkles, Search, ArrowLeft } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
     return (
