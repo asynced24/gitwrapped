@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
+import Link from "next/link";
 import { domToPng } from "modern-screenshot";
 import { UserStats } from "@/types/github";
 import { ViewModeProvider, useViewMode } from "@/context/ViewModeContext";
@@ -10,10 +11,12 @@ import { DevProfileCard } from "@/components/DevProfileCard";
 import { LanguageBar } from "@/components/LanguageBar";
 import { RepoCard } from "@/components/RepoCard";
 import { ActivityChart } from "@/components/ActivityChart";
+import { ContributionHeatmap } from "@/components/ContributionHeatmap";
 import { WrappedStory } from "@/components/WrappedStory";
 import { PokemonCard } from "@/components/PokemonCard";
 import { TechCursor } from "@/components/TechCursor";
 import { buildCardData } from "@/lib/card";
+import { SITE_URL } from "@/lib/site";
 import {
     Activity,
     Code2,
@@ -39,6 +42,13 @@ export default function DashboardClient({ stats }: DashboardClientProps) {
 }
 
 type RepoSort = "stars" | "recent" | "size";
+
+const PATTERN_LABEL = {
+    steady: "📊 Steady contributor",
+    regular: "📅 Regular contributor",
+    bursty: "⚡ Bursty contributor",
+    quiet: "",
+} as const;
 
 function DashboardContent({ stats }: DashboardClientProps) {
     const { mode } = useViewMode();
@@ -84,12 +94,9 @@ function DashboardContent({ stats }: DashboardClientProps) {
 
         const query = params.toString();
         const computedBadgePath = `/api/badge/${stats.user.login}${query ? `?${query}` : ""}`;
-        const origin = typeof window !== "undefined"
-            ? window.location.origin
-            : "https://gitwrapped.aryansync.com";
+        const origin = SITE_URL;
         const dashboardUrl = `${origin}/dashboard/${stats.user.login}`;
         const absoluteBadgeUrl = `${origin}${computedBadgePath}`;
-        const programmingLanguageCount = stats.languageStats.filter(l => !l.isMarkup).length;
         const portfolioHref = normalizedPortfolio ? `https://${normalizedPortfolio}` : "";
 
         const socialButtons = [
@@ -107,7 +114,7 @@ function DashboardContent({ stats }: DashboardClientProps) {
         const githubProfileUrl = `https://github.com/${stats.user.login}`;
 
         const statButtons = [
-            `<a href="${dashboardUrl}"><img src="https://img.shields.io/badge/Languages-${programmingLanguageCount}-1F2937?style=flat-square&logo=codefactor&logoColor=white" alt="Languages" /></a>`,
+            `<a href="${dashboardUrl}"><img src="https://img.shields.io/badge/Languages-${stats.languageCount}-1F2937?style=flat-square&logo=codefactor&logoColor=white" alt="Languages" /></a>`,
             `<a href="${githubProfileUrl}?tab=repositories"><img src="https://img.shields.io/badge/Repositories-${stats.ownRepoCount}-1F2937?style=flat-square&logo=github&logoColor=white" alt="Repositories" /></a>`,
             `<a href="${githubProfileUrl}?tab=repositories&language=${topLangQuery}"><img src="https://img.shields.io/badge/Top_Language-${topLang}-1F2937?style=flat-square&logo=stackblitz&logoColor=white" alt="Top Language" /></a>`,
         ];
@@ -118,7 +125,7 @@ function DashboardContent({ stats }: DashboardClientProps) {
             badgePath: computedBadgePath,
             readmeSnippet: snippet,
         };
-    }, [portfolioUrl, linkedinUsername, stats.languageStats, stats.ownRepoCount, stats.user.login, stats.topLanguage]);
+    }, [portfolioUrl, linkedinUsername, stats.languageCount, stats.ownRepoCount, stats.user.login, stats.topLanguage]);
 
     const handleCopyBadge = async () => {
         const markdown = readmeSnippet;
@@ -141,7 +148,7 @@ function DashboardContent({ stats }: DashboardClientProps) {
             {/* Navigation */}
             <nav className="dashboard-nav">
                 <div className="dashboard-nav__left">
-                    <a href="/" className="dashboard-nav__logo">GitWrapped</a>
+                    <Link href="/" className="dashboard-nav__logo">GitWrapped</Link>
                 </div>
                 <div className="dashboard-nav__center">
                     <ModeToggle />
@@ -170,11 +177,12 @@ function DashboardContent({ stats }: DashboardClientProps) {
                                 Active in last 30 days
                             </span>
                         )}
-                        {stats.contributionConsistency.pattern !== 'inactive' && (
-                            <span className="activity-badge">
-                                {stats.contributionConsistency.pattern === 'consistent' && '📊 Consistent contributor'}
-                                {stats.contributionConsistency.pattern === 'burst' && '⚡ Burst contributor'}
-                                {stats.contributionConsistency.pattern === 'sporadic' && '🌊 Sporadic contributor'}
+                        {stats.activity.pattern !== 'quiet' && (
+                            <span
+                                className="activity-badge"
+                                title={`Active in ${stats.activity.activeWeeks} of the last ${stats.activity.totalWeeks} weeks`}
+                            >
+                                {PATTERN_LABEL[stats.activity.pattern]}
                             </span>
                         )}
                     </div>
@@ -188,31 +196,53 @@ function DashboardContent({ stats }: DashboardClientProps) {
                         <Activity size={18} />
                         Activity & Growth
                     </h2>
-                    <p className="section-subtitle">Repository creation and update activity over the last 24 months</p>
+                    <p className="section-subtitle">
+                        {stats.activity.total.toLocaleString("en-US")} contributions in the last 12 months, from GitHub&apos;s contribution calendar
+                    </p>
 
                     <div className="card">
-                        <ActivityChart data={stats.monthlyActivity} />
+                        <ContributionHeatmap weeks={stats.activity.weeks} />
                     </div>
 
-                    {/* Quick activity stats */}
-                    <div className="stats-grid stats-grid--3">
+                    <div className="stats-grid stats-grid--4">
                         <div className="stat-card">
-                            <span className="stat-value">{stats.ownRepoCount}</span>
-                            <span className="stat-label">Own repos</span>
+                            <span className="stat-value">{stats.activity.total.toLocaleString("en-US")}</span>
+                            <span className="stat-label">Contributions</span>
+                            <span className="stat-hint">
+                                {stats.activity.commits.toLocaleString("en-US")} commits · {stats.activity.pullRequests} PRs · {stats.activity.reviews} reviews
+                            </span>
                         </div>
                         <div className="stat-card">
-                            <span className="stat-value">
-                                {stats.mostActiveYear || "-"}
-                            </span>
-                            <span className="stat-label">Most active year</span>
+                            <span className="stat-value">{stats.activity.activeWeeks}/{stats.activity.totalWeeks}</span>
+                            <span className="stat-label">Active weeks</span>
+                            <span className="stat-hint">{stats.activity.activeDays} active days</span>
                         </div>
                         <div className="stat-card">
-                            <span className="stat-value">
-                                {stats.contributionConsistency.activeMonths}/{stats.contributionConsistency.totalMonths}
+                            <span className="stat-value">{stats.activity.longestStreak}d</span>
+                            <span className="stat-label">Longest streak</span>
+                            <span className="stat-hint">
+                                {stats.activity.currentStreak > 0 ? `${stats.activity.currentStreak}d current` : "No current streak"}
                             </span>
-                            <span className="stat-label">Active months</span>
+                        </div>
+                        <div className="stat-card">
+                            <span className="stat-value">{stats.activity.busiestWeekday?.slice(0, 3) ?? "-"}</span>
+                            <span className="stat-label">Busiest weekday</span>
+                            <span className="stat-hint">
+                                {stats.activity.bestDay ? `Best day: ${stats.activity.bestDay.count} on ${stats.activity.bestDay.date}` : "No activity yet"}
+                            </span>
                         </div>
                     </div>
+
+                    <div className="card" style={{ marginTop: 16 }}>
+                        <h3 className="card-title">Contributions per month</h3>
+                        <ActivityChart data={stats.activity.monthly} />
+                    </div>
+
+                    {stats.activity.restricted > 0 && (
+                        <p className="data-note">
+                            Includes {stats.activity.restricted.toLocaleString("en-US")} private contributions this user chose to show on their profile (counts only; GitHub does not reveal the repos).
+                        </p>
+                    )}
                 </section>
 
                 {/* ============================================= */}
@@ -237,24 +267,29 @@ function DashboardContent({ stats }: DashboardClientProps) {
                         <p className="dev-profile-text">{stats.developmentProfile}</p>
                     </div>
 
-                    {/* DevOps signals */}
-                    {stats.devOpsMaturity.signals.some(s => s.found) && (
+                    {/* Engineering practices */}
+                    {stats.practices.analyzedRepos > 0 && (
                         <div className="card">
                             <h3 className="card-title">
                                 <ShieldCheck size={16} />
-                                DevOps Signals
+                                Engineering Practices
                             </h3>
-                            <div className="devops-signals">
-                                {stats.devOpsMaturity.signals
-                                    .filter(s => s.found)
-                                    .map(signal => (
-                                        <span key={signal.type} className="devops-signal-badge">
-                                            <span>{signal.icon}</span>
-                                            <span>{signal.label}</span>
-                                            <span className="text-muted">({signal.repoCount})</span>
+                            <p className="text-muted" style={{ fontSize: 13, marginBottom: 14 }}>
+                                Share of the {stats.practices.analyzedRepos} most recently pushed, non-archived repos where each practice appears at the repo root.
+                            </p>
+                            <div className="practice-list">
+                                {stats.practices.signals.map(signal => (
+                                    <div key={signal.key} className="practice-row">
+                                        <span aria-hidden>{signal.icon}</span>
+                                        <span>{signal.label}</span>
+                                        <div className="practice-row__bar">
+                                            <div className="practice-row__fill" style={{ width: `${signal.share}%` }} />
+                                        </div>
+                                        <span className="practice-row__count">
+                                            {signal.repoCount}/{stats.practices.analyzedRepos}
                                         </span>
-                                    ))
-                                }
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
@@ -310,6 +345,12 @@ function DashboardContent({ stats }: DashboardClientProps) {
                         </div>
                     </div>
 
+                    {!stats.starTotalsComplete && (
+                        <p className="data-note">
+                            This account has more starred repos than GitWrapped pages through, so star totals are a lower bound. <Link href="/methodology">Why?</Link>
+                        </p>
+                    )}
+
                     {/* Most Impactful Repo */}
                     {stats.mostStarredRepo && stats.mostStarredRepo.stargazers_count > 0 && (
                         <RepoCard repo={stats.mostStarredRepo} highlight />
@@ -331,7 +372,7 @@ function DashboardContent({ stats }: DashboardClientProps) {
                 {/* ============================================= */}
                 <section className="dashboard-section badge-section">
                     <h2 className="section-title">README Badge</h2>
-                    <p className="section-subtitle">Generate a premium profile-ready README block with social buttons</p>
+                    <p className="section-subtitle">Generate a profile-ready README block with social buttons</p>
 
                     <div className="badge-input-grid">
                         <div>
@@ -398,7 +439,7 @@ function PokemonCardView({ stats }: DashboardClientProps) {
     const [isCapturing, setIsCapturing] = useState(false);
     const cardExportRef = useRef<HTMLDivElement>(null);
 
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://gitwrapped.aryansync.com";
+    const origin = SITE_URL;
     const cardUrl = `${origin}/api/card/${stats.user.login}`;
     const markdownSnippet = `![${stats.user.login}'s Dev Card](${cardUrl})`;
 
@@ -438,7 +479,7 @@ function PokemonCardView({ stats }: DashboardClientProps) {
             <TechCursor />
             <nav className="dashboard-nav">
                 <div className="dashboard-nav__left">
-                    <a href="/" className="dashboard-nav__logo">GitWrapped</a>
+                    <Link href="/" className="dashboard-nav__logo">GitWrapped</Link>
                 </div>
                 <div className="dashboard-nav__center">
                     <ModeToggle />
@@ -461,6 +502,20 @@ function PokemonCardView({ stats }: DashboardClientProps) {
                     >
                         <PokemonCard data={cardData} captureMode={isCapturing} />
                     </div>
+                </div>
+
+                <div className="card-explain">
+                    <h3 className="card-explain__title">Why these numbers</h3>
+                    {cardData.explanations.map(e => (
+                        <div key={e.stat} className="card-explain__row">
+                            <span className="card-explain__stat">{e.stat}</span>
+                            <span className="card-explain__value">{e.value}</span>
+                            <span className="card-explain__because">{e.because}</span>
+                        </div>
+                    ))}
+                    <p className="data-note">
+                        Every stat is one real metric, scaled so big and small accounts both read sensibly. <Link href="/methodology">See the formulas</Link>.
+                    </p>
                 </div>
 
                 <div className="pokemon-card-view__actions">

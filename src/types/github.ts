@@ -1,9 +1,9 @@
 /**
- * GitHub API Types
- * 
- * These types map directly to the GitHub REST API v3 responses.
- * Only fields that are actually available from the API are included.
+ * App-level types. Everything here is derived from a RawSnapshot
+ * (src/lib/github/types.ts) by the pure functions in src/lib/analysis.
  */
+
+import type { RawCalendarDay } from "@/lib/github/types";
 
 export interface GitHubUser {
     login: string;
@@ -14,12 +14,9 @@ export interface GitHubUser {
     location: string | null;
     blog: string | null;
     twitter_username: string | null;
-    public_repos: number;
-    public_gists: number;
     followers: number;
     following: number;
     created_at: string;
-    updated_at: string;
 }
 
 export interface Repository {
@@ -31,14 +28,11 @@ export interface Repository {
     language: string | null;
     stargazers_count: number;
     forks_count: number;
-    watchers_count: number;
-    open_issues_count: number;
     created_at: string;
-    updated_at: string;
     pushed_at: string;
     size: number;
     topics: string[];
-    fork: boolean;
+    archived: boolean;
 }
 
 export interface LanguageStats {
@@ -49,9 +43,7 @@ export interface LanguageStats {
     isMarkup?: boolean;
 }
 
-/**
- * Language stats calculated by repo count instead of bytes
- */
+/** Languages by number of repos where it is the primary language. */
 export interface LanguageStatsByRepo {
     language: string;
     repoCount: number;
@@ -59,43 +51,14 @@ export interface LanguageStatsByRepo {
     color: string;
 }
 
-/**
- * Developer DNA - Tracks the "Lab Strand" (notebooks/experiments)
- * separate from the "Code Strand" (traditional programming).
- * Purely ratio-based, no archetype labels.
- */
+/** Notebook ("lab") work versus regular source code. */
 export interface DeveloperDNA {
     notebookBytes: number;
     notebookRepoCount: number;
-    labRatio: number; // 0-100, percentage of work in notebooks
+    labRatio: number; // 0-100, share of own repos whose primary language is Jupyter Notebook
     totalCodeBytes: number;
 }
 
-/**
- * DevOps Maturity - Analyzes CI/CD and infrastructure practices
- */
-export interface DevOpsMaturity {
-    score: number; // 0-100
-    tier: 'code-shipper' | 'devops-curious' | 'pipeline-builder' | 'infrastructure-architect';
-    signals: DevOpsSignal[];
-    hasGitHubActions: boolean;
-    hasDocker: boolean;
-    hasKubernetes: boolean;
-    hasTerraform: boolean;
-}
-
-export interface DevOpsSignal {
-    type: string;
-    label: string;
-    icon: string;
-    found: boolean;
-    repoCount: number;
-}
-
-/**
- * Language Era - For the Archaeology feature
- * Tracks all languages used each year, not just dominant
- */
 export interface LanguageEra {
     year: number;
     dominantLanguage: string;
@@ -106,9 +69,6 @@ export interface LanguageEra {
     allLanguages: { language: string; bytes: number; percentage: number }[];
 }
 
-/**
- * Experience Tier - For real, context-aware motivational messaging
- */
 export type ExperienceTier = 'pioneer' | 'veteran' | 'established' | 'rising' | 'newcomer';
 
 export interface ExperienceProfile {
@@ -117,153 +77,99 @@ export interface ExperienceProfile {
     contextualMessage: string | null;
 }
 
-/**
- * Monthly Activity - tracks repo creation/update activity per month
- */
-export interface MonthlyActivity {
-    month: string;        // "2025-01" format
-    reposCreated: number;
-    reposPushed: number;
+/* ── Activity (from the GitHub contribution calendar, last 12 months) ── */
+
+export type ActivityPattern = 'steady' | 'regular' | 'bursty' | 'quiet';
+
+export interface MonthlyContributions {
+    month: string; // "2026-01"
+    count: number;
 }
 
-/**
- * Contribution Consistency - pattern of activity
- */
-export interface ContributionConsistency {
-    pattern: 'consistent' | 'burst' | 'sporadic' | 'inactive';
-    activeMonths: number;
-    totalMonths: number;
-    longestGapDays: number;
+export interface ActivitySummary {
+    total: number;
+    commits: number;
+    pullRequests: number;
+    reviews: number;
+    issues: number;
+    /** Opted-in private contributions (count only). */
+    restricted: number;
+    activeDays: number;
+    totalDays: number;
+    activeWeeks: number;
+    totalWeeks: number;
+    currentStreak: number;
+    longestStreak: number;
+    bestDay: { date: string; count: number } | null;
+    busiestWeekday: string | null;
+    monthly: MonthlyContributions[];
+    /** Calendar weeks (Sunday first), for the heatmap. */
+    weeks: RawCalendarDay[][];
+    pattern: ActivityPattern;
 }
 
-/**
- * Code Health - Comprehensive code quality assessment
- */
-export interface CodeHealth {
-    overallScore: number; // 0-100
-    tier: 'needs-work' | 'getting-there' | 'solid' | 'excellent';
+/* ── Engineering practices (share of analysed repos) ── */
 
-    documentation: DocumentationScore;
-    branching: BranchingScore;
-    deployment: DeploymentScore;
-    organization: OrganizationScore;
-    testing: TestingScore;
-    devOps: DevOpsMaturity;
-}
+export type PracticeKey = 'ci' | 'tests' | 'containers' | 'iac' | 'deploy' | 'license' | 'readme';
 
-export interface DocumentationScore {
-    score: number;
-    hasReadme: boolean;
-    readmeQuality: 'none' | 'minimal' | 'good' | 'excellent';
-    hasLicense: boolean;
-    hasContributing: boolean;
-    hasCodeOfConduct: boolean;
-    reposWithReadme: number;
-    totalReposChecked: number;
-}
-
-export interface BranchingScore {
-    score: number;
-    strategy: 'single-branch' | 'basic-branching' | 'feature-branches' | 'gitflow';
-    avgBranchesPerRepo: number;
-    reposWithMultipleBranches: number;
-    totalBranches: number;
-}
-
-export interface DeploymentScore {
-    score: number;
-    platforms: DeploymentPlatform[];
-    hasAnyDeployment: boolean;
-    reposWithDeployment: number;
-}
-
-export interface DeploymentPlatform {
-    name: string;
+export interface PracticeSignal {
+    key: PracticeKey;
+    label: string;
     icon: string;
     repoCount: number;
+    share: number; // 0-100
 }
 
-export interface OrganizationScore {
-    score: number;
-    hasGitignore: boolean;
-    hasSrcFolder: boolean;
-    hasTestsFolder: boolean;
-    hasPackageManager: boolean;
-    reposWellOrganized: number;
-}
-
-export interface TestingScore {
-    score: number;
-    hasTestFiles: boolean;
-    hasTestConfig: boolean;
-    reposWithTests: number;
+export interface PracticesSummary {
+    analyzedRepos: number;
+    signals: PracticeSignal[];
 }
 
 /**
- * UserStats contains only data that can be verified from GitHub's public API.
- * 
- * Note: We intentionally do NOT include:
- * - Commit counts (requires authentication + pagination of all commits)
- * - Contribution calendar (requires GraphQL API or scraping)
- * - Coding schedule/hours (not available from public API)
- * - Streak data (would require commit history analysis)
+ * Everything the dashboard, story, card and badge show about one user.
+ * Produced only by analyzeSnapshot().
  */
 export interface UserStats {
+    fetchedAt: string;
     user: GitHubUser;
+    /** Owned, public, non-fork repos, most recently pushed first. */
     repositories: Repository[];
-    languageStats: LanguageStats[];
 
-    // Direct from API - verifiable
-    totalStars: number;
-    totalForks: number;
-    publicRepoCount: number;
     ownRepoCount: number;
     forkedRepoCount: number;
+    /** Repos with language/tree detail (the most recently pushed ones). */
+    analyzedRepoCount: number;
+    maintainedRepoCount: number;
 
-    // Derived from repository data
+    /** Stars and forks on own non-fork repos only. */
+    totalStars: number;
+    /** False when star/fork totals are a lower bound (very large accounts). */
+    starTotalsComplete: boolean;
+    totalForks: number;
     topRepositories: Repository[];
+    mostStarredRepo: Repository | null;
+    hasPopularRepo: boolean;
+
     accountAgeYears: number;
     accountAgeMonths: number;
-
-    // Activity insights based on repo dates
     recentlyActive: boolean;
-    mostActiveYear: number | null;
     reposByYear: Record<number, number>;
+    /** Year the user created the most repos. */
+    mostActiveYear: number | null;
 
-    // Language insights
+    languageStats: LanguageStats[];
+    programmingLanguages: LanguageStats[];
+    languageCount: number;
+    languageStatsByRepoCount: LanguageStatsByRepo[];
     topLanguage: string | null;
     topLanguagePercentage: number;
     languageDiversity: string;
-    languageStatsByRepoCount: LanguageStatsByRepo[];
-
-    // Repository profile
-    hasPopularRepo: boolean;
-    mostStarredRepo: Repository | null;
-
-    // Developer DNA (Lab vs Code)
-    developerDNA: DeveloperDNA;
-
-    // DevOps Maturity
-    devOpsMaturity: DevOpsMaturity;
-
-    // Language Eras (for Archaeology)
     languageEras: LanguageEra[];
 
-    // Code Health (dashboard feature)
-    codeHealth: CodeHealth;
-
-    // Experience Profile (motivational messaging)
+    developerDNA: DeveloperDNA;
+    practices: PracticesSummary;
+    activity: ActivitySummary;
     experienceProfile: ExperienceProfile;
-
-    // Activity & Growth
-    monthlyActivity: MonthlyActivity[];
-    contributionConsistency: ContributionConsistency;
-
-    // Real contribution count (commits/PRs/issues/reviews, incl. opted-in
-    // private contributions), last 12 months, via the GraphQL API
-    recentContributions: number;
-
-    // Development Profile
     developmentProfile: string;
 }
 
@@ -299,6 +205,19 @@ export const LANGUAGE_COLORS: Record<string, string> = {
     Objective: "#438eff",
     Perl: "#0298c3",
     "Jupyter Notebook": "#DA5B0B",
+    "Objective-C": "#438eff",
+    Zig: "#ec915c",
+    Svelte: "#ff3e00",
+    Astro: "#ff5a03",
+    Lean: "#5a8ee6",
+    HCL: "#844fba",
+    Nix: "#7e7eff",
+    Julia: "#a270ba",
+    OCaml: "#ef7a08",
+    Solidity: "#AA6746",
+    Assembly: "#6E4C13",
+    PowerShell: "#012456",
+    Apex: "#1797c0",
 };
 
 export function getLanguageColor(language: string): string {

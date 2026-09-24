@@ -1,39 +1,27 @@
 "use client";
 
-import { MonthlyActivity } from "@/types/github";
-import {
-    AreaChart,
-    Area,
-    XAxis,
-    YAxis,
-    Tooltip,
-    ResponsiveContainer,
-} from "recharts";
+import type { MonthlyContributions } from "@/types/github";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 interface ActivityChartProps {
-    data: MonthlyActivity[];
+    data: MonthlyContributions[];
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function formatMonth(month: string): string {
+    const [year, m] = month.split("-");
+    return `${MONTHS[Number(m) - 1]} '${year.slice(2)}`;
+}
+
+/** Contributions per calendar month, last 12 months, from the contribution calendar. */
 export function ActivityChart({ data }: ActivityChartProps) {
-    // Filter to only months with some activity for a cleaner view
-    const chartData = data.map(d => ({
-        month: formatMonth(d.month),
-        rawMonth: d.month,
-        activity: d.reposCreated + d.reposPushed,
-        created: d.reposCreated,
-        pushed: d.reposPushed,
-    }));
+    const chartData = data.map(d => ({ month: formatMonth(d.month), count: d.count }));
 
     return (
         <div className="activity-chart">
             <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                    <defs>
-                        <linearGradient id="activityGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
-                        </linearGradient>
-                    </defs>
+                <BarChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
                     <XAxis
                         dataKey="month"
                         tick={{ fontSize: 11, fill: "var(--text-muted)" }}
@@ -48,6 +36,7 @@ export function ActivityChart({ data }: ActivityChartProps) {
                         allowDecimals={false}
                     />
                     <Tooltip
+                        cursor={{ fill: "var(--border-muted)", opacity: 0.4 }}
                         contentStyle={{
                             background: "var(--bg-card)",
                             border: "1px solid var(--border-default)",
@@ -55,30 +44,11 @@ export function ActivityChart({ data }: ActivityChartProps) {
                             fontSize: 13,
                             color: "var(--text-primary)",
                         }}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        formatter={(value: any, name: any) => {
-                            const label = name === "created" ? "Created" : name === "pushed" ? "Pushed" : "Activity";
-                            return [value, label];
-                        }}
-                        labelFormatter={(label: any) => String(label)}
+                        formatter={(value) => [Number(value).toLocaleString("en-US"), "Contributions"]}
                     />
-                    <Area
-                        type="monotone"
-                        dataKey="activity"
-                        stroke="var(--accent-primary)"
-                        strokeWidth={2}
-                        fill="url(#activityGrad)"
-                        dot={false}
-                        activeDot={{ r: 4, fill: "var(--accent-primary)" }}
-                    />
-                </AreaChart>
+                    <Bar dataKey="count" fill="var(--accent-primary)" radius={[3, 3, 0, 0]} maxBarSize={36} />
+                </BarChart>
             </ResponsiveContainer>
         </div>
     );
-}
-
-function formatMonth(monthStr: string): string {
-    const [year, month] = monthStr.split("-");
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    return `${months[parseInt(month) - 1]} '${year.slice(2)}`;
 }

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { fetchUser, fetchRepositories } from "@/lib/github";
+import { getProfile } from "@/lib/profile";
 import { rateLimit, GITHUB_USERNAME_RE } from "@/lib/rate-limit";
 
 type BadgeVariant = "compact" | "minimal" | "identity";
@@ -9,7 +9,8 @@ interface BadgeData {
   username: string;
   repos: number;
   languageCount: number;
-  activeYear: number;
+  /** Contributions in the last 12 months (replaces a hard-coded "Active <this year>"). */
+  contributions: number;
   portfolio?: string;
   linkedin?: string;
 }
@@ -31,7 +32,7 @@ export async function GET(
 
     // Rate limit: 30 requests per minute per IP
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    const limited = rateLimit(`badge:${ip}`, 30, 60_000);
+    const limited = await rateLimit(`badge:${ip}`, 30, 60_000);
     if (limited) return limited;
 
     const { searchParams } = new URL(request.url);
@@ -41,23 +42,13 @@ export async function GET(
     const portfolio = searchParams.get("portfolio") || "";
     const linkedin = searchParams.get("linkedin") || "";
 
-    const [user, repositories] = await Promise.all([
-      fetchUser(username),
-      fetchRepositories(username),
-    ]);
-
-    const ownRepos = repositories.filter(r => !r.fork);
-
-    // Get unique language count
-    const uniqueLanguages = new Set(
-      ownRepos.map(r => r.language).filter(Boolean)
-    );
+    const stats = await getProfile(username);
 
     const data: BadgeData = {
-      username: user.login,
-      repos: ownRepos.length,
-      languageCount: uniqueLanguages.size,
-      activeYear: new Date().getFullYear(),
+      username: stats.user.login,
+      repos: stats.ownRepoCount,
+      languageCount: stats.languageCount,
+      contributions: stats.activity.total,
       portfolio,
       linkedin,
     };
@@ -82,7 +73,7 @@ export async function GET(
     });
   } catch {
     return new Response(generateErrorBadge(), {
-      headers: { "Content-Type": "image/svg+xml" },
+      headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=120" },
       status: 200,
     });
   }
@@ -176,7 +167,7 @@ function generateCompactBadge(data: BadgeData, theme: BadgeTheme): string {
   <text x="22" y="26" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="700" fill="${c.accent}">GitWrapped</text>
   <text x="105" y="26" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="13" fill="${c.textMuted}">|</text>
   <text x="118" y="26" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="600" fill="${c.text}">${escapeXml(data.username)}</text>
-  <text x="22" y="48" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="12" fill="${c.textMuted}">${data.repos} Repos · ${data.languageCount} Languages · Active ${data.activeYear}</text>
+  <text x="22" y="48" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="12" fill="${c.textMuted}">${data.repos} Repos · ${data.languageCount} Languages · ${data.contributions.toLocaleString("en-US")} contributions/yr</text>
   ${linksRow}
 </svg>`;
 }

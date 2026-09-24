@@ -3,6 +3,7 @@
 import { Star, GitFork, Code2, Copy, Check, ExternalLink } from "lucide-react";
 import { UserStats } from "@/types/github";
 import { useState } from "react";
+import { SITE_URL } from "@/lib/site";
 
 interface DevProfileCardProps {
     stats: UserStats;
@@ -15,18 +16,13 @@ interface DevProfileCardProps {
  */
 export function DevProfileCard({ stats, compact = false }: DevProfileCardProps) {
     const [copied, setCopied] = useState(false);
-    const { user, languageStats, totalStars, totalForks, languageDiversity } = stats;
+    const { user, programmingLanguages, totalStars, totalForks, languageDiversity, languageCount } = stats;
 
-    // Get top 3 programming languages for display (no percentages, just names)
-    const topLanguages = languageStats
-        .filter(l => !l.isMarkup)
-        .slice(0, 3);
-
-    // Unique language count
-    const languageCount = languageStats.filter(l => !l.isMarkup).length;
+    // Top 3 programming languages for display (no percentages, just names)
+    const topLanguages = programmingLanguages.slice(0, 3);
 
     const handleCopyLink = async () => {
-        const link = `${window.location.origin}/dashboard/${user.login}`;
+        const link = `${SITE_URL}/dashboard/${user.login}`;
         await navigator.clipboard.writeText(link);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -87,13 +83,13 @@ export function DevProfileCard({ stats, compact = false }: DevProfileCardProps) 
                     {totalStars >= 10 && (
                         <div className="dev-profile-card__stat">
                             <Star size={14} />
-                            <span>{totalStars.toLocaleString()}</span>
+                            <span>{totalStars.toLocaleString("en-US")}</span>
                         </div>
                     )}
                     {totalForks >= 5 && (
                         <div className="dev-profile-card__stat">
                             <GitFork size={14} />
-                            <span>{totalForks.toLocaleString()}</span>
+                            <span>{totalForks.toLocaleString("en-US")}</span>
                         </div>
                     )}
                     <div className="dev-profile-card__stat">

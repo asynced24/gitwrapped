@@ -352,7 +352,7 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                                 style={{ fontFamily: "'JetBrains Mono', monospace", textShadow: "0 1px 4px rgba(0,0,0,0.8), 0 0 12px rgba(0,0,0,0.5)" }}
                             >
                                 @{data.username}{data.location ? ` · ${data.location}` : ""} · Since{" "}
-                                {new Date().getFullYear() - data.accountAgeYears}
+                                {data.memberSince}
                             </p>
                         </div>
 
@@ -402,12 +402,12 @@ export function PokemonCard({ data, className = "", captureMode = false }: Pokem
                                     >
                                         {cleanText(data.ability.description)}
                                     </p>
-                                    {/* XP + Velocity merged as metadata — replaces separate pill bar */}
+                                    {/* The real activity behind the numbers */}
                                     <p
                                         className="text-[11px] text-white/65 mt-1.5 tracking-wide tabular-nums"
                                         style={{ fontFamily: "'JetBrains Mono', monospace" }}
                                     >
-                                        XP {data.xp.toLocaleString()} · Velocity {data.codeVelocity}%
+                                        {data.contributions.toLocaleString("en-US")} contribs · {data.activeWeeks}/{data.totalWeeks} wks active
                                     </p>
                                 </div>
                             </div>

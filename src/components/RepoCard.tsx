@@ -37,13 +37,13 @@ export function RepoCard({ repo, highlight = false }: RepoCardProps) {
                 {repo.stargazers_count > 0 && (
                     <span className="language-legend-item">
                         <Star size={14} />
-                        {repo.stargazers_count.toLocaleString()}
+                        {repo.stargazers_count.toLocaleString("en-US")}
                     </span>
                 )}
                 {repo.forks_count > 0 && (
                     <span className="language-legend-item">
                         <GitFork size={14} />
-                        {repo.forks_count.toLocaleString()}
+                        {repo.forks_count.toLocaleString("en-US")}
                     </span>
                 )}
                 <span className="language-legend-item text-muted">
