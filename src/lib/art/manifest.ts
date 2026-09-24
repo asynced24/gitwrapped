@@ -1,4 +1,5 @@
 import type { ArtFamily, Rarity } from "./families";
+import type { PassionKey } from "@/lib/passions";
 import manifest from "./manifest.json";
 
 export interface Artwork {
@@ -8,6 +9,16 @@ export interface Artwork {
     rarity: Rarity;
     /** Scene / pose name shown on the card, e.g. "Storm Ridge". */
     variant: string;
+    /**
+     * Passion edition art: the family's creature in a passion scene. Shown to
+     * any card of this family with this passion, whatever its rarity.
+     */
+    passion?: PassionKey;
+    /**
+     * One-of-one: painted for a single GitHub login (lower case). That user
+     * always gets it, and it never enters any shared pool.
+     */
+    owner?: string;
     /** Path under /public. Portrait 5:7, full-bleed, no text, WebP ≤ 150 KB. */
     file: string;
 }

@@ -4,6 +4,7 @@
  */
 
 import type { RawCalendarDay } from "@/lib/github/types";
+import type { Passion } from "@/lib/passions";
 
 export interface GitHubUser {
     login: string;
@@ -171,6 +172,8 @@ export interface UserStats {
     activity: ActivitySummary;
     experienceProfile: ExperienceProfile;
     developmentProfile: string;
+    /** Passion edition earned from a repo about sport, music, games…, or null. */
+    passion: Passion | null;
 }
 
 // GitHub's linguist language colors

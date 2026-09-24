@@ -1,6 +1,7 @@
 import type { UserStats } from "@/types/github";
 import { familyForLanguage, type Rarity } from "@/lib/art/families";
 import { pickArtwork, type CardArt } from "@/lib/art/pick";
+import { PASSIONS, type Passion } from "@/lib/passions";
 
 export type { Rarity } from "@/lib/art/families";
 
@@ -63,6 +64,8 @@ export interface PokemonCardData {
     rarity: Rarity;
     /** Which painting this card shows and which pool it came from. */
     art: CardArt;
+    /** Passion edition this card earned, with the repo that earned it. */
+    passion: Pick<Passion, "key" | "edition" | "emoji" | "color" | "repo"> | null;
     explanations: CardStatExplanation[];
 }
 
@@ -549,7 +552,11 @@ export function buildCardData(stats: UserStats): PokemonCardData {
     const evolutionStage = computeStage({ ageYears, weekShare, stars: stats.totalStars, contributions: a.total });
     const ability = pickAbility(stats);
     const rarity = computeRarity(evolutionStage, topStars, a.longestStreak);
-    const art = pickArtwork(stats.user.login, familyForLanguage(stats.topLanguage), rarity);
+    const art = pickArtwork(stats.user.login, familyForLanguage(stats.topLanguage), rarity, undefined, stats.passion?.key ?? null);
+    // A one-of-one painting carries its own edition; otherwise the detected one.
+    const passion: Passion | null = art.custom && art.passion
+        ? { ...PASSIONS[art.passion], repo: null, score: 0 }
+        : stats.passion;
 
     const attack1: Attack = {
         name: theme.attacks.light.name,
@@ -604,10 +611,21 @@ export function buildCardData(stats: UserStats): PokemonCardData {
                     : `A ${a.longestStreak}-day streak (legendary at ${LEGENDARY_STREAK_DAYS})`)
                 : `Follows the stage: Basic is common, Stage 1 uncommon, Stage 2 rare`,
         },
+        ...(passion
+            ? [{
+                stat: "Edition",
+                value: passion.edition,
+                because: passion.repo
+                    ? `Your repo ${passion.repo} is about ${passion.key.replace("-", " ")}`
+                    : `A one-of-one edition painted for @${stats.user.login}`,
+            }]
+            : []),
         {
             stat: "Art",
             value: art.species,
-            because: art.poolSize > 0
+            because: art.custom
+                ? `${art.variant}, a one-of-one painting made only for @${stats.user.login}`
+                : art.poolSize > 0
                 ? `${art.variant}, 1 of ${art.poolSize} ${rarity} ${art.species} paintings, picked from your username`
                 : `The original ${art.species} painting; more ${rarity} variants are coming`,
         },
@@ -642,6 +660,9 @@ export function buildCardData(stats: UserStats): PokemonCardData {
         cardNumber: computeCardNumber(stats.user.login),
         rarity,
         art,
+        passion: passion
+            ? { key: passion.key, edition: passion.edition, emoji: passion.emoji, color: passion.color, repo: passion.repo }
+            : null,
         explanations,
     };
 }

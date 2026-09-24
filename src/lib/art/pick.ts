@@ -1,5 +1,6 @@
 import { FAMILIES, RARITIES, type ArtFamily, type Rarity } from "./families";
 import { ARTWORKS, type Artwork } from "./manifest";
+import type { PassionKey } from "@/lib/passions";
 
 export interface CardArt {
     /** Artwork id, or `<family>:fallback` when the pool is still empty. */
@@ -12,6 +13,10 @@ export interface CardArt {
     variant: string | null;
     /** How many artworks share this card's pool (0 while on the fallback). */
     poolSize: number;
+    /** Set when the painting comes from a passion edition pool. */
+    passion: PassionKey | null;
+    /** True for a one-of-one painting made for this user. */
+    custom: boolean;
 }
 
 /**
@@ -56,16 +61,54 @@ export function pickArtwork(
     login: string,
     family: ArtFamily,
     rarity: Rarity,
-    artworks: readonly Artwork[] = ARTWORKS
+    artworks: readonly Artwork[] = ARTWORKS,
+    passion: PassionKey | null = null
 ): CardArt {
     const info = FAMILIES[family];
+    const user = login.toLowerCase();
+
+    // A one-of-one made for this user beats everything else.
+    const own = artworks.find(a => a.owner === user);
+    if (own) {
+        return {
+            id: own.id,
+            file: own.file,
+            family: own.family,
+            rarity,
+            species: FAMILIES[own.family].species[rarity],
+            variant: own.variant,
+            poolSize: 1,
+            passion: own.passion ?? null,
+            custom: true,
+        };
+    }
+    const shared = artworks.filter(a => !a.owner);
+
+    // A passion edition painting beats the regular pools when one exists.
+    if (passion) {
+        const pool = shared.filter(a => a.family === family && a.passion === passion);
+        const chosen = pickFromPool(login, pool);
+        if (chosen) {
+            return {
+                id: chosen.id,
+                file: chosen.file,
+                family,
+                rarity,
+                species: info.species[rarity],
+                variant: chosen.variant,
+                poolSize: pool.length,
+                passion,
+                custom: false,
+            };
+        }
+    }
 
     // Earned tier first, then each lower tier of the same family, so a
     // legendary card shows the best painting that exists for its creature
     // line. Never another family: that would show the wrong creature.
     for (let tier = RARITIES.indexOf(rarity); tier >= 0; tier--) {
         const poolRarity = RARITIES[tier];
-        const pool = artworks.filter(a => a.family === family && a.rarity === poolRarity);
+        const pool = shared.filter(a => a.family === family && a.rarity === poolRarity && !a.passion);
         const chosen = pickFromPool(login, pool);
         if (chosen) {
             return {
@@ -76,6 +119,8 @@ export function pickArtwork(
                 species: info.species[poolRarity],
                 variant: chosen.variant,
                 poolSize: pool.length,
+                passion: null,
+                custom: false,
             };
         }
     }
@@ -89,5 +134,7 @@ export function pickArtwork(
         species: info.species[rarity],
         variant: null,
         poolSize: 0,
+        passion: null,
+        custom: false,
     };
 }

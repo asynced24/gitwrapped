@@ -253,11 +253,21 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
     `<text x="${(L.stats.x + colW * i + colW / 2).toFixed(1)}" y="${statsBaseline}" text-anchor="middle" font-family="${MONO}"><tspan font-size="7" letter-spacing="1" fill="${TEXT.statsLabel}">${label}</tspan><tspan font-size="9.5" fill="${dotColor}" dx="6">●</tspan><tspan font-size="9.5" fill="${TEXT.statsValue}" dx="4">${escapeXml(value)}</tspan></text>`;
   const retreat = `<text x="${(L.stats.x + colW * 2 + colW / 2).toFixed(1)}" y="${statsBaseline}" text-anchor="middle" font-family="${MONO}"><tspan font-size="7" letter-spacing="1" fill="${TEXT.statsLabel}">RETREAT</tspan><tspan font-size="9.5" fill="${accent}" dx="6" letter-spacing="1">${"●".repeat(Math.min(data.retreatCost, 4)) || "–"}</tspan></text>`;
 
-  const artLabel = data.art.poolSize > 1
+  const artLabel = data.art.custom
+    ? `${data.art.variant} · 1 of 1`
+    : data.art.poolSize > 1
     ? `${data.art.species} · ${data.art.variant} · 1 of ${data.art.poolSize}`
     : data.art.variant
       ? `${data.art.species} · ${data.art.variant}`
       : `${data.art.species} · since ${data.memberSince}`;
+
+  // Passion edition pill, centred under the avatar.
+  const editionLabel = data.passion ? `${data.passion.edition.toUpperCase()}` : "";
+  const editionWidth = 28 + editionLabel.length * 5.6;
+  const editionBadge = data.passion
+    ? `<rect x="${(L.avatar.cx - editionWidth / 2).toFixed(1)}" y="${L.avatar.cy + L.avatar.r + 10}" width="${editionWidth.toFixed(1)}" height="18" rx="9" fill="rgba(10,15,29,0.85)" stroke="${data.passion.color}" stroke-width="1.2"/>
+  <text x="${L.avatar.cx}" y="${L.avatar.cy + L.avatar.r + 22.5}" text-anchor="middle" font-family="${MONO}" font-size="8" letter-spacing="1" fill="#FFFFFF"><tspan font-size="9">${data.passion.emoji}</tspan><tspan dx="4" fill="${data.passion.color}">${escapeXml(editionLabel)}</tspan></text>`
+    : "";
 
   const t = rarity.frameWidth;
   const { cx, cy, r } = L.avatar;
@@ -321,6 +331,7 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
     ? `<image href="${images.avatar}" x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" clip-path="url(#${id("avatar")})" preserveAspectRatio="xMidYMid slice"/>`
     : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${theme.borderColor}"/><text x="${cx}" y="${cy + 11}" text-anchor="middle" font-family="${DISPLAY}" font-size="30" fill="#FFFFFF">${escapeXml(data.username.charAt(0).toUpperCase())}</text>`}
   <circle cx="${cx}" cy="${cy}" r="${r + 1.2}" stroke="${accent}" stroke-opacity="0.85" stroke-width="2.4"/>
+  ${editionBadge}
 
   <!-- Header -->
   <rect x="${L.header.x}" y="${L.header.y}" width="${L.header.width}" height="${L.header.height}" rx="${L.header.radius}" fill="rgba(10,15,29,0.92)" stroke="rgba(255,255,255,0.15)"/>
