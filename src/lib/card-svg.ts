@@ -1,5 +1,6 @@
 import { getLanguageTheme, type PokemonCardData } from "@/lib/card";
 import { FAMILIES, type Rarity } from "@/lib/art/families";
+import { hash32 } from "@/lib/art/pick";
 
 /* ─────────────────────────────────────────────
    Image loading (network) — kept apart from rendering so the
@@ -184,6 +185,26 @@ export function sparkles(rarity: Rarity): { x: number; y: number; size: number }
   }));
 }
 
+/**
+ * One-of-ones swap sparkles for gold embers rising from the ground line.
+ * Positions come from the username, so a card never reshuffles.
+ */
+export const EMBER_COUNT = 20;
+
+export function embers(seed: string): { x: number; y: number; r: number; drift: number; duration: number; delay: number }[] {
+  return Array.from({ length: EMBER_COUNT }, (_, i) => {
+    const h = hash32(`${seed}:ember:${i}`);
+    return {
+      x: 20 + (h % 318),
+      y: 150 + ((h >>> 9) % 120), // start in the lower art window, above the panels
+      r: 1.1 + ((h >>> 17) % 16) / 10, // 1.1–2.6
+      drift: ((h >>> 21) % 41) - 20, // sideways sway, -20..20px
+      duration: 4 + ((h >>> 25) % 5), // 4–8s
+      delay: -(((h >>> 13) % 80) / 10), // negative: already mid-flight on first frame
+    };
+  });
+}
+
 function sparklePath({ x, y, size }: { x: number; y: number; size: number }): string {
   const s = size;
   const w = s * 0.22;
@@ -251,19 +272,25 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
   const animated = oneOfOne || data.rarity === "legendary";
   const cls = (name: string) => (animated ? ` class="${id(name)}"` : "");
 
-  const sparkleShapes = sparkles(data.rarity)
-    .map((s, i) => `<path d="${sparklePath(s)}" fill="#FFFFFF" opacity="${(0.55 + 0.3 * foil).toFixed(2)}" filter="url(#${id("sparkle")})"${cls("twinkle")}${animated ? ` style="animation-delay:${(i * 0.37).toFixed(2)}s"` : ""}/>`)
-    .join("");
+  const sparkleShapes = oneOfOne
+    ? embers(data.username.toLowerCase())
+        .map(e => `<circle cx="${e.x}" cy="${e.y}" r="${e.r.toFixed(1)}" fill="${e.r > 1.9 ? "#FFE9A3" : "#F5C518"}" filter="url(#${id("ember")})" class="${id("ember")}" style="--dx:${e.drift}px;animation-duration:${e.duration}s;animation-delay:${e.delay.toFixed(1)}s"/>`)
+        .join("")
+    : sparkles(data.rarity)
+        .map((s, i) => `<path d="${sparklePath(s)}" fill="#FFFFFF" opacity="${(0.55 + 0.3 * foil).toFixed(2)}" filter="url(#${id("sparkle")})"${cls("twinkle")}${animated ? ` style="animation-delay:${(i * 0.37).toFixed(2)}s"` : ""}/>`)
+        .join("");
 
   const motionStyle = animated
     ? `<style>
     @keyframes ${id("sweep")} { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
     @keyframes ${id("twinkle")} { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
     @keyframes ${id("pulse")} { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
+    @keyframes ${id("ember")} { 0% { transform: translate(0, 0); opacity: 0 } 15% { opacity: 0.95 } 70% { opacity: 0.6 } 100% { transform: translate(var(--dx), -110px); opacity: 0 } }
+    .${id("ember")} { animation: ${id("ember")} 6s ease-out infinite; transform-box: fill-box; }
     .${id("sweep")} { animation: ${id("sweep")} 5.5s ease-in-out infinite; }
     .${id("twinkle")} { animation: ${id("twinkle")} 2.4s ease-in-out infinite; }
     .${id("pulse")} { animation: ${id("pulse")} 3s ease-in-out infinite; }
-    @media (prefers-reduced-motion: reduce) { .${id("sweep")}, .${id("twinkle")}, .${id("pulse")} { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .${id("sweep")}, .${id("twinkle")}, .${id("pulse")}, .${id("ember")} { animation: none; opacity: 0.6; } }
   </style>`
     : "";
   const sweep = animated
@@ -360,6 +387,12 @@ export function renderCardSVG(data: PokemonCardData, images: CardImages, options
       <feFlood flood-color="${accent}" flood-opacity="0.9"/>
       <feComposite in2="b" operator="in" result="g"/>
       <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="${id("ember")}" x="-300%" y="-300%" width="700%" height="700%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.4" result="b"/>
+      <feFlood flood-color="#F5C518" flood-opacity="0.9"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <filter id="${id("shadow")}" x="-20%" y="-20%" width="140%" height="160%">
       <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.7"/>

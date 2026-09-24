@@ -7,10 +7,12 @@ exports[`renderCardSVG > renders asynced24's card unchanged 1`] = `
     @keyframes gw-sweep { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
     @keyframes gw-twinkle { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
     @keyframes gw-pulse { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
+    @keyframes gw-ember { 0% { transform: translate(0, 0); opacity: 0 } 15% { opacity: 0.95 } 70% { opacity: 0.6 } 100% { transform: translate(var(--dx), -110px); opacity: 0 } }
+    .gw-ember { animation: gw-ember 6s ease-out infinite; transform-box: fill-box; }
     .gw-sweep { animation: gw-sweep 5.5s ease-in-out infinite; }
     .gw-twinkle { animation: gw-twinkle 2.4s ease-in-out infinite; }
     .gw-pulse { animation: gw-pulse 3s ease-in-out infinite; }
-    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse, .gw-ember { animation: none; opacity: 0.6; } }
   </style>
     <linearGradient id="gw-sweepGrad" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
@@ -56,6 +58,12 @@ exports[`renderCardSVG > renders asynced24's card unchanged 1`] = `
       <feComposite in2="b" operator="in" result="g"/>
       <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
+    <filter id="gw-ember" x="-300%" y="-300%" width="700%" height="700%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.4" result="b"/>
+      <feFlood flood-color="#F5C518" flood-opacity="0.9"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
     <filter id="gw-shadow" x="-20%" y="-20%" width="140%" height="160%">
       <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.7"/>
     </filter>
@@ -73,7 +81,7 @@ exports[`renderCardSVG > renders asynced24's card unchanged 1`] = `
   <rect y="255" width="358" height="243" fill="url(#gw-scrim)"/>
   <rect width="358" height="498" fill="url(#gw-foil)" style="mix-blend-mode:overlay"/>
   <g transform="skewX(-18)" style="mix-blend-mode:screen"><rect class="gw-sweep" x="-40" y="-20" width="90" height="538" fill="url(#gw-sweepGrad)"/></g>
-  <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.00s"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.37s"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.58" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.74s"/>
+  <circle cx="59" cy="255" r="2.2" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:-2px;animation-duration:6s;animation-delay:-0.4s"/><circle cx="208" cy="176" r="2.4" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:6px;animation-duration:6s;animation-delay:-2.4s"/><circle cx="235" cy="168" r="2.4" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:-20px;animation-duration:6s;animation-delay:-7.1s"/><circle cx="20" cy="160" r="1.2" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:-4px;animation-duration:6s;animation-delay:-6.8s"/><circle cx="217" cy="232" r="1.2" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:-10px;animation-duration:6s;animation-delay:-1.5s"/><circle cx="56" cy="203" r="2.2" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:-9px;animation-duration:7s;animation-delay:-0.8s"/><circle cx="201" cy="179" r="1.4" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:-4px;animation-duration:4s;animation-delay:-7.1s"/><circle cx="52" cy="156" r="1.4" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:6px;animation-duration:4s;animation-delay:-3.5s"/><circle cx="38" cy="184" r="1.1" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:14px;animation-duration:8s;animation-delay:-6.7s"/><circle cx="210" cy="265" r="1.4" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:9px;animation-duration:6s;animation-delay:-5.7s"/><circle cx="146" cy="254" r="2.4" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:-19px;animation-duration:4s;animation-delay:-5.6s"/><circle cx="115" cy="190" r="2.2" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:-13px;animation-duration:7s;animation-delay:-5.2s"/><circle cx="33" cy="163" r="1.5" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:-16px;animation-duration:4s;animation-delay:-0.8s"/><circle cx="212" cy="263" r="2.3" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:-16px;animation-duration:7s;animation-delay:-1.2s"/><circle cx="144" cy="208" r="1.3" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:-11px;animation-duration:6s;animation-delay:-4.6s"/><circle cx="168" cy="248" r="1.1" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:17px;animation-duration:8s;animation-delay:-6.6s"/><circle cx="271" cy="258" r="1.3" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:10px;animation-duration:4s;animation-delay:-5.9s"/><circle cx="189" cy="266" r="1.8" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:-6px;animation-duration:4s;animation-delay:-2.2s"/><circle cx="162" cy="231" r="1.3" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:12px;animation-duration:4s;animation-delay:-0.7s"/><circle cx="132" cy="231" r="2.1" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:18px;animation-duration:6s;animation-delay:-1.0s"/>
 
   <!-- 52-week contribution horizon -->
   <polyline class="gw-pulse" points="8.0,277.0 14.6,277.0 21.2,273.3 27.7,271.8 34.3,277.0 40.9,277.0 47.5,277.0 54.0,277.0 60.6,277.0 67.2,277.0 73.8,277.0 80.3,277.0 86.9,277.0 93.5,277.0 100.1,266.2 106.7,277.0 113.2,272.5 119.8,277.0 126.4,266.5 133.0,262.9 139.5,263.6 146.1,262.4 152.7,277.0 159.3,270.1 165.8,273.3 172.4,277.0 179.0,273.3 185.6,277.0 192.2,277.0 198.7,277.0 205.3,277.0 211.9,277.0 218.5,270.1 225.0,271.1 231.6,257.5 238.2,247.9 244.8,260.8 251.3,261.0 257.9,267.9 264.5,268.3 271.1,267.2 277.7,277.0 284.2,267.5 290.8,271.1 297.4,265.3 304.0,260.8 310.5,254.3 317.1,261.9 323.7,255.4 330.3,257.2 336.8,251.4 343.4,246.1 350.0,243.0" stroke="#56D6FF" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
@@ -144,10 +152,12 @@ exports[`renderCardSVG > renders gaearon's card unchanged 1`] = `
     @keyframes gw-sweep { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
     @keyframes gw-twinkle { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
     @keyframes gw-pulse { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
+    @keyframes gw-ember { 0% { transform: translate(0, 0); opacity: 0 } 15% { opacity: 0.95 } 70% { opacity: 0.6 } 100% { transform: translate(var(--dx), -110px); opacity: 0 } }
+    .gw-ember { animation: gw-ember 6s ease-out infinite; transform-box: fill-box; }
     .gw-sweep { animation: gw-sweep 5.5s ease-in-out infinite; }
     .gw-twinkle { animation: gw-twinkle 2.4s ease-in-out infinite; }
     .gw-pulse { animation: gw-pulse 3s ease-in-out infinite; }
-    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse, .gw-ember { animation: none; opacity: 0.6; } }
   </style>
     <linearGradient id="gw-sweepGrad" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
@@ -184,6 +194,12 @@ exports[`renderCardSVG > renders gaearon's card unchanged 1`] = `
       <feFlood flood-color="#B78CFF" flood-opacity="0.9"/>
       <feComposite in2="b" operator="in" result="g"/>
       <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="gw-ember" x="-300%" y="-300%" width="700%" height="700%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.4" result="b"/>
+      <feFlood flood-color="#F5C518" flood-opacity="0.9"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <filter id="gw-shadow" x="-20%" y="-20%" width="140%" height="160%">
       <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.7"/>
@@ -273,10 +289,12 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
     @keyframes gw-sweep { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
     @keyframes gw-twinkle { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
     @keyframes gw-pulse { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
+    @keyframes gw-ember { 0% { transform: translate(0, 0); opacity: 0 } 15% { opacity: 0.95 } 70% { opacity: 0.6 } 100% { transform: translate(var(--dx), -110px); opacity: 0 } }
+    .gw-ember { animation: gw-ember 6s ease-out infinite; transform-box: fill-box; }
     .gw-sweep { animation: gw-sweep 5.5s ease-in-out infinite; }
     .gw-twinkle { animation: gw-twinkle 2.4s ease-in-out infinite; }
     .gw-pulse { animation: gw-pulse 3s ease-in-out infinite; }
-    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse, .gw-ember { animation: none; opacity: 0.6; } }
   </style>
     <linearGradient id="gw-sweepGrad" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
@@ -322,6 +340,12 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
       <feComposite in2="b" operator="in" result="g"/>
       <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
+    <filter id="gw-ember" x="-300%" y="-300%" width="700%" height="700%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.4" result="b"/>
+      <feFlood flood-color="#F5C518" flood-opacity="0.9"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
     <filter id="gw-shadow" x="-20%" y="-20%" width="140%" height="160%">
       <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.7"/>
     </filter>
@@ -339,7 +363,7 @@ exports[`renderCardSVG > renders shrikanthv15's card unchanged 1`] = `
   <rect y="255" width="358" height="243" fill="url(#gw-scrim)"/>
   <rect width="358" height="498" fill="url(#gw-foil)" style="mix-blend-mode:overlay"/>
   <g transform="skewX(-18)" style="mix-blend-mode:screen"><rect class="gw-sweep" x="-40" y="-20" width="90" height="538" fill="url(#gw-sweepGrad)"/></g>
-  <path d="M48,91 Q49.1,94.9 53,96 Q49.1,97.1 48,101 Q46.9,97.1 43,96 Q46.9,94.9 48,91Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.00s"/><path d="M300,72.5 Q301.65,78.35 307.5,80 Q301.65,81.65 300,87.5 Q298.35,81.65 292.5,80 Q298.35,78.35 300,72.5Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.37s"/><path d="M232,186 Q234.2,193.8 242,196 Q234.2,198.2 232,206 Q229.8,198.2 222,196 Q229.8,193.8 232,186Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:0.74s"/><path d="M90,205 Q91.1,208.9 95,210 Q91.1,211.1 90,215 Q88.9,211.1 85,210 Q88.9,208.9 90,205Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:1.11s"/><path d="M320,182.5 Q321.65,188.35 327.5,190 Q321.65,191.65 320,197.5 Q318.35,191.65 312.5,190 Q318.35,188.35 320,182.5Z" fill="#FFFFFF" opacity="0.60" filter="url(#gw-sparkle)" class="gw-twinkle" style="animation-delay:1.48s"/>
+  <circle cx="184" cy="257" r="2.1" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:14px;animation-duration:4s;animation-delay:-2.1s"/><circle cx="164" cy="263" r="2.6" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:12px;animation-duration:7s;animation-delay:-4.2s"/><circle cx="88" cy="183" r="2.2" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:-4px;animation-duration:6s;animation-delay:-4.9s"/><circle cx="43" cy="221" r="2.3" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:-10px;animation-duration:6s;animation-delay:-3.6s"/><circle cx="223" cy="232" r="2.0" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:9px;animation-duration:4s;animation-delay:-5.2s"/><circle cx="263" cy="202" r="1.1" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:-16px;animation-duration:4s;animation-delay:-5.5s"/><circle cx="177" cy="197" r="1.9" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:10px;animation-duration:6s;animation-delay:-7.0s"/><circle cx="300" cy="200" r="1.7" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:-5px;animation-duration:8s;animation-delay:-1.3s"/><circle cx="310" cy="238" r="2.1" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:6px;animation-duration:5s;animation-delay:-1.3s"/><circle cx="189" cy="214" r="2.3" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:8px;animation-duration:7s;animation-delay:-2.4s"/><circle cx="326" cy="173" r="1.4" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:8px;animation-duration:5s;animation-delay:-0.6s"/><circle cx="91" cy="258" r="2.2" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:-18px;animation-duration:7s;animation-delay:-2.4s"/><circle cx="187" cy="186" r="2.3" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:12px;animation-duration:7s;animation-delay:-2.4s"/><circle cx="264" cy="205" r="1.4" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:7px;animation-duration:6s;animation-delay:-5.3s"/><circle cx="76" cy="245" r="2.1" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:-11px;animation-duration:7s;animation-delay:-1.5s"/><circle cx="192" cy="204" r="1.7" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:19px;animation-duration:6s;animation-delay:-5.5s"/><circle cx="264" cy="154" r="1.6" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:14px;animation-duration:6s;animation-delay:-3.0s"/><circle cx="91" cy="243" r="1.2" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:13px;animation-duration:6s;animation-delay:-6.5s"/><circle cx="63" cy="246" r="1.6" fill="#F5C518" filter="url(#gw-ember)" class="gw-ember" style="--dx:-16px;animation-duration:7s;animation-delay:-5.8s"/><circle cx="235" cy="211" r="2.0" fill="#FFE9A3" filter="url(#gw-ember)" class="gw-ember" style="--dx:-5px;animation-duration:7s;animation-delay:-4.6s"/>
 
   <!-- 52-week contribution horizon -->
   <polyline class="gw-pulse" points="8.0,277.0 14.6,269.1 21.2,277.0 27.7,277.0 34.3,277.0 40.9,277.0 47.5,277.0 54.0,270.6 60.6,267.9 67.2,277.0 73.8,277.0 80.3,262.6 86.9,277.0 93.5,267.9 100.1,270.6 106.7,265.0 113.2,269.1 119.8,256.7 126.4,254.7 133.0,243.0 139.5,246.2 146.1,254.3 152.7,261.3 159.3,267.9 165.8,266.8 172.4,270.6 179.0,261.9 185.6,258.3 192.2,269.1 198.7,277.0 205.3,261.9 211.9,266.8 218.5,277.0 225.0,269.1 231.6,258.8 238.2,265.9 244.8,277.0 251.3,263.4 257.9,277.0 264.5,277.0 271.1,277.0 277.7,272.5 284.2,277.0 290.8,272.5 297.4,263.4 304.0,277.0 310.5,277.0 317.1,277.0 323.7,277.0 330.3,277.0 336.8,272.5 343.4,277.0 350.0,267.9" stroke="#4FE3A8" stroke-width="4.5" stroke-opacity="0.35" stroke-linejoin="round" stroke-linecap="round"/>
@@ -410,10 +434,12 @@ exports[`renderCardSVG > renders torvalds's card unchanged 1`] = `
     @keyframes gw-sweep { 0% { transform: translateX(-160px) } 55%, 100% { transform: translateX(560px) } }
     @keyframes gw-twinkle { 0%, 100% { opacity: 0.15 } 50% { opacity: 0.95 } }
     @keyframes gw-pulse { 0%, 100% { stroke-opacity: 0.2 } 50% { stroke-opacity: 0.65 } }
+    @keyframes gw-ember { 0% { transform: translate(0, 0); opacity: 0 } 15% { opacity: 0.95 } 70% { opacity: 0.6 } 100% { transform: translate(var(--dx), -110px); opacity: 0 } }
+    .gw-ember { animation: gw-ember 6s ease-out infinite; transform-box: fill-box; }
     .gw-sweep { animation: gw-sweep 5.5s ease-in-out infinite; }
     .gw-twinkle { animation: gw-twinkle 2.4s ease-in-out infinite; }
     .gw-pulse { animation: gw-pulse 3s ease-in-out infinite; }
-    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .gw-sweep, .gw-twinkle, .gw-pulse, .gw-ember { animation: none; opacity: 0.6; } }
   </style>
     <linearGradient id="gw-sweepGrad" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
@@ -450,6 +476,12 @@ exports[`renderCardSVG > renders torvalds's card unchanged 1`] = `
       <feFlood flood-color="#FFB347" flood-opacity="0.9"/>
       <feComposite in2="b" operator="in" result="g"/>
       <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="gw-ember" x="-300%" y="-300%" width="700%" height="700%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.4" result="b"/>
+      <feFlood flood-color="#F5C518" flood-opacity="0.9"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <filter id="gw-shadow" x="-20%" y="-20%" width="140%" height="160%">
       <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.7"/>

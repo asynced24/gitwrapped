@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { analyzeSnapshot } from "@/lib/analysis";
 import { FIXTURE_USERS, loadFixture } from "@/lib/analysis/test-helpers";
 import { buildCardData } from "./card";
-import { LAYOUT, RARITY_STYLE, fitText, horizonPoints, renderCardSVG, renderErrorSVG, sparkles } from "./card-svg";
+import { EMBER_COUNT, LAYOUT, RARITY_STYLE, embers, fitText, horizonPoints, renderCardSVG, renderErrorSVG, sparkles } from "./card-svg";
 
 const NO_IMAGES = { cardArt: null, avatar: null };
 
@@ -93,6 +93,18 @@ describe("real cards", () => {
         const oneOfOne = renderCardSVG({ ...data, art: { ...data.art, custom: true } }, NO_IMAGES);
         expect(oneOfOne).toContain("animateTransform");
         expect(oneOfOne).toContain("ONE OF ONE");
+    });
+
+    it("gives one-of-ones rising embers instead of sparkles, fixed per user", () => {
+        const data = buildCardData(analyzeSnapshot(loadFixture("asynced24")), []);
+        const svg = renderCardSVG({ ...data, art: { ...data.art, custom: true } }, NO_IMAGES);
+        expect((svg.match(/class="gw-ember"/g) ?? []).length).toBe(EMBER_COUNT);
+        expect(svg).not.toMatch(/<path d="M[^"]*Z" fill="#FFFFFF"/);
+        expect(embers("asynced24")).toEqual(embers("asynced24"));
+        for (const e of embers("asynced24")) {
+            expect(e.y).toBeLessThan(LAYOUT.ability.y);
+            expect(e.delay).toBeLessThanOrEqual(0);
+        }
     });
 });
 
