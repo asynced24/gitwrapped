@@ -7,6 +7,7 @@ import {
     computeHeavyDamage,
     computeHP,
     computeLightDamage,
+    computeRarity,
     computeRetreatCost,
     logScale,
     pickAbility,
@@ -87,11 +88,23 @@ describe("buildCardData on real accounts", () => {
                     ability: c.ability.name,
                     retreat: c.retreatCost,
                     stage: c.evolutionStage,
+                    rarity: c.rarity,
+                    art: c.art.id,
                     type: c.topLanguage,
                 },
             ])
         );
         expect(summary).toMatchSnapshot();
+    });
+});
+
+describe("computeRarity", () => {
+    it("follows the stage unless the account is legendary", () => {
+        expect(computeRarity("BASIC", 0, 0)).toBe("common");
+        expect(computeRarity("STAGE 1", 500, 40)).toBe("uncommon");
+        expect(computeRarity("STAGE 2", 9_999, 364)).toBe("rare");
+        expect(computeRarity("STAGE 1", 10_000, 0)).toBe("legendary");
+        expect(computeRarity("BASIC", 0, 365)).toBe("legendary");
     });
 });
 

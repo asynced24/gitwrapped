@@ -4,7 +4,8 @@ import { PATTERN_THRESHOLDS } from "@/lib/analysis/activity";
 import { POPULAR_REPO_STARS, RECENT_DAYS } from "@/lib/analysis";
 import { MEANINGFUL_BYTE_SHARE, MEANINGFUL_PRIMARY_REPOS } from "@/lib/analysis/languages";
 import { MAINTAINED_WITHIN_DAYS } from "@/lib/analysis/repos";
-import { HP_RANGE } from "@/lib/card";
+import { HP_RANGE, LEGENDARY_STREAK_DAYS, LEGENDARY_TOP_REPO_STARS } from "@/lib/card";
+import { ART_FAMILIES, FAMILIES, RARITIES, totalPoolTarget } from "@/lib/art/families";
 import { SNAPSHOT_TTL_SECONDS } from "@/lib/profile";
 
 export const metadata: Metadata = {
@@ -136,6 +137,43 @@ export default function MethodologyPage() {
                             <td>Type</td>
                             <td>Your top programming language by bytes.</td>
                         </tr>
+                        <tr>
+                            <td>Rarity</td>
+                            <td>
+                                Follows the stage: Basic is common, Stage 1 uncommon, Stage 2 rare. Legendary needs a repo
+                                with {LEGENDARY_TOP_REPO_STARS.toLocaleString("en-US")}+ stars or a {LEGENDARY_STREAK_DAYS}-day
+                                contribution streak.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section>
+                <h2>Card art</h2>
+                <p>
+                    Your top language picks a creature family, and your rarity picks its form. Each family and rarity
+                    has its own pool of paintings, {totalPoolTarget()} planned in total, and the card says how many
+                    share your pool (&ldquo;1 of 6&rdquo;). Rare and legendary pools only open to accounts that earn
+                    them, so few people share those. While a pool is still empty, the card shows the family&apos;s
+                    original painting.
+                </p>
+                <p>
+                    Your painting is picked from your username with rendezvous hashing: every painting gets a score
+                    from <code>hash(username, painting)</code> and you get the highest. It never changes on its own,
+                    and adding a painting to a pool of N only moves the roughly 1 in N+1 people who now score it
+                    highest. Cards already in READMEs stay as they are.
+                </p>
+                <table>
+                    <tbody>
+                        {ART_FAMILIES.map(family => (
+                            <tr key={family}>
+                                <td>{FAMILIES[family].label}</td>
+                                <td>
+                                    {RARITIES.map(r => `${FAMILIES[family].species[r]} (${FAMILIES[family].poolTargets[r]})`).join(" → ")}
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </section>

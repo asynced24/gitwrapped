@@ -1,4 +1,8 @@
 import type { UserStats } from "@/types/github";
+import { familyForLanguage, type Rarity } from "@/lib/art/families";
+import { pickArtwork, type CardArt } from "@/lib/art/pick";
+
+export type { Rarity } from "@/lib/art/families";
 
 /* ─────────────────────────────────────────────
    Types
@@ -53,8 +57,12 @@ export interface PokemonCardData {
     contributions: number;
     activeWeeks: number;
     totalWeeks: number;
+    /** Contributions per calendar week, oldest first: drives the horizon line. */
+    weeklyActivity: number[];
     cardNumber: string;
-    rarity: "common" | "uncommon" | "rare";
+    rarity: Rarity;
+    /** Which painting this card shows and which pool it came from. */
+    art: CardArt;
     explanations: CardStatExplanation[];
 }
 
@@ -321,27 +329,6 @@ export function getLanguageTheme(language: string): LanguageCardTheme {
     return LANGUAGE_CARD_THEMES[language] ?? DEFAULT_THEME;
 }
 
-export function getCardArtPath(language: string): string {
-    if (language === "Python" || language === "Scala") {
-        return "/cards/python.jpg";
-    }
-    if (language === "TypeScript" || language === "JavaScript") {
-        return "/cards/typescript.jpg";
-    }
-    if (language === "Java" || language === "Kotlin" || language === "C#") {
-        return "/cards/java.jpg";
-    }
-    if (language === "Rust" || language === "Go" || language === "C" || language === "C++") {
-        return "/cards/rust+go+c.jpg";
-    }
-    if (language === "R" || language === "Haskell") {
-        return "/cards/aimljupyer.jpg";
-    }
-    if (language === "Shell" || language === "PHP" || language === "Lua") {
-        return "/cards/devops.jpg";
-    }
-    return "/cards/multicoder.jpg";
-}
 
 /* ─────────────────────────────────────────────
    Type Matchup System
@@ -441,6 +428,15 @@ export function computeHeavyDamage(topRepoStars: number): number {
 /** Retreat cost = live projects you'd be walking away from: 1 per 2, max 4. */
 export function computeRetreatCost(maintainedRepos: number): number {
     return Math.min(4, Math.ceil(maintainedRepos / 2));
+}
+
+/** Legendary: an account that stands out even among Stage 2 cards. */
+export const LEGENDARY_TOP_REPO_STARS = 10_000;
+export const LEGENDARY_STREAK_DAYS = 365;
+
+export function computeRarity(stage: EvolutionStage, topRepoStars: number, longestStreak: number): Rarity {
+    if (topRepoStars >= LEGENDARY_TOP_REPO_STARS || longestStreak >= LEGENDARY_STREAK_DAYS) return "legendary";
+    return stage === "STAGE 2" ? "rare" : stage === "STAGE 1" ? "uncommon" : "common";
 }
 
 export function computeStage(input: { ageYears: number; weekShare: number; stars: number; contributions: number }): EvolutionStage {
@@ -552,6 +548,8 @@ export function buildCardData(stats: UserStats): PokemonCardData {
     const retreatCost = computeRetreatCost(stats.maintainedRepoCount);
     const evolutionStage = computeStage({ ageYears, weekShare, stars: stats.totalStars, contributions: a.total });
     const ability = pickAbility(stats);
+    const rarity = computeRarity(evolutionStage, topStars, a.longestStreak);
+    const art = pickArtwork(stats.user.login, familyForLanguage(stats.topLanguage), rarity);
 
     const attack1: Attack = {
         name: theme.attacks.light.name,
@@ -597,6 +595,22 @@ export function buildCardData(stats: UserStats): PokemonCardData {
             because: `${ageYears} years on GitHub, active ${Math.round(weekShare * 100)}% of weeks, ${formatCount(stats.totalStars)} star${stats.totalStars === 1 ? "" : "s"}`,
         },
         { stat: "Type", value: theme.type, because: `${topLanguage} is ${stats.topLanguagePercentage}% of your code by bytes` },
+        {
+            stat: "Rarity",
+            value: rarity[0].toUpperCase() + rarity.slice(1),
+            because: rarity === "legendary"
+                ? (topStars >= LEGENDARY_TOP_REPO_STARS
+                    ? `A repo with ${formatCount(topStars)} stars (legendary at ${formatCount(LEGENDARY_TOP_REPO_STARS)})`
+                    : `A ${a.longestStreak}-day streak (legendary at ${LEGENDARY_STREAK_DAYS})`)
+                : `Follows the stage: Basic is common, Stage 1 uncommon, Stage 2 rare`,
+        },
+        {
+            stat: "Art",
+            value: art.species,
+            because: art.poolSize > 0
+                ? `${art.variant}, 1 of ${art.poolSize} ${rarity} ${art.species} paintings, picked from your username`
+                : `The original ${art.species} painting; more ${rarity} variants are coming`,
+        },
     ];
 
     const bio = stats.user.bio
@@ -624,8 +638,10 @@ export function buildCardData(stats: UserStats): PokemonCardData {
         contributions: a.total,
         activeWeeks: a.activeWeeks,
         totalWeeks: a.totalWeeks,
+        weeklyActivity: a.weeks.map(week => week.reduce((sum, day) => sum + day.count, 0)),
         cardNumber: computeCardNumber(stats.user.login),
-        rarity: evolutionStage === "STAGE 2" ? "rare" : evolutionStage === "STAGE 1" ? "uncommon" : "common",
+        rarity,
+        art,
         explanations,
     };
 }
