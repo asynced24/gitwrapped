@@ -44,10 +44,12 @@ const detailed = (n: number, stars: number) => ({
     languages: { edges: [{ size: 10, node: { name: "Go" } }] },
 });
 
-function route(handlers: Record<string, (vars: Record<string, unknown>) => unknown>) {
-    mockedGraphQL.mockImplementation(async (query: string, vars: Record<string, unknown>) => {
+type Options = Parameters<typeof githubGraphQL>[2];
+
+function route(handlers: Record<string, (vars: Record<string, unknown>, opts: Options) => unknown>) {
+    mockedGraphQL.mockImplementation(async (query: string, vars: Record<string, unknown>, opts?: Options) => {
         const name = /query (\w+)/.exec(query)![1];
-        return handlers[name](vars) as never;
+        return handlers[name](vars, opts) as never;
     });
 }
 
@@ -102,6 +104,27 @@ describe("collectSnapshot", () => {
             }),
         });
         expect((await collectSnapshot("u")).starTotalsComplete).toBe(false);
+    });
+
+    it("treats a repo whose tree field errored as unknown, not empty", async () => {
+        route({
+            User: () => user(2),
+            RecentRepos: () => ({ user: { repositories: { nodes: [detailed(1, 0), detailed(2, 0)] } } }),
+            RepoTrees: (_vars, opts) => {
+                // GitHub failed to resolve r2's tree: root comes back null with an error.
+                opts?.onPartialErrors?.([{ type: "SERVICE_UNAVAILABLE", message: "timeout", path: ["nodes", 1, "root"] }]);
+                return {
+                    nodes: [
+                        { id: "R_1", root: null, workflows: null },
+                        { id: "R_2", root: null, workflows: null },
+                    ],
+                };
+            },
+        });
+        const snap = await collectSnapshot("u");
+        // r1 really is empty (no HEAD, no error); r2 is unknown.
+        expect(snap.repos[0].rootEntries).toEqual([]);
+        expect(snap.repos[1].rootEntries).toBeNull();
     });
 
     it("throws not-found when the user does not exist", async () => {

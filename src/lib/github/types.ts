@@ -77,7 +77,8 @@ export interface RawSnapshot {
     forkTotal: number;
     /**
      * False when an account has so many starred repos that paging stopped
-     * before reaching zero-star ones: star/fork totals are then a lower bound.
+     * before reaching zero-star ones: the star total is then a lower bound.
+     * Fork totals are judged separately (see analyzeSnapshot).
      */
     starTotalsComplete: boolean;
     contributions: RawContributions;

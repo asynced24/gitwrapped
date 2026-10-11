@@ -144,9 +144,11 @@ export interface UserStats {
 
     /** Stars and forks on own non-fork repos only. */
     totalStars: number;
-    /** False when star/fork totals are a lower bound (very large accounts). */
+    /** False when the star total is a lower bound (very large accounts). */
     starTotalsComplete: boolean;
     totalForks: number;
+    /** False when the fork total is a lower bound (more than 100 owned repos). */
+    forkTotalsComplete: boolean;
     topRepositories: Repository[];
     mostStarredRepo: Repository | null;
     hasPopularRepo: boolean;

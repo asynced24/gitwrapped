@@ -128,11 +128,7 @@ async function fetchTrees(ids: string[]): Promise<Map<string, TreeNode>> {
     const batches: string[][] = [];
     for (let i = 0; i < ids.length; i += TREE_BATCH_SIZE) batches.push(ids.slice(i, i + TREE_BATCH_SIZE));
 
-    const results = await Promise.allSettled(
-        batches.map(batch =>
-            githubGraphQL<RepoTreesQueryResult>(REPO_TREES_QUERY, { ids: batch }, { timeoutMs: TREE_TIMEOUT_MS })
-        )
-    );
+    const results = await Promise.allSettled(batches.map(fetchTreeBatch));
 
     const trees = new Map<string, TreeNode>();
     for (const result of results) {
@@ -141,9 +137,32 @@ async function fetchTrees(ids: string[]): Promise<Map<string, TreeNode>> {
             if (result.reason instanceof GitHubError && result.reason.kind === "rate-limited") throw result.reason;
             continue;
         }
-        for (const node of result.value.nodes) if (node) trees.set(node.id, node);
+        for (const node of result.value) trees.set(node.id, node);
     }
     return trees;
+}
+
+/**
+ * One batch of tree lookups. A field error on one repo (GitHub sometimes
+ * fails to resolve a large tree) comes back as `root: null` next to an error
+ * whose path names that node. Without the path check that repo would look
+ * empty and drag every practice share down, so it is dropped as unknown.
+ */
+async function fetchTreeBatch(batch: string[]): Promise<TreeNode[]> {
+    const failed = new Set<number>();
+    const data = await githubGraphQL<RepoTreesQueryResult>(
+        REPO_TREES_QUERY,
+        { ids: batch },
+        {
+            timeoutMs: TREE_TIMEOUT_MS,
+            onPartialErrors: errors => {
+                for (const { path } of errors) {
+                    if (path?.[0] === "nodes" && typeof path[1] === "number") failed.add(path[1]);
+                }
+            },
+        }
+    );
+    return data.nodes.filter((node, i): node is TreeNode => node !== null && !failed.has(i));
 }
 
 function toLiteRepo(node: GqlRepoCore): RawRepo {
