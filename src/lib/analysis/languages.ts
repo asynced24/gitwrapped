@@ -10,6 +10,9 @@ export const NON_PROGRAMMING_LANGUAGES = new Set([
     "HTML", "CSS", "SCSS", "Sass", "Less", "Stylus", "Markdown", "MDX",
     "Dockerfile", "Makefile", "CMake", "Procfile", "Batchfile", "TeX",
     "Jupyter Notebook",
+    // Document formats GitHub reports as languages (addyosmani's "top
+    // language" came out as Rich Text Format).
+    "Rich Text Format", "Roff", "reStructuredText", "AsciiDoc", "Org", "SVG",
 ]);
 
 /** A language counts as "used" at ≥ this share of programming bytes… */

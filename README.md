@@ -5,8 +5,13 @@
 <div align="center">
 
 <a href="https://gitwrapped.aryansync.com/dashboard/asynced24">
-  <img src="https://gitwrapped.aryansync.com/api/badge/asynced24?portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20260924d" alt="GitWrapped Badge" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://gitwrapped.aryansync.com/api/badge/asynced24?theme=dark&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011b" />
+    <img src="https://gitwrapped.aryansync.com/api/badge/asynced24?portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011b" alt="GitWrapped badge for asynced24" />
+  </picture>
 </a>
+
+<sub>Follows your GitHub theme: dark badge in dark mode, light in light mode.</sub>
 
 <a href="https://gitwrapped.aryansync.com/dashboard/asynced24"><img src="https://img.shields.io/badge/GitWrapped-0F172A?style=for-the-badge&logo=github&logoColor=white" alt="GitWrapped" /></a> <a href="https://aryansync.com"><img src="https://img.shields.io/badge/Portfolio-111827?style=for-the-badge&logo=vercel&logoColor=white" alt="Portfolio" /></a> <a href="https://linkedin.com/in/aryansingh24"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>
 
@@ -27,45 +32,82 @@ No login required—just type your username.
 
 <div align="center">
 
+<sub>Six languages, six different paintings. The art comes from each account's top language family and rarity.</sub>
+
 <table>
 <tr>
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/torvalds">
-<img src="https://gitwrapped.aryansync.com/api/card/torvalds?v=20260924d" width="300"/>
-</a>
-<br/>
-<sub>torvalds</sub>
+<a href="https://gitwrapped.aryansync.com/dashboard/torvalds"><img src="https://gitwrapped.aryansync.com/api/card/torvalds?v=20261011b" width="260" alt="torvalds's GitWrapped card" /></a>
+<br/><sub><b>torvalds</b> · C</sub>
 </td>
-
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/gaearon">
-<img src="https://gitwrapped.aryansync.com/api/card/gaearon?v=20260924d" width="300"/>
-</a>
-<br/>
-<sub>gaearon</sub>
+<a href="https://gitwrapped.aryansync.com/dashboard/JakeWharton"><img src="https://gitwrapped.aryansync.com/api/card/JakeWharton?v=20261011b" width="260" alt="JakeWharton's GitWrapped card" /></a>
+<br/><sub><b>JakeWharton</b> · Kotlin</sub>
+</td>
+<td align="center">
+<a href="https://gitwrapped.aryansync.com/dashboard/karpathy"><img src="https://gitwrapped.aryansync.com/api/card/karpathy?v=20261011b" width="260" alt="karpathy's GitWrapped card" /></a>
+<br/><sub><b>karpathy</b> · Python</sub>
 </td>
 </tr>
-
 <tr>
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/shrikanthv15">
-<img src="https://gitwrapped.aryansync.com/api/card/shrikanthv15?v=20260924d" width="300"/>
-</a>
-<br/>
-<sub>shrikanthv15</sub>
+<a href="https://gitwrapped.aryansync.com/dashboard/yyx990803"><img src="https://gitwrapped.aryansync.com/api/card/yyx990803?v=20261011b" width="260" alt="yyx990803's GitWrapped card" /></a>
+<br/><sub><b>yyx990803</b> · JavaScript</sub>
 </td>
-
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/asynced24">
-<img src="https://gitwrapped.aryansync.com/api/card/asynced24?v=20260924d" width="300"/>
-</a>
-<br/>
-<sub>asynced24</sub>
+<a href="https://gitwrapped.aryansync.com/dashboard/dhh"><img src="https://gitwrapped.aryansync.com/api/card/dhh?v=20261011b" width="260" alt="dhh's GitWrapped card" /></a>
+<br/><sub><b>dhh</b> · Ruby</sub>
+</td>
+<td align="center">
+<a href="https://gitwrapped.aryansync.com/dashboard/fchollet"><img src="https://gitwrapped.aryansync.com/api/card/fchollet?v=20261011b" width="260" alt="fchollet's GitWrapped card" /></a>
+<br/><sub><b>fchollet</b> · Python</sub>
 </td>
 </tr>
 </table>
 
+### One of one
+
+Hand-painted cards made for a single account, with a signal glitch and a gold frame glint (both off under reduced motion).
+
+<table>
+<tr>
+<td align="center">
+<a href="https://gitwrapped.aryansync.com/dashboard/asynced24"><img src="https://gitwrapped.aryansync.com/api/card/asynced24?v=20261011b" width="300" alt="asynced24's GitWrapped card" /></a>
+<br/><sub><b>asynced24</b> · "The Steps"</sub>
+</td>
+<td align="center">
+<a href="https://gitwrapped.aryansync.com/dashboard/shrikanthv15"><img src="https://gitwrapped.aryansync.com/api/card/shrikanthv15?v=20261011b" width="300" alt="shrikanthv15's GitWrapped card" /></a>
+<br/><sub><b>shrikanthv15</b> · "Mic and the Owl"</sub>
+</td>
+</tr>
+</table>
+
+### README badges
+
+Avatar, top language and a 52-week contribution sparkline from the real calendar, framed in the card's gold-to-cyan gradient. The sheen stops under reduced motion.
+
+<table>
+<tr>
+<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=compact&theme=dark&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011b" width="400" alt="variant=compact&theme=dark badge" /><br/><sub><code>variant=compact&theme=dark</code></sub></td>
+<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=identity&theme=dark&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011b" width="400" alt="variant=identity&theme=dark badge" /><br/><sub><code>variant=identity&theme=dark</code></sub></td>
+</tr>
+<tr>
+<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=identity&theme=light&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011b" width="400" alt="variant=identity&theme=light badge" /><br/><sub><code>variant=identity&theme=light</code></sub></td>
+<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=minimal&theme=mono&v=20261011b" width="400" alt="variant=minimal&theme=mono badge" /><br/><sub><code>variant=minimal&theme=mono</code></sub></td>
+</tr>
+</table>
+
 </div>
+
+```md
+<a href="https://gitwrapped.aryansync.com/dashboard/YOUR_USERNAME">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://gitwrapped.aryansync.com/api/badge/YOUR_USERNAME?theme=dark" />
+    <img src="https://gitwrapped.aryansync.com/api/badge/YOUR_USERNAME" alt="GitWrapped badge" />
+  </picture>
+</a>
+<img src="https://gitwrapped.aryansync.com/api/card/YOUR_USERNAME" width="300" alt="GitWrapped card" />
+```
 
 </div>
 
