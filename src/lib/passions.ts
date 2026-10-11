@@ -63,6 +63,13 @@ export const PASSION_KEYS = Object.keys(PASSIONS) as PassionKey[];
 export const PASSION_WEIGHTS = { topic: 3, name: 2, description: 1 } as const;
 /** Score needed to earn an edition: one topic or name hit, or two description hits. */
 export const PASSION_THRESHOLD = 2;
+/**
+ * Share of a user's repos that must match. Without it the bar is absolute,
+ * so big accounts clear it by accident: one `game-prototypes` among
+ * hundreds of repos made tj, sindresorhus and yyx990803 "Arcade Edition".
+ * At 5%, one repo is enough up to 20 repos; 100 repos need 5.
+ */
+export const PASSION_MIN_SHARE = 0.05;
 
 export interface Passion extends PassionInfo {
     /** The repo that contributed most to the match, shown on the card (null for a custom edition). */
@@ -92,6 +99,7 @@ export function detectPassion(repos: RawRepo[]): Passion | null {
         const info = PASSIONS[key];
         let score = 0;
         let topRepo: { name: string; score: number } | null = null;
+        let matching = 0;
 
         for (const repo of repos) {
             const repoScore =
@@ -100,10 +108,12 @@ export function detectPassion(repos: RawRepo[]): Passion | null {
                 PASSION_WEIGHTS.description * mentions(repo.description ?? "", info.keywords);
             if (repoScore === 0) continue;
             score += repoScore;
+            matching++;
             if (!topRepo || repoScore > topRepo.score) topRepo = { name: repo.name, score: repoScore };
         }
 
-        if (topRepo && score >= PASSION_THRESHOLD && (!best || score > best.score)) {
+        const recurring = matching >= Math.ceil(repos.length * PASSION_MIN_SHARE);
+        if (topRepo && score >= PASSION_THRESHOLD && recurring && (!best || score > best.score)) {
             best = { ...info, repo: topRepo.name, score };
         }
     }

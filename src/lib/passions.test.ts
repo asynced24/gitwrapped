@@ -49,6 +49,14 @@ describe("detectPassion", () => {
         expect(detectPassion(repos)?.key).toBe("fitness");
     });
 
+    it("ignores a one-off repo on a big account, but not a recurring theme", () => {
+        const work = Array.from({ length: 39 }, (_, i) => repo({ name: `lib-${i}` }));
+        expect(detectPassion([...work, repo({ name: "game-prototypes" })])).toBeNull();
+
+        const games = ["game-prototypes", "tiny-game", "roguelike-jam"].map(name => repo({ name }));
+        expect(detectPassion([...work.slice(3), ...games])?.key).toBe("gaming");
+    });
+
     it("finds nothing for accounts without passion repos", () => {
         expect(detectPassion(loadFixture("torvalds").repos)).toBeNull();
         expect(analyzeSnapshot(loadFixture("torvalds")).passion).toBeNull();

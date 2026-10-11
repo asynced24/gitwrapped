@@ -7,6 +7,7 @@ import { MAINTAINED_WITHIN_DAYS } from "@/lib/analysis/repos";
 import { HP_RANGE, LEGENDARY_STREAK_DAYS, LEGENDARY_TOP_REPO_STARS } from "@/lib/card";
 import { ART_FAMILIES, FAMILIES, RARITIES, totalPoolTarget } from "@/lib/art/families";
 import { SNAPSHOT_TTL_SECONDS } from "@/lib/profile";
+import { PASSION_MIN_SHARE } from "@/lib/passions";
 
 export const metadata: Metadata = {
     title: "Methodology | GitWrapped",
@@ -170,7 +171,8 @@ export default function MethodologyPage() {
                     mention in a description doesn&apos;t), your creature can appear in a painting of that world. Those
                     paintings are scarcer than the regular pools, so the card goes up one rarity tier, and the card
                     view names the repo that earned it. Words are matched whole, so <code>race-condition</code> is not
-                    racing.
+                    racing. It has to be a recurring theme: at least {PASSION_MIN_SHARE * 100}% of your repos must match,
+                    so one <code>game-prototypes</code> among a hundred libraries doesn&apos;t make you a gamer.
                 </p>
                 <p>
                     <strong>One of one.</strong> A few paintings are made for a single account. Legendary and
