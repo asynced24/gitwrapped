@@ -219,7 +219,7 @@ function generateIdentityBadge(data: BadgeData, theme: BadgeTheme): string {
   </defs>
   <rect x="0.5" y="0.5" width="319" height="${height - 1}" rx="8" fill="${c.bg}" stroke="${c.border}"/>
   <rect x="0.5" y="0.5" width="4" height="${height - 1}" rx="2" fill="url(#accentBar)"/>
-  <text x="14" y="24" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="600" fill="${c.text}">${escapeXml(data.username)}.dev</text>
+  <text x="14" y="24" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="600" fill="${c.text}">@${escapeXml(data.username)}</text>
   <text x="14" y="44" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="11" fill="${c.textMuted}">Developer Snapshot · GitWrapped</text>
   ${linksRow}
 </svg>`;
