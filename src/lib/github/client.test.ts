@@ -69,6 +69,21 @@ describe("githubGraphQL", () => {
         await expect(githubGraphQL("q", {})).resolves.toEqual({ nodes: [null] });
     });
 
+    it("hands partial errors (including NOT_FOUND) to an opted-in caller instead of throwing", async () => {
+        const errors = [{ type: "NOT_FOUND", message: "no node", path: ["nodes", 1] }];
+        respond({ data: { nodes: [{ id: "a" }, null] }, errors });
+        const seen: unknown[] = [];
+        await expect(githubGraphQL("q", {}, { onPartialErrors: e => seen.push(...e) })).resolves.toEqual({
+            nodes: [{ id: "a" }, null],
+        });
+        expect(seen).toEqual(errors);
+    });
+
+    it("still throws on a rate limit even when the caller accepts partial data", async () => {
+        respond({ data: { nodes: [] }, errors: [{ type: "RATE_LIMITED", message: "slow down" }] });
+        expect((await errorOf(githubGraphQL("q", {}, { onPartialErrors: () => {} }))).kind).toBe("rate-limited");
+    });
+
     it("reports a timeout as upstream", async () => {
         vi.stubGlobal("fetch", vi.fn((_url: string, init: RequestInit) =>
             new Promise((_, reject) => init.signal?.addEventListener("abort", () =>

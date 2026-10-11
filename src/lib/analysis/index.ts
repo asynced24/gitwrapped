@@ -74,6 +74,10 @@ export function analyzeSnapshot(snapshot: RawSnapshot): UserStats {
         totalStars: stars,
         starTotalsComplete: snapshot.starTotalsComplete,
         totalForks: forks,
+        // Star paging stops at the first zero-star repo, but a zero-star repo
+        // can still have forks: fork totals are only complete when every
+        // owned repo was listed.
+        forkTotalsComplete: repos.length >= snapshot.repoTotal,
         topRepositories: ranked.slice(0, 6).map(toRepository),
         mostStarredRepo: mostStarred ? toRepository(mostStarred) : null,
         hasPopularRepo: (mostStarred?.stars ?? 0) >= POPULAR_REPO_STARS,

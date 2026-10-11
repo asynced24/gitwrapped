@@ -3,9 +3,21 @@ import { GitHubError } from "./errors";
 const GRAPHQL_ENDPOINT = "https://api.github.com/graphql";
 const DEFAULT_TIMEOUT_MS = 10_000;
 
-interface GraphQLErrorItem {
+export interface GraphQLErrorItem {
     type?: string;
     message: string;
+    /** Where in the response the error happened, e.g. ["nodes", 3, "root"]. */
+    path?: (string | number)[];
+}
+
+interface GraphQLOptions {
+    timeoutMs?: number;
+    /**
+     * Opt in to partial data: errors that came with usable data are handed
+     * here instead of being dropped (or, for NOT_FOUND, thrown). The caller
+     * then decides which fields to distrust.
+     */
+    onPartialErrors?: (errors: GraphQLErrorItem[]) => void;
 }
 
 interface GraphQLResponse<T> {
@@ -21,7 +33,7 @@ interface GraphQLResponse<T> {
 export async function githubGraphQL<T>(
     query: string,
     variables: Record<string, unknown>,
-    { timeoutMs = DEFAULT_TIMEOUT_MS }: { timeoutMs?: number } = {}
+    { timeoutMs = DEFAULT_TIMEOUT_MS, onPartialErrors }: GraphQLOptions = {}
 ): Promise<T> {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
@@ -69,6 +81,10 @@ export async function githubGraphQL<T>(
         const types = body.errors.map(e => e.type);
         if (types.includes("RATE_LIMITED")) {
             throw new GitHubError("rate-limited", "GitHub rate limit reached.", resetFromHeaders(res.headers));
+        }
+        if (onPartialErrors && body.data) {
+            onPartialErrors(body.errors);
+            return body.data;
         }
         if (types.includes("NOT_FOUND")) {
             throw new GitHubError("not-found", body.errors[0].message);

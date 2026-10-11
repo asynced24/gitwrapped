@@ -197,6 +197,7 @@ export default function MethodologyPage() {
                 <ul>
                     <li>Contributions to other people&apos;s and organisation repos count toward activity, but only repos you own are analysed for languages and practices.</li>
                     <li>For accounts with hundreds of starred repos, star totals stop after the 500 most starred and are marked as a lower bound.</li>
+                    <li>Fork totals on accounts with more than 100 repos are a lower bound (shown with a +): older zero-star repos are never listed, and they can still have forks.</li>
                     <li>&ldquo;Popular repo&rdquo; means {POPULAR_REPO_STARS}+ stars. It&apos;s an arbitrary line, and it&apos;s stated here so you can judge it.</li>
                     <li>Nothing here measures code quality. It measures what is visible on GitHub.</li>
                 </ul>

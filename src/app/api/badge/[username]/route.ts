@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { isGitHubError, type GitHubErrorKind } from "@/lib/github/errors";
 import { getProfile } from "@/lib/profile";
 import { rateLimit, GITHUB_USERNAME_RE } from "@/lib/rate-limit";
 
@@ -71,9 +72,12 @@ export async function GET(
         "Cache-Control": "public, max-age=3600, s-maxage=3600",
       },
     });
-  } catch {
-    return new Response(generateErrorBadge(), {
-      headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=120" },
+  } catch (error) {
+    const kind: GitHubErrorKind = isGitHubError(error) ? error.kind : "upstream";
+    const { text, cacheSeconds } = ERROR_BADGES[kind];
+    // Always 200: GitHub's image proxy shows a broken image for non-2xx.
+    return new Response(generateErrorBadge(text), {
+      headers: { "Content-Type": "image/svg+xml", "Cache-Control": `public, max-age=${cacheSeconds}` },
       status: 200,
     });
   }
@@ -221,9 +225,20 @@ function generateIdentityBadge(data: BadgeData, theme: BadgeTheme): string {
 </svg>`;
 }
 
-function generateErrorBadge(): string {
+/**
+ * A rate limit or outage must not tell a README visitor the user doesn't
+ * exist, and must not be cached as long as a real "not found".
+ */
+const ERROR_BADGES: Record<GitHubErrorKind, { text: string; cacheSeconds: number }> = {
+  "not-found": { text: "User not found", cacheSeconds: 3600 },
+  "rate-limited": { text: "GitHub busy, retrying soon", cacheSeconds: 120 },
+  upstream: { text: "GitHub unavailable", cacheSeconds: 60 },
+  config: { text: "Badge unavailable", cacheSeconds: 60 },
+};
+
+function generateErrorBadge(text: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="44" viewBox="0 0 200 44">
   <rect x="0.5" y="0.5" width="199" height="43" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
-  <text x="12" y="28" font-family="Inter, sans-serif" font-size="12" fill="#9ca3af">User not found</text>
+  <text x="12" y="28" font-family="Inter, sans-serif" font-size="12" fill="#9ca3af">${escapeXml(text)}</text>
 </svg>`;
 }

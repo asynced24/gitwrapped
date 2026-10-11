@@ -16,7 +16,7 @@ interface DevProfileCardProps {
  */
 export function DevProfileCard({ stats, compact = false }: DevProfileCardProps) {
     const [copied, setCopied] = useState(false);
-    const { user, programmingLanguages, totalStars, totalForks, languageDiversity, languageCount } = stats;
+    const { user, programmingLanguages, totalStars, totalForks, forkTotalsComplete, languageDiversity, languageCount } = stats;
 
     // Top 3 programming languages for display (no percentages, just names)
     const topLanguages = programmingLanguages.slice(0, 3);
@@ -89,7 +89,9 @@ export function DevProfileCard({ stats, compact = false }: DevProfileCardProps) 
                     {totalForks >= 5 && (
                         <div className="dev-profile-card__stat">
                             <GitFork size={14} />
-                            <span>{totalForks.toLocaleString("en-US")}</span>
+                            <span title={forkTotalsComplete ? undefined : "At least: repos past your 100 most recent are only listed when they have stars"}>
+                                {totalForks.toLocaleString("en-US")}{forkTotalsComplete ? "" : "+"}
+                            </span>
                         </div>
                     )}
                     <div className="dev-profile-card__stat">
