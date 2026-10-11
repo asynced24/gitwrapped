@@ -14,7 +14,8 @@
     "art:status": "tsx scripts/art/status.ts",
     "art:preview": "tsx scripts/art/preview.ts",
     "bench": "tsx scripts/bench/run.ts",
-    "bench:mock": "tsx scripts/bench/mock-github.ts"
+    "bench:mock": "tsx scripts/bench/mock-github.ts",
+    "badge:preview": "tsx scripts/badge-preview.ts"
   },
   "dependencies": {
     "@fontsource-variable/mona-sans": "^5.2.8",

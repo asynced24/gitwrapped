@@ -6,8 +6,8 @@
 
 <a href="https://gitwrapped.aryansync.com/dashboard/asynced24">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://gitwrapped.aryansync.com/api/badge/asynced24?theme=dark&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011" />
-    <img src="https://gitwrapped.aryansync.com/api/badge/asynced24?portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011" alt="GitWrapped badge for asynced24" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://gitwrapped.aryansync.com/api/badge/asynced24?theme=dark&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011b" />
+    <img src="https://gitwrapped.aryansync.com/api/badge/asynced24?portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011b" alt="GitWrapped badge for asynced24" />
   </picture>
 </a>
 
@@ -32,33 +32,35 @@ No login required—just type your username.
 
 <div align="center">
 
+<sub>Six languages, six different paintings. The art comes from each account's top language family and rarity.</sub>
+
 <table>
 <tr>
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/torvalds"><img src="https://gitwrapped.aryansync.com/api/card/torvalds?v=20261011" width="260" alt="torvalds's GitWrapped card" /></a>
+<a href="https://gitwrapped.aryansync.com/dashboard/torvalds"><img src="https://gitwrapped.aryansync.com/api/card/torvalds?v=20261011b" width="260" alt="torvalds's GitWrapped card" /></a>
 <br/><sub><b>torvalds</b> · C</sub>
 </td>
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/karpathy"><img src="https://gitwrapped.aryansync.com/api/card/karpathy?v=20261011" width="260" alt="karpathy's GitWrapped card" /></a>
-<br/><sub><b>karpathy</b> · Python</sub>
+<a href="https://gitwrapped.aryansync.com/dashboard/JakeWharton"><img src="https://gitwrapped.aryansync.com/api/card/JakeWharton?v=20261011b" width="260" alt="JakeWharton's GitWrapped card" /></a>
+<br/><sub><b>JakeWharton</b> · Kotlin</sub>
 </td>
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/sindresorhus"><img src="https://gitwrapped.aryansync.com/api/card/sindresorhus?v=20261011" width="260" alt="sindresorhus's GitWrapped card" /></a>
-<br/><sub><b>sindresorhus</b> · JavaScript</sub>
+<a href="https://gitwrapped.aryansync.com/dashboard/karpathy"><img src="https://gitwrapped.aryansync.com/api/card/karpathy?v=20261011b" width="260" alt="karpathy's GitWrapped card" /></a>
+<br/><sub><b>karpathy</b> · Python</sub>
 </td>
 </tr>
 <tr>
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/dhh"><img src="https://gitwrapped.aryansync.com/api/card/dhh?v=20261011" width="260" alt="dhh's GitWrapped card" /></a>
+<a href="https://gitwrapped.aryansync.com/dashboard/yyx990803"><img src="https://gitwrapped.aryansync.com/api/card/yyx990803?v=20261011b" width="260" alt="yyx990803's GitWrapped card" /></a>
+<br/><sub><b>yyx990803</b> · JavaScript</sub>
+</td>
+<td align="center">
+<a href="https://gitwrapped.aryansync.com/dashboard/dhh"><img src="https://gitwrapped.aryansync.com/api/card/dhh?v=20261011b" width="260" alt="dhh's GitWrapped card" /></a>
 <br/><sub><b>dhh</b> · Ruby</sub>
 </td>
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/gaearon"><img src="https://gitwrapped.aryansync.com/api/card/gaearon?v=20261011" width="260" alt="gaearon's GitWrapped card" /></a>
-<br/><sub><b>gaearon</b> · Lean</sub>
-</td>
-<td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/rauchg"><img src="https://gitwrapped.aryansync.com/api/card/rauchg?v=20261011" width="260" alt="rauchg's GitWrapped card" /></a>
-<br/><sub><b>rauchg</b> · JavaScript</sub>
+<a href="https://gitwrapped.aryansync.com/dashboard/fchollet"><img src="https://gitwrapped.aryansync.com/api/card/fchollet?v=20261011b" width="260" alt="fchollet's GitWrapped card" /></a>
+<br/><sub><b>fchollet</b> · Python</sub>
 </td>
 </tr>
 </table>
@@ -70,11 +72,11 @@ Hand-painted cards made for a single account, with a signal glitch and a gold fr
 <table>
 <tr>
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/asynced24"><img src="https://gitwrapped.aryansync.com/api/card/asynced24?v=20261011" width="300" alt="asynced24's GitWrapped card" /></a>
+<a href="https://gitwrapped.aryansync.com/dashboard/asynced24"><img src="https://gitwrapped.aryansync.com/api/card/asynced24?v=20261011b" width="300" alt="asynced24's GitWrapped card" /></a>
 <br/><sub><b>asynced24</b> · "The Steps"</sub>
 </td>
 <td align="center">
-<a href="https://gitwrapped.aryansync.com/dashboard/shrikanthv15"><img src="https://gitwrapped.aryansync.com/api/card/shrikanthv15?v=20261011" width="300" alt="shrikanthv15's GitWrapped card" /></a>
+<a href="https://gitwrapped.aryansync.com/dashboard/shrikanthv15"><img src="https://gitwrapped.aryansync.com/api/card/shrikanthv15?v=20261011b" width="300" alt="shrikanthv15's GitWrapped card" /></a>
 <br/><sub><b>shrikanthv15</b> · "Mic and the Owl"</sub>
 </td>
 </tr>
@@ -82,14 +84,16 @@ Hand-painted cards made for a single account, with a signal glitch and a gold fr
 
 ### README badges
 
+Avatar, top language and a 52-week contribution sparkline from the real calendar, framed in the card's gold-to-cyan gradient. The sheen stops under reduced motion.
+
 <table>
 <tr>
-<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=compact&theme=dark&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011" alt="compact badge" /><br/><sub><code>variant=compact</code></sub></td>
-<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=minimal&theme=dark&v=20261011" alt="minimal badge" /><br/><sub><code>variant=minimal</code></sub></td>
+<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=compact&theme=dark&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011b" width="400" alt="variant=compact&theme=dark badge" /><br/><sub><code>variant=compact&theme=dark</code></sub></td>
+<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=identity&theme=dark&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011b" width="400" alt="variant=identity&theme=dark badge" /><br/><sub><code>variant=identity&theme=dark</code></sub></td>
 </tr>
 <tr>
-<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=identity&theme=dark&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011" alt="identity badge" /><br/><sub><code>variant=identity</code></sub></td>
-<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=compact&theme=mono&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011" alt="mono badge" /><br/><sub><code>theme=mono</code></sub></td>
+<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=identity&theme=light&portfolio=aryansync.com&linkedin=linkedin.com%2Fin%2Faryansingh24&v=20261011b" width="400" alt="variant=identity&theme=light badge" /><br/><sub><code>variant=identity&theme=light</code></sub></td>
+<td align="center"><img src="https://gitwrapped.aryansync.com/api/badge/asynced24?variant=minimal&theme=mono&v=20261011b" width="400" alt="variant=minimal&theme=mono badge" /><br/><sub><code>variant=minimal&theme=mono</code></sub></td>
 </tr>
 </table>
 

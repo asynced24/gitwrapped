@@ -10,6 +10,11 @@ describe("analyzeLanguages", () => {
         expect(result.programming.map(l => l.language)).toEqual(["TypeScript"]);
     });
 
+    it("never makes a document format the top language", () => {
+        const result = analyzeLanguages([repo({ languages: { "Rich Text Format": 9000, JavaScript: 1000 } })]);
+        expect(result.programming[0]?.language).toBe("JavaScript");
+    });
+
     it("does not count a language that is a trace in one repo", () => {
         const result = analyzeLanguages([
             repo({ languages: { C: 99_000, Perl: 500, Python: 500 } }),
