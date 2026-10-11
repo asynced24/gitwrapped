@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "art:add": "tsx scripts/art/add.ts",
     "art:status": "tsx scripts/art/status.ts",
-    "art:preview": "tsx scripts/art/preview.ts"
+    "art:preview": "tsx scripts/art/preview.ts",
+    "bench": "tsx scripts/bench/run.ts",
+    "bench:mock": "tsx scripts/bench/mock-github.ts"
   },
   "dependencies": {
     "@fontsource-variable/mona-sans": "^5.2.8",

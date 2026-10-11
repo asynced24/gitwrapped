@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { collectSnapshot } from "./collect";
+import { recordBudget, resetBudget } from "./budget";
 import { GitHubError } from "./errors";
 
 vi.mock("./client", () => ({ githubGraphQL: vi.fn() }));
@@ -125,6 +126,16 @@ describe("collectSnapshot", () => {
         // r1 really is empty (no HEAD, no error); r2 is unknown.
         expect(snap.repos[0].rootEntries).toEqual([]);
         expect(snap.repos[1].rootEntries).toBeNull();
+    });
+
+    it("refuses a new profile below the budget reserve without sending a request", async () => {
+        recordBudget(new Headers({ "x-ratelimit-limit": "5000", "x-ratelimit-remaining": "50", "x-ratelimit-reset": "4102444800" }));
+        try {
+            await expect(collectSnapshot("u")).rejects.toMatchObject({ kind: "rate-limited" });
+            expect(mockedGraphQL).not.toHaveBeenCalled();
+        } finally {
+            resetBudget();
+        }
     });
 
     it("throws not-found when the user does not exist", async () => {

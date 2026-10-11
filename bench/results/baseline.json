@@ -1,0 +1,56 @@
+{
+  "label": "baseline",
+  "runId": "391921",
+  "date": "2026-10-11T03:13:43.969Z",
+  "ttlSeconds": 8,
+  "coldConcurrent": {
+    "n": 20,
+    "p50": 1568,
+    "p95": 1573,
+    "max": 1573,
+    "statuses": {
+      "200": 20
+    },
+    "upstreamRequests": 60,
+    "collections": 20,
+    "note": "one collection = 3 upstream requests for this fixture; ideal is 1 collection"
+  },
+  "warm": {
+    "n": 200,
+    "p50": 45,
+    "p95": 100,
+    "p99": 107,
+    "max": 111,
+    "statuses": {
+      "200": 200
+    },
+    "upstreamRequests": 0
+  },
+  "enumeration": {
+    "budget": 120,
+    "requests": {
+      "n": 80,
+      "p50": 331,
+      "p95": 1178,
+      "max": 1181,
+      "statuses": {
+        "200": 32,
+        "429": 48
+      }
+    },
+    "upstreamRequestsDuringFlood": 216,
+    "refusedByGitHub": 108,
+    "cachedProfileAfter": 200,
+    "newProfileAfter": 429,
+    "upstreamRequestsFor11NewProfilesAfterExhaustion": 22
+  },
+  "outageAfterExpiry": {
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "note": "200 = served the expired snapshot; 502 = error page",
+    "upstreamRequests": 6
+  }
+}

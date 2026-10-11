@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { budgetSnapshot, resetBudget } from "./budget";
 import { githubGraphQL } from "./client";
 import { GitHubError } from "./errors";
 
@@ -21,6 +22,7 @@ async function errorOf(promise: Promise<unknown>): Promise<GitHubError> {
 describe("githubGraphQL", () => {
     beforeEach(() => vi.stubEnv("GITHUB_TOKEN", "test-token"));
     afterEach(() => {
+        resetBudget();
         vi.unstubAllEnvs();
         vi.unstubAllGlobals();
     });
@@ -82,6 +84,26 @@ describe("githubGraphQL", () => {
     it("still throws on a rate limit even when the caller accepts partial data", async () => {
         respond({ data: { nodes: [] }, errors: [{ type: "RATE_LIMITED", message: "slow down" }] });
         expect((await errorOf(githubGraphQL("q", {}, { onPartialErrors: () => {} }))).kind).toBe("rate-limited");
+    });
+
+    it("records the token budget GitHub reports on every response", async () => {
+        respond({ data: {} }, { headers: { "x-ratelimit-limit": "5000", "x-ratelimit-remaining": "4321", "x-ratelimit-reset": "4102444800" } });
+        await githubGraphQL("q", {});
+        expect(budgetSnapshot()).toEqual({ limit: 5000, remaining: 4321, resetAt: 4102444800_000 });
+    });
+
+    it("stops sending requests after GitHub refuses one, until the window resets", async () => {
+        respond({ errors: [{ type: "RATE_LIMITED", message: "slow down" }] }, {
+            headers: { "x-ratelimit-remaining": "0", "x-ratelimit-reset": "4102444800" },
+        });
+        expect((await errorOf(githubGraphQL("q", {}))).kind).toBe("rate-limited");
+
+        const fetchSpy = vi.fn();
+        vi.stubGlobal("fetch", fetchSpy);
+        const refused = await errorOf(githubGraphQL("q", {}));
+        expect(refused.kind).toBe("rate-limited");
+        expect(refused.resetAt).toBe("2100-01-01T00:00:00.000Z");
+        expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it("reports a timeout as upstream", async () => {
