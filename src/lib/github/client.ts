@@ -1,6 +1,8 @@
+import { assertCanRequest, recordBudget, recordExhausted } from "./budget";
 import { GitHubError } from "./errors";
 
-const GRAPHQL_ENDPOINT = "https://api.github.com/graphql";
+/** Overridable so the benchmark harness can point at a local mock GitHub. */
+const GRAPHQL_ENDPOINT = process.env.GITHUB_GRAPHQL_URL ?? "https://api.github.com/graphql";
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 export interface GraphQLErrorItem {
@@ -40,6 +42,8 @@ export async function githubGraphQL<T>(
         throw new GitHubError("config", "GITHUB_TOKEN is not set; the GraphQL API requires a token.");
     }
 
+    assertCanRequest();
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -66,9 +70,11 @@ export async function githubGraphQL<T>(
         throw new GitHubError("config", "GitHub rejected the token (401).");
     }
 
+    recordBudget(res.headers);
+
     const remaining = res.headers.get("x-ratelimit-remaining");
     if (res.status === 429 || (res.status === 403 && (remaining === "0" || res.headers.has("retry-after")))) {
-        throw new GitHubError("rate-limited", "GitHub rate limit reached.", resetFromHeaders(res.headers));
+        throw rateLimited(res.headers);
     }
 
     if (!res.ok) {
@@ -80,7 +86,7 @@ export async function githubGraphQL<T>(
     if (body.errors?.length) {
         const types = body.errors.map(e => e.type);
         if (types.includes("RATE_LIMITED")) {
-            throw new GitHubError("rate-limited", "GitHub rate limit reached.", resetFromHeaders(res.headers));
+            throw rateLimited(res.headers);
         }
         if (onPartialErrors && body.data) {
             onPartialErrors(body.errors);
@@ -100,6 +106,12 @@ export async function githubGraphQL<T>(
     }
 
     return body.data;
+}
+
+function rateLimited(headers: Headers): GitHubError {
+    const resetAt = resetFromHeaders(headers);
+    recordExhausted(resetAt);
+    return new GitHubError("rate-limited", "GitHub rate limit reached.", resetAt);
 }
 
 function resetFromHeaders(headers: Headers): string | null {

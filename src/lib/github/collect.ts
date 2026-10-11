@@ -1,3 +1,4 @@
+import { assertCanStartCollection } from "./budget";
 import { githubGraphQL } from "./client";
 import { GitHubError } from "./errors";
 import {
@@ -31,9 +32,11 @@ type TreeNode = NonNullable<RepoTreesQueryResult["nodes"][number]>;
  *   USER_QUERY ─────────┬─ (repoTotal > 100) REPOS_BY_STARS pages, serial
  *   RECENT_REPOS_QUERY ─┴─ REPO_TREES batches of 20, parallel
  *
- * A typical account costs 2 + ceil(repos / 20) requests.
+ * A typical account costs 2 + ceil(repos / 20) requests. Refused up front,
+ * with no request sent, when the token's budget is down to its reserve.
  */
 export async function collectSnapshot(login: string): Promise<RawSnapshot> {
+    assertCanStartCollection();
     const userPromise = githubGraphQL<UserQueryResult>(USER_QUERY, { login });
     const recentPromise = githubGraphQL<RecentReposQueryResult>(RECENT_REPOS_QUERY, { login });
 

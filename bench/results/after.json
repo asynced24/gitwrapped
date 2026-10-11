@@ -1,0 +1,56 @@
+{
+  "label": "after",
+  "runId": "654215",
+  "date": "2026-10-11T03:17:34.235Z",
+  "ttlSeconds": 8,
+  "coldConcurrent": {
+    "n": 20,
+    "p50": 1274,
+    "p95": 1275,
+    "max": 1280,
+    "statuses": {
+      "200": 20
+    },
+    "upstreamRequests": 3,
+    "collections": 1,
+    "note": "one collection = 3 upstream requests for this fixture; ideal is 1 collection"
+  },
+  "warm": {
+    "n": 200,
+    "p50": 53,
+    "p95": 68,
+    "p99": 75,
+    "max": 76,
+    "statuses": {
+      "200": 200
+    },
+    "upstreamRequests": 0
+  },
+  "outageAfterExpiry": {
+    "statuses": [
+      200,
+      200,
+      200
+    ],
+    "note": "200 = served the expired snapshot; 502 = error page",
+    "upstreamRequests": 6
+  },
+  "enumeration": {
+    "budget": 120,
+    "requests": {
+      "n": 80,
+      "p50": 24,
+      "p95": 1177,
+      "max": 1184,
+      "statuses": {
+        "200": 31,
+        "429": 49
+      }
+    },
+    "upstreamRequestsDuringFlood": 126,
+    "refusedByGitHub": 4,
+    "cachedProfileAfter": 200,
+    "newProfileAfter": 429,
+    "upstreamRequestsFor11NewProfilesAfterExhaustion": 0
+  }
+}

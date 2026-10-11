@@ -63,7 +63,9 @@ After the fixes on `fix/data-correctness`: 124/124 tests, build green.
 
 ## 4. Recommended first milestone: three initiatives
 
-### I-1 (P0) Make the GitHub budget a first-class, measured constraint
+### I-1 (P0) Make the GitHub budget a first-class, measured constraint: **done**
+
+Shipped as in-flight dedup plus a budget gate. Stale fallback was dropped because the benchmark showed it already works. Results: [case-studies/github-budget.md](case-studies/github-budget.md).
 
 | | |
 |---|---|

@@ -121,6 +121,16 @@ Measured with `scripts/count-calls.ts` against live GitHub (cold cache, same tok
 | Repeat load (cached) | — | ~15 ms |
 | Tests | 0 | 75 |
 
+Under load, measured with `npm run bench` (production build against a fixture-backed mock GitHub, no token needed):
+
+| | Before | After |
+|---|---|---|
+| 20 simultaneous first visits to one profile | 60 GitHub requests | 3 |
+| 80 new usernames with 120 points of quota left: requests GitHub refused | 108 | 4 |
+| GitHub requests per new user once the quota is spent | 2 | 0 |
+
+How and why: [docs/case-studies/github-budget.md](docs/case-studies/github-budget.md).
+
 Correctness fixes:
 
 - "Consistency", "active months" and the activity chart used to be computed from each repo's single `pushed_at` timestamp. They now come from the daily contribution calendar.
@@ -147,6 +157,7 @@ npm run dev
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npx tsx --env-file=.env.local scripts/count-calls.ts <user>` | Live request count, timing and resulting card |
+| `npm run bench -- <label>` | Load test against a mock GitHub; writes `bench/results/<label>.json` |
 
 CI runs lint, typecheck, tests and a production build on every pull request.
 
